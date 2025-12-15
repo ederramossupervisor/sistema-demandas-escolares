@@ -1190,7 +1190,6 @@ window.alterarStatusDemanda = alterarStatusDemanda;
 window.reenviarEmailDemanda = reenviarEmailDemanda;
 // ✅ VERIFICAÇÃO FINAL
 console.log('📋 Resumo da demanda salva:');
-console.log('- ID:', resultadoSalvar.id);
 console.log('- Título:', dadosDemanda.titulo);
 console.log('- Anexos:', dadosDemanda.anexos ? dadosDemanda.anexos.length : 0);
 
