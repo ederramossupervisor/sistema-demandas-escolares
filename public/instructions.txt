@@ -35,4 +35,63 @@ NO GOOGLE APPS SCRIPT:
 5. COPIAR a URL gerada
 
 ==========================================
-4. CONFIGURAR ARQUIVOS
+4. CONFIGURAR ARQUIVOS DO SITE
+==========================================
+NA PASTA DO SEU PROJETO:
+1. Coloque seus ícones PNG na pasta: public/icons/
+   - Todos os tamanhos: 32x32, 72x72, ..., 512x512
+2. Renomeie 32x32.png para favicon.ico e coloque em public/
+3. A URL do seu script JÁ ESTÁ configurada em:
+   src/js/googleAppsScript.js (linha 6)
+
+==========================================  
+5. TESTAR LOCALMENTE
+==========================================
+1. Abra o arquivo src/index.html no navegador
+2. Teste criar uma demanda (sem enviar e-mail primeiro)
+3. Verifique se aparece na planilha Google
+
+==========================================
+6. HOSPEDAR NO GITHUB PAGES
+==========================================
+1. Crie repositório no GitHub: sistema-demandas-supervisao
+2. Faça upload de TODOS os arquivos
+3. Vá em Settings > Pages
+4. Em Source: "Deploy from a branch"
+5. Branch: main, pasta: / (root)
+6. Salve e aguarde o link
+
+==========================================
+7. CONFIGURAR GATILHOS AUTOMÁTICOS
+==========================================
+NO GOOGLE APPS SCRIPT:
+1. Execute a função: configurarGatilhoDiario()
+   (Menu Executar > configurarGatilhoDiario)
+2. Isso configurará envio automático de lembretes às 8h
+
+==========================================
+PROBLEMAS COMUNS E SOLUÇÕES
+==========================================
+❌ "Erro ao conectar ao servidor"
+   → Verifique se o Apps Script está publicado
+   → Verifique a URL no googleAppsScript.js
+
+❌ "Permissão negada" no Apps Script
+   → Execute o script uma vez manualmente para autorizar
+
+❌ "Planilha não encontrada"
+   → Verifique o nome exato da planilha e aba
+
+❌ E-mails não são enviados
+   → Verifique propriedades do script (EMAIL_SUPERVISAO)
+   → Verifique se as escolas selecionadas têm e-mail
+
+==========================================
+SUPORTE
+==========================================
+Para problemas, verifique:
+1. Console do navegador (F12 > Console)
+2. Logs do Google Apps Script (Execuções)
+3. Planilha Google (se os dados estão sendo salvos)
+
+Boa sorte! Seu sistema está pronto para uso. 🚀
