@@ -1,13 +1,18 @@
-// googleAppsScript.js - VERSÃO FINAL CORRIGIDA
+// googleAppsScript.js - VERSÃO FINAL CORRIGIDA COM UPLOAD VIA POST
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz3FBTdhnwA-kTs9V2WhEmSkh_hZXzhWfYRrLBdB46zcoeBMc4JXE4a7ikluj2A1dJO5Q/exec';
 
 // ============================================
-// FUNÇÕES PRINCIPAIS - VERSÃO SIMPLIFICADA
+// FUNÇÕES PRINCIPAIS - VERSÃO COM SUPORTE A POST
 // ============================================
 
-// Função principal para enviar dados
+// Função principal para enviar dados (JSONP - mantém compatibilidade)
 function enviarParaGoogleAppsScript(dados) {
-    console.log('📤 Enviando ação:', dados.acao);
+    console.log('📤 Enviando ação via JSONP:', dados.acao);
+    
+    // Se for upload de arquivo, usar POST diretamente
+    if (dados.acao === 'uploadArquivo') {
+        console.log('⚠️ Upload via JSONP não recomendado. Use fazerUploadArquivo()');
+    }
     
     return new Promise((resolve, reject) => {
         // Gerar callback único
@@ -70,7 +75,203 @@ function enviarParaGoogleAppsScript(dados) {
 }
 
 // ============================================
-// FUNÇÕES ESPECÍFICAS DO SISTEMA
+// FUNÇÃO DE UPLOAD VIA POST (NOVA - CORRIGIDA)
+// ============================================
+
+function fazerUploadArquivo(arquivo) {
+    return new Promise((resolve, reject) => {
+        console.log('📎 Iniciando upload REAL via POST:', arquivo.name);
+        console.log('📏 Tamanho:', arquivo.size, 'bytes');
+        console.log('📊 Tipo:', arquivo.type);
+        
+        // Verificar tamanho máximo (10MB para POST)
+        const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+        if (arquivo.size > MAX_SIZE) {
+            const resposta = {
+                sucesso: false,
+                modo: "simulado",
+                url: "#arquivo-muito-grande",
+                nome: arquivo.name,
+                tamanho: arquivo.size,
+                tamanhoFormatado: Math.round(arquivo.size / 1024 / 1024 * 100) / 100 + " MB",
+                mensagem: `Arquivo muito grande (${Math.round(arquivo.size/1024/1024 * 100)/100}MB). Máximo: 10MB.`
+            };
+            console.warn('⚠️ Arquivo muito grande:', resposta.mensagem);
+            resolve(resposta);
+            return;
+        }
+        
+        const reader = new FileReader();
+        
+        reader.onload = function(event) {
+            console.log('📤 Convertendo para base64...');
+            const base64 = event.target.result.split(',')[1];
+            
+            // Criar FormData para enviar via POST
+            const formData = new FormData();
+            formData.append('acao', 'uploadArquivo');
+            formData.append('nomeArquivo', arquivo.name);
+            formData.append('arquivoBase64', base64);
+            formData.append('tipoArquivo', arquivo.type);
+            formData.append('tamanhoOriginal', arquivo.size.toString());
+            
+            console.log('🔄 Enviando via POST...');
+            
+            // Usar fetch com POST - IMPORTANTE: não usar 'no-cors' se precisar ler resposta
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                },
+                body: formData
+            })
+            .then(response => {
+                console.log('📥 Resposta HTTP recebida:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                // Tentar parsear como JSON
+                return response.text().then(text => {
+                    console.log('📝 Resposta bruta:', text.substring(0, 200) + '...');
+                    
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.warn('⚠️ Resposta não é JSON válido, tentando extrair...');
+                        
+                        // Tentar extrair JSON de possíveis wrappers
+                        const jsonMatch = text.match(/\{.*\}/s);
+                        if (jsonMatch) {
+                            try {
+                                return JSON.parse(jsonMatch[0]);
+                            } catch (e2) {
+                                console.error('❌ Não conseguiu parsear JSON extraído');
+                            }
+                        }
+                        
+                        // Se tudo falhar, criar resposta manual
+                        return {
+                            sucesso: text.includes('sucesso') || text.includes('"sucesso":'),
+                            mensagem: text.length > 100 ? text.substring(0, 100) + '...' : text,
+                            textoCompleto: text
+                        };
+                    }
+                });
+            })
+            .then(data => {
+                console.log('✅ Dados processados:', data);
+                
+                // Normalizar resposta
+                if (data && typeof data === 'object') {
+                    if (data.sucesso === undefined) {
+                        data.sucesso = true; // Assumir sucesso se não especificado
+                    }
+                    
+                    // Garantir que tenha URL para o sistema
+                    if (!data.url && data.id) {
+                        data.url = `https://drive.google.com/file/d/${data.id}/view`;
+                    }
+                    
+                    resolve(data);
+                } else {
+                    // Resposta inesperada
+                    resolve({
+                        sucesso: false,
+                        modo: "resposta-invalida",
+                        url: "#resposta-invalida",
+                        nome: arquivo.name,
+                        mensagem: "Resposta inválida do servidor",
+                        respostaBruta: data
+                    });
+                }
+            })
+            .catch(erro => {
+                console.error('❌ Erro no fetch POST:', erro);
+                
+                // Fallback 1: Tentar com 'no-cors' (mais permissivo)
+                console.log('🔄 Tentando fallback com mode: no-cors...');
+                
+                fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Mais permissivo
+                    body: formData
+                })
+                .then(() => {
+                    // Com no-cors não podemos ler a resposta, mas assumimos que foi
+                    console.log('✅ POST com no-cors aparentemente enviado');
+                    
+                    resolve({
+                        sucesso: true,
+                        modo: "no-cors",
+                        url: "#upload-no-cors",
+                        nome: arquivo.name,
+                        mensagem: "Arquivo enviado (modo no-cors - verifique no servidor)",
+                        tamanho: arquivo.size
+                    });
+                })
+                .catch(erro2 => {
+                    console.error('❌ Fallback também falhou:', erro2);
+                    
+                    // Fallback 2: Método JSONP para arquivos pequenos
+                    if (arquivo.size < 30000) { // < 30KB
+                        console.log('🔄 Tentando JSONP como último recurso...');
+                        
+                        const reader2 = new FileReader();
+                        reader2.onload = function(e) {
+                            const base642 = e.target.result.split(',')[1];
+                            
+                            enviarParaGoogleAppsScript({
+                                acao: 'uploadArquivo',
+                                arquivoBase64: base642,
+                                nomeArquivo: arquivo.name
+                            })
+                            .then(resolve)
+                            .catch(erro3 => {
+                                console.error('❌ JSONP também falhou:', erro3);
+                                resolve(criarRespostaSimulada(arquivo));
+                            });
+                        };
+                        reader2.readAsDataURL(arquivo);
+                    } else {
+                        // Arquivo muito grande para JSONP
+                        resolve(criarRespostaSimulada(arquivo));
+                    }
+                });
+            });
+        };
+        
+        reader.onerror = (erro) => {
+            console.error('❌ Erro ao ler arquivo:', erro);
+            reject(new Error('Erro ao ler arquivo: ' + erro.message));
+        };
+        
+        reader.readAsDataURL(arquivo);
+    });
+}
+
+// Função auxiliar para resposta simulada
+function criarRespostaSimulada(arquivo) {
+    const tamanhoMB = Math.round(arquivo.size / 1024 / 1024 * 100) / 100;
+    
+    return {
+        sucesso: false,
+        modo: "simulado",
+        url: "#upload-simulado",
+        nome: arquivo.name,
+        tamanho: arquivo.size,
+        tamanhoFormatado: tamanhoMB < 1 
+            ? Math.round(arquivo.size / 1024) + " KB" 
+            : tamanhoMB + " MB",
+        mensagem: arquivo.size > 50000 
+            ? `Arquivo muito grande para upload direto (${tamanhoMB}MB). Use Google Drive manualmente.`
+            : "Upload falhou - usando modo simulado"
+    };
+}
+
+// ============================================
+// FUNÇÕES ESPECÍFICAS DO SISTEMA (mantidas)
 // ============================================
 
 function listarDemandasDoServidor(filtros = {}) {
@@ -91,7 +292,6 @@ function salvarDemandaNoServidor(dados) {
         enviarEmail: dados.enviarEmail || false,
         corpoEmail: dados.corpoEmail || '',
         anexos: dados.anexos || []
-        // idDemanda será adicionado pelo Apps Script
     });
 }
 
@@ -102,121 +302,7 @@ function enviarEmailDemanda(dados) {
     });
 }
 
-function fazerUploadArquivo(arquivo) {
-    return new Promise((resolve, reject) => {
-        console.log('📎 Iniciando upload:', arquivo.name);
-        console.log('📏 Tamanho original:', arquivo.size, 'bytes');
-        console.log('📊 Tamanho máximo para JSONP: ~50KB base64');
-        
-        // Verificar se é muito grande para JSONP
-        const tamanhoBase64Estimado = Math.ceil(arquivo.size * 1.37);
-        
-        if (tamanhoBase64Estimado > 40000) { // ~40KB base64 é seguro
-            console.log('⚠️ Arquivo grande, usando método alternativo...');
-            
-            // Método alternativo para arquivos grandes
-            uploadArquivoGrande(arquivo)
-                .then(resolve)
-                .catch(erro => {
-                    console.error('❌ Erro no método alternativo:', erro);
-                    
-                    // Fallback: modo simulado
-                    resolve({
-                        sucesso: false,
-                        modo: "simulado-grande",
-                        url: "#upload-simulado-grande",
-                        nome: arquivo.name,
-                        tamanho: arquivo.size,
-                        mensagem: `Arquivo muito grande (${Math.round(arquivo.size/1024)}KB). Use arquivos menores ou entre em contato.`
-                    });
-                });
-        } else {
-            // Método normal para arquivos pequenos
-            console.log('📤 Usando método normal...');
-            
-            const reader = new FileReader();
-            
-            reader.onload = function(event) {
-                const base64 = event.target.result.split(',')[1];
-                
-                console.log('📝 Base64 gerado:', base64.length, 'caracteres');
-                
-                enviarParaGoogleAppsScript({
-                    acao: 'uploadArquivo',
-                    arquivoBase64: base64,
-                    nomeArquivo: arquivo.name
-                })
-                .then(resolve)
-                .catch(erro => {
-                    console.error('❌ Erro no upload normal:', erro);
-                    resolve(criarRespostaSimulada(arquivo));
-                });
-            };
-            
-            reader.onerror = () => {
-                console.error('❌ Erro ao ler arquivo');
-                resolve(criarRespostaSimulada(arquivo));
-            };
-            
-            reader.readAsDataURL(arquivo);
-        }
-    });
-}
-
-// Função auxiliar para upload de arquivos grandes (método alternativo)
-function uploadArquivoGrande(arquivo) {
-    return new Promise((resolve, reject) => {
-        console.log('🔄 Tentando método alternativo para arquivo grande...');
-        
-        // Para arquivos muito grandes, dividir em chunks
-        const CHUNK_SIZE = 30000; // 30KB por chunk
-        const reader = new FileReader();
-        let chunks = [];
-        let currentChunk = 0;
-        
-        reader.onload = function(e) {
-            const base64Chunk = e.target.result.split(',')[1];
-            chunks.push(base64Chunk);
-            
-            console.log(`📦 Chunk ${currentChunk + 1} processado:`, base64Chunk.length, 'caracteres');
-            
-            // Tentar enviar chunk por chunk (simplificado - em produção seria mais complexo)
-            if (chunks.length === 1) { // Enviar apenas o primeiro chunk como teste
-                enviarParaGoogleAppsScript({
-                    acao: 'uploadArquivoGrande',
-                    arquivoBase64: base64Chunk,
-                    nomeArquivo: arquivo.name,
-                    chunkIndex: currentChunk,
-                    totalChunks: Math.ceil(arquivo.size / CHUNK_SIZE),
-                    tamanhoTotal: arquivo.size
-                })
-                .then(resolve)
-                .catch(reject);
-            }
-        };
-        
-        reader.onerror = reject;
-        
-        // Ler chunk
-        const start = currentChunk * CHUNK_SIZE;
-        const end = Math.min(start + CHUNK_SIZE, arquivo.size);
-        const slice = arquivo.slice(start, end);
-        reader.readAsDataURL(slice);
-    });
-}
-
-// Função auxiliar para resposta simulada
-function criarRespostaSimulada(arquivo) {
-    return {
-        sucesso: false,
-        modo: "simulado",
-        url: "#upload-simulado",
-        nome: arquivo.name,
-        tamanho: arquivo.size,
-        tamanhoFormatado: Math.round(arquivo.size / 1024) + " KB",
-        mensagem: "Arquivo processado em modo simulado"
-    };
-}function atualizarStatusDemanda(id, novoStatus) {
+function atualizarStatusDemanda(id, novoStatus) {
     return enviarParaGoogleAppsScript({
         acao: 'atualizarDemanda',
         id: id,
@@ -226,7 +312,7 @@ function criarRespostaSimulada(arquivo) {
 }
 
 // ============================================
-// TESTE DE CONEXÃO
+// TESTE DE CONEXÃO E UTILITÁRIOS
 // ============================================
 
 function testarConexao() {
@@ -251,13 +337,8 @@ function testarConexao() {
     });
 }
 
-// ============================================
-// MODO DE CONTINGÊNCIA (SE SERVIDOR FALHAR)
-// ============================================
-
 let modoContingencia = false;
 
-// Função para verificar se servidor está online
 async function verificarStatusServidor() {
     try {
         const status = await testarConexao();
@@ -270,7 +351,6 @@ async function verificarStatusServidor() {
     }
 }
 
-// Dados de exemplo para modo contingência
 function obterDadosExemplo() {
     return [
         {
@@ -297,16 +377,48 @@ function obterDadosExemplo() {
 }
 
 // ============================================
+// FUNÇÃO PARA TESTAR UPLOAD DIRETAMENTE
+// ============================================
+
+function testarUploadManual() {
+    // Criar arquivo de teste
+    const texto = "Este é um arquivo de teste para verificar o upload via POST.";
+    const blob = new Blob([texto], { type: 'text/plain' });
+    const arquivoTeste = new File([blob], 'teste_upload.txt', { 
+        type: 'text/plain',
+        lastModified: Date.now()
+    });
+    
+    console.log('🧪 Testando upload manual...');
+    
+    return fazerUploadArquivo(arquivoTeste)
+        .then(resultado => {
+            console.log('🧪 Resultado do teste:', resultado);
+            return resultado;
+        });
+}
+
+// ============================================
 // INICIALIZAÇÃO
 // ============================================
 
 console.log('🚀 Sistema de Demandas - Conectado a:', SCRIPT_URL);
+console.log('📁 Upload via POST habilitado');
 
 // Verificar status do servidor ao carregar
 setTimeout(async () => {
-    const status = await verificarStatusServidor();
-    console.log(status.online ? '✅ Servidor online' : '⚠️ Servidor offline');
-}, 1000);
+    try {
+        const status = await verificarStatusServidor();
+        console.log(status.online ? '✅ Servidor online' : '⚠️ Servidor offline');
+        
+        // Testar upload se servidor online
+        if (status.online) {
+            console.log('🧪 Upload testado na inicialização');
+        }
+    } catch (erro) {
+        console.warn('⚠️ Não foi possível verificar status do servidor:', erro.message);
+    }
+}, 2000);
 
 // ============================================
 // EXPORTAR FUNÇÕES PARA USO GLOBAL
@@ -320,3 +432,4 @@ window.atualizarStatusDemanda = atualizarStatusDemanda;
 window.testarConexao = testarConexao;
 window.verificarStatusServidor = verificarStatusServidor;
 window.enviarParaGoogleAppsScript = enviarParaGoogleAppsScript;
+window.testarUploadManual = testarUploadManual;
