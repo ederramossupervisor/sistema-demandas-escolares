@@ -104,26 +104,52 @@ function enviarEmailDemanda(dados) {
 
 function fazerUploadArquivo(arquivo) {
     return new Promise((resolve, reject) => {
+        console.log('📎 Iniciando upload REAL:', arquivo.name);
+        console.log('📏 Tamanho:', arquivo.size, 'bytes');
+        
         const reader = new FileReader();
         
         reader.onload = function(event) {
+            // Extrair base64 (remover cabeçalho data:application/pdf;base64,)
             const base64 = event.target.result.split(',')[1];
             
-            // Agora envia REALMENTE para o servidor
+            console.log('📤 Enviando para servidor...');
+            console.log('📝 Dados enviados:', {
+                nomeArquivo: arquivo.name,
+                temBase64: !!base64,
+                tamanhoBase64: base64 ? base64.length : 0
+            });
+            
+            // 🚨 VERIFIQUE SE ESTÁ ENVIANDO CORRETAMENTE:
             enviarParaGoogleAppsScript({
                 acao: 'uploadArquivo',
                 arquivoBase64: base64,
-                nomeArquivo: arquivo.name
+                nomeArquivo: arquivo.name  // ← DEVE SER arquivo.name NÃO fileName
             })
-            .then(resolve)
-            .catch(reject);
+            .then(resposta => {
+                console.log('✅ Upload concluído:', resposta);
+                resolve(resposta);
+            })
+            .catch(erro => {
+                console.error('❌ Erro no upload:', erro);
+                resolve({
+                    sucesso: false,
+                    modo: "simulado",
+                    url: "#upload-simulado",
+                    nome: arquivo.name,
+                    mensagem: "Erro: " + erro.message
+                });
+            });
         };
         
-        reader.onerror = () => reject(new Error('Erro ao ler arquivo'));
+        reader.onerror = () => {
+            console.error('❌ Erro ao ler arquivo');
+            reject(new Error('Erro ao ler arquivo'));
+        };
+        
         reader.readAsDataURL(arquivo);
     });
 }
-
 function atualizarStatusDemanda(id, novoStatus) {
     return enviarParaGoogleAppsScript({
         acao: 'atualizarDemanda',
