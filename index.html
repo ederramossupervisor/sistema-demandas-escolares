@@ -167,18 +167,16 @@
                     
                     <!-- CONTEÚDO DAS ABAS -->
                     <div class="tab-content active" id="tab-principal">
-                        <!-- TÍTULO -->
+                        <!-- Campo Título - JÁ CORRIGIDO -->
                         <div class="form-group">
                             <label for="titulo"><i class="fas fa-heading"></i> Título da Demanda *</label>
-                            <input type="text" id="titulo" required 
-                                   placeholder="Ex: Entrega do relatório bimestral">
+                            <input type="text" id="titulo" name="titulo" required placeholder="Ex: Entrega do relatório bimestral">
                         </div>
                         
-                        <!-- DESCRIÇÃO -->
-                        <div class="form-group">
-                            <label for="descricao"><i class="fas fa-align-left"></i> Descrição Detalhada *</label>
-                            <textarea id="descricao" rows="4" required
-                                      placeholder="Descreva detalhadamente o que precisa ser feito..."></textarea>
+                       <!-- Campo Descrição - JÁ CORRIGIDO -->
+                       <div class="form-group">
+                           <label for="descricao"><i class="fas fa-align-left"></i> Descrição Detalhada *</label>
+                           <textarea id="descricao" name="descricao" rows="4" required placeholder="Descreva detalhadamente o que precisa ser feito..."></textarea>
                         </div>
                         
                         <!-- SELEÇÃO DE ESCOLAS -->
@@ -198,7 +196,7 @@
                                            value="EEEFM Pedra Azul" class="escola-checkbox">
                                     <label for="escola-pedra-azul" class="escola-label">
                                         <span class="escola-nome">EEEFM Pedra Azul</span>
-                                        <span class="escola-email">eder.ramos@educador.edu.es.gov.br</span>
+                                        <span class="escola-email">escolapedreiras@sedu.es.gov.br</span>
                                     </label>
                                 </div>
                                 
@@ -222,12 +220,12 @@
                             </div>
                         </div>
                         
-                        <!-- RESPONSÁVEL -->
+                        <!-- RESPONSÁVEL - CORRIGIDO COM checked -->
                         <div class="form-group">
                             <label><i class="fas fa-user-tag"></i> Responsável pela Execução *</label>
                             <div class="radio-group">
                                 <label class="radio-option">
-                                    <input type="radio" name="responsavel" value="Supervisor" required>
+                                    <input type="radio" name="responsavel" value="Supervisor" required checked>
                                     <span class="radio-label supervisor">
                                         <i class="fas fa-user-tie"></i> Supervisor
                                     </span>
@@ -241,10 +239,10 @@
                             </div>
                         </div>
                         
-                        <!-- PRAZO -->
+                        <!-- PRAZO - CORRIGIDO COM name -->
                         <div class="form-group">
                             <label for="prazo"><i class="fas fa-calendar-day"></i> Prazo Final *</label>
-                            <input type="date" id="prazo" required 
+                            <input type="date" id="prazo" name="prazo" required 
                                    min="2024-01-01">
                         </div>
                     </div>
@@ -409,6 +407,33 @@
         console.log('PWA instalado com sucesso!');
         if (installButton.parentNode) {
             installButton.parentNode.removeChild(installButton);
+        }
+    });
+
+    // ============================================
+    // CONFIGURAÇÃO DE DATA DINÂMICA PARA O PRAZO
+    // ============================================
+    document.addEventListener('DOMContentLoaded', function() {
+        // Configurar data mínima como amanhã
+        const hoje = new Date();
+        const amanha = new Date(hoje);
+        amanha.setDate(hoje.getDate() + 1);
+        
+        const prazoInput = document.getElementById('prazo');
+        if (prazoInput) {
+            prazoInput.min = amanha.toISOString().split('T')[0];
+            
+            // Definir valor padrão como 7 dias à frente
+            const prazoPadrao = new Date(hoje);
+            prazoPadrao.setDate(hoje.getDate() + 7);
+            prazoInput.value = prazoPadrao.toISOString().split('T')[0];
+        }
+        
+        // Configurar data máxima (2 anos à frente)
+        const maxDate = new Date(hoje);
+        maxDate.setFullYear(hoje.getFullYear() + 2);
+        if (prazoInput) {
+            prazoInput.max = maxDate.toISOString().split('T')[0];
         }
     });
     </script>
