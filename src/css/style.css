@@ -1202,3 +1202,72 @@ a:hover {
 .mb-3 { margin-bottom: 30px; }
 
 .hidden { display: none !important; }
+/* ============================================
+   ESTILOS ESPECÍFICOS PARA PWA
+   ============================================ */
+
+/* Quando instalado como PWA */
+.pwa-mode .btn-floating {
+    bottom: 80px; /* Ajustar para não sobrepor barra do PWA */
+}
+
+/* Barra de status do PWA */
+@media (display-mode: standalone) {
+    body {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+    }
+    
+    .header {
+        padding-top: calc(20px + env(safe-area-inset-top));
+    }
+}
+
+/* Botão de instalação do PWA */
+#install-button {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Offline indicator */
+.offline-indicator {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background-color: #f39c12;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    z-index: 1001;
+    display: none;
+}
+
+.offline .offline-indicator {
+    display: block;
+}
+
+/* Loading para sincronização */
+.sync-loading {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 1002;
+    display: none;
+}
+
+.syncing .sync-loading {
+    display: block;
+}
