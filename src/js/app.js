@@ -763,6 +763,19 @@ if (state.arquivosSelecionados.length > 0) {
     for (const arquivo of state.arquivosSelecionados) {
         try {
             console.log(`📤 Enviando arquivo: ${arquivo.name} (${formatarTamanhoArquivo(arquivo.size)})`);
+            // 🔥 NOVO: Criar barra de progresso para arquivos grandes
+        let barraProgresso = null;
+        if (arquivo.size > 30000) {
+            barraProgresso = criarBarraProgressoUpload(arquivo);
+        }
+        
+        const resultado = await fazerUploadArquivo(arquivo);
+        
+        // 🔥 NOVO: Atualizar barra de progresso
+        if (barraProgresso) {
+            barraProgresso.completar(resultado.sucesso);
+            setTimeout(() => barraProgresso.remover(), 2000);
+        }
             
             const resultado = await fazerUploadArquivo(arquivo);
             
