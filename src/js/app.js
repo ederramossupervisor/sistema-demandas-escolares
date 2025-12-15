@@ -756,89 +756,77 @@ async function salvarDemanda(e) {
         
         // 2. Fazer upload dos anexos se houver
         let linksAnexos = [];
-        // 🔥 BLOCO DE UPLOAD CORRIGIDO:
-if (state.arquivosSelecionados.length > 0) {
-    mostrarToast('Upload', 'Enviando anexos...', 'info');
-    
-    for (const arquivo of state.arquivosSelecionados) {
-        try {
-            console.log(`📤 Enviando arquivo: ${arquivo.name} (${formatarTamanhoArquivo(arquivo.size)})`);
-            // 🔥 NOVO: Criar barra de progresso para arquivos grandes
-        let barraProgresso = null;
-        if (arquivo.size > 30000) {
-            barraProgresso = criarBarraProgressoUpload(arquivo);
-        }
         
-        const resultado = await fazerUploadArquivo(arquivo);
-        
-        // 🔥 NOVO: Atualizar barra de progresso
-        if (barraProgresso) {
-            barraProgresso.completar(resultado.sucesso);
-            setTimeout(() => barraProgresso.remover(), 2000);
-        }
+        if (state.arquivosSelecionados.length > 0) {
+            mostrarToast('Upload', 'Enviando anexos...', 'info');
             
-            const resultado = await fazerUploadArquivo(arquivo);
-            
-            console.log('📥 Resultado do upload:', resultado);
-            
-            // 🔥 VERIFICAÇÃO ROBUSTA DA URL
-            let urlFinal = null;
-            let mensagemStatus = '';
-            
-            if (resultado.sucesso !== false && resultado.dados && resultado.dados.url) {
-                // Formato novo: resultado.dados.url
-                urlFinal = resultado.dados.url;
-                mensagemStatus = '✅ Enviado com sucesso';
-                
-            } else if (resultado.url && resultado.url.startsWith('http')) {
-                // Formato antigo: resultado.url
-                urlFinal = resultado.url;
-                mensagemStatus = '✅ Enviado com sucesso (formato antigo)';
-                
-            } else if (resultado.modo && resultado.modo.includes('simulado')) {
-                // Modo simulado - upload falhou
-                urlFinal = '#upload-simulado';
-                mensagemStatus = `⚠️ Modo simulado: ${resultado.mensagem || 'Arquivo grande demais'}`;
-                
-            } else {
-                // Outro erro
-                urlFinal = '#upload-falhou';
-                mensagemStatus = `❌ Falha: ${resultado.mensagem || 'Erro desconhecido'}`;
+            for (const arquivo of state.arquivosSelecionados) {
+                try {
+                    console.log(`📤 Enviando arquivo: ${arquivo.name} (${formatarTamanhoArquivo(arquivo.size)})`);
+                    
+                    // Fazer upload do arquivo (apenas UMA declaração da variável resultado)
+                    const resultadoUpload = await fazerUploadArquivo(arquivo);
+                    
+                    console.log('📥 Resultado do upload:', resultadoUpload);
+                    
+                    // 🔥 VERIFICAÇÃO ROBUSTA DA URL
+                    let urlFinal = null;
+                    let mensagemStatus = '';
+                    
+                    if (resultadoUpload.sucesso !== false && resultadoUpload.dados && resultadoUpload.dados.url) {
+                        // Formato novo: resultado.dados.url
+                        urlFinal = resultadoUpload.dados.url;
+                        mensagemStatus = '✅ Enviado com sucesso';
+                        
+                    } else if (resultadoUpload.url && resultadoUpload.url.startsWith('http')) {
+                        // Formato antigo: resultado.url
+                        urlFinal = resultadoUpload.url;
+                        mensagemStatus = '✅ Enviado com sucesso (formato antigo)';
+                        
+                    } else if (resultadoUpload.modo && resultadoUpload.modo.includes('simulado')) {
+                        // Modo simulado - upload falhou
+                        urlFinal = '#upload-simulado';
+                        mensagemStatus = `⚠️ Modo simulado: ${resultadoUpload.mensagem || 'Arquivo grande demais'}`;
+                        
+                    } else {
+                        // Outro erro
+                        urlFinal = '#upload-falhou';
+                        mensagemStatus = `❌ Falha: ${resultadoUpload.mensagem || 'Erro desconhecido'}`;
+                    }
+                    
+                    // Só adicionar se tem URL válida
+                    if (urlFinal && urlFinal.startsWith('http')) {
+                        linksAnexos.push({
+                            nome: arquivo.name,
+                            url: urlFinal,
+                            tamanho: arquivo.size,
+                            status: 'sucesso'
+                        });
+                        
+                        console.log(`🎯 Arquivo ${arquivo.name}: ${mensagemStatus}`);
+                        console.log(`🔗 URL: ${urlFinal}`);
+                        
+                    } else {
+                        console.warn(`⚠️ Arquivo ${arquivo.name} não tem URL válida:`, urlFinal);
+                        mostrarToast('Atenção', `${arquivo.name}: ${mensagemStatus}`, 'warning');
+                    }
+                    
+                } catch (erro) {
+                    console.error(`❌ Erro no upload de ${arquivo.name}:`, erro);
+                    mostrarToast('Atenção', `Erro ao enviar ${arquivo.name}: ${erro.message}`, 'warning');
+                }
             }
             
-            // Só adicionar se tem URL válida
-            if (urlFinal && urlFinal.startsWith('http')) {
-                linksAnexos.push({
-                    nome: arquivo.name,
-                    url: urlFinal,
-                    tamanho: arquivo.size,
-                    status: 'sucesso'
-                });
-                
-                console.log(`🎯 Arquivo ${arquivo.name}: ${mensagemStatus}`);
-                console.log(`🔗 URL: ${urlFinal}`);
-                
-            } else {
-                console.warn(`⚠️ Arquivo ${arquivo.name} não tem URL válida:`, urlFinal);
-                mostrarToast('Atenção', `${arquivo.name}: ${mensagemStatus}`, 'warning');
-            }
+            // Só adicionar anexos se realmente tiver URLs válidas
+            dadosDemanda.anexos = linksAnexos.filter(a => a.url.startsWith('http'));
             
-        } catch (erro) {
-            console.error(`❌ Erro no upload de ${arquivo.name}:`, erro);
-            mostrarToast('Atenção', `Erro ao enviar ${arquivo.name}: ${erro.message}`, 'warning');
+            if (dadosDemanda.anexos.length > 0) {
+                console.log(`✅ ${dadosDemanda.anexos.length} anexos prontos para salvar`);
+            } else {
+                console.warn('⚠️ Nenhum anexo válido para salvar');
+                delete dadosDemanda.anexos; // Não enviar anexos vazios
+            }
         }
-    }
-    
-    // Só adicionar anexos se realmente tiver URLs válidas
-    dadosDemanda.anexos = linksAnexos.filter(a => a.url.startsWith('http'));
-    
-    if (dadosDemanda.anexos.length > 0) {
-        console.log(`✅ ${dadosDemanda.anexos.length} anexos prontos para salvar`);
-    } else {
-        console.warn('⚠️ Nenhum anexo válido para salvar');
-        delete dadosDemanda.anexos; // Não enviar anexos vazios
-    }
-}
         
         // 3. Salvar demanda no servidor
         mostrarToast('Salvando', 'Salvando demanda...', 'info');
@@ -1201,13 +1189,18 @@ window.mostrarDetalhesDemanda = mostrarDetalhesDemanda;
 window.fecharModalDetalhes = fecharModalDetalhes;
 window.alterarStatusDemanda = alterarStatusDemanda;
 window.reenviarEmailDemanda = reenviarEmailDemanda;
-// ✅ VERIFICAÇÃO FINAL
-console.log('📋 Resumo da demanda salva:');
-console.log('- Título:', dadosDemanda.titulo);
-console.log('- Anexos:', dadosDemanda.anexos ? dadosDemanda.anexos.length : 0);
 
-if (dadosDemanda.anexos) {
-    dadosDemanda.anexos.forEach((anexo, i) => {
-        console.log(`  ${i+1}. ${anexo.nome}: ${anexo.url}`);
-    });
+/**
+ * Função auxiliar para criar barra de progresso de upload (se necessário)
+ */
+function criarBarraProgressoUpload(arquivo) {
+    // Implementação opcional para mostrar progresso
+    return {
+        completar: function(sucesso) {
+            console.log(`Upload ${sucesso ? 'completo' : 'falhou'} para ${arquivo.name}`);
+        },
+        remover: function() {
+            console.log(`Removendo indicador para ${arquivo.name}`);
+        }
+    };
 }
