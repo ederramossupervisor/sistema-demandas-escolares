@@ -6,7 +6,7 @@
 
 // ⚠️⚠️⚠️ URL DO SEU GOOGLE APPS SCRIPT ⚠️⚠️⚠️
 // COLE AQUI A URL QUE VOCÊ ME ENVIOU:
-const URL_DO_SEU_SCRIPT = 'https://script.google.com/macros/s/AKfycbzi9v245GkVbRcav6a-_VehDx9F94ig8_OhKCdq3e50uUAOLCxCzApL7pdWSug6ni_haQ/exec';
+const URL_DO_SEU_SCRIPT = 'https://script.google.com/macros/s/AKfycbztB2lSBlPGu9Zq4eJKqAFvd0QxL_gJdSfeJdZronq7zGbwk5NQpDYIHcYGnhAdVkI40Q/exec';
 
 // ============================================
 // FUNÇÕES PRINCIPAIS DE COMUNICAÇÃO
