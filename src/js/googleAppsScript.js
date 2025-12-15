@@ -1,5 +1,5 @@
 // googleAppsScript.js - VERSÃO FINAL CORRIGIDA
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyKjRfnNF-jI12Y-fXLdBIDXD8T_Qo9gMzOABkIUPT47Bzr7XEBA--pmSX8OS9rZn3dkQ/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzzFGeKOLm0xpppPMOA2EQOzl8HJ3PnqoGPn2mF7rhAmXq7imPcdxNmS5xFzHKBV4cduQ/exec';
 
 // ============================================
 // FUNÇÕES PRINCIPAIS - VERSÃO SIMPLIFICADA
