@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Sitemap (você pode adicionar depois)
+# Sitemap: https://seusite.com/sitemap.xml
+
+# Este é um sistema interno, não indexar
+Disallow: /admin/
+Disallow: /api/
