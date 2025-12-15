@@ -864,20 +864,6 @@ function validarFormulario() {
         elementos.prazo.focus();
         return false;
     }
-    // Verificar se um radio button está selecionado
-const responsavelSelecionado = document.querySelector('input[name="responsavel"]:checked');
-if (!responsavelSelecionado) {
-    // Selecionar o primeiro por padrão
-    document.querySelector('input[name="responsavel"][value="Supervisor"]').checked = true;
-}
-
-// Verificar prazo
-if (!elementos.prazo.value) {
-    // Definir prazo padrão (amanhã)
-    const amanha = new Date();
-    amanha.setDate(amanha.getDate() + 1);
-    elementos.prazo.value = amanha.toISOString().split('T')[0];
-}
     
     return true;
 }
