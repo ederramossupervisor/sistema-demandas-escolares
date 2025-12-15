@@ -104,21 +104,23 @@ function enviarEmailDemanda(dados) {
 
 function fazerUploadArquivo(arquivo) {
     return new Promise((resolve, reject) => {
-        // Para simplificar neste momento, retornar sucesso fake
-        // Em produção, implementar upload real
+        const reader = new FileReader();
         
-        console.log('📎 Arquivo selecionado para upload:', arquivo.name);
+        reader.onload = function(event) {
+            const base64 = event.target.result.split(',')[1];
+            
+            // Agora envia REALMENTE para o servidor
+            enviarParaGoogleAppsScript({
+                acao: 'uploadArquivo',
+                arquivoBase64: base64,
+                nomeArquivo: arquivo.name
+            })
+            .then(resolve)
+            .catch(reject);
+        };
         
-        // Simular upload bem-sucedido
-        setTimeout(() => {
-            resolve({
-                sucesso: true,
-                url: '#upload-simulado',
-                nome: arquivo.name,
-                tamanho: arquivo.size,
-                mensagem: 'Arquivo pronto para envio'
-            });
-        }, 500);
+        reader.onerror = () => reject(new Error('Erro ao ler arquivo'));
+        reader.readAsDataURL(arquivo);
     });
 }
 
