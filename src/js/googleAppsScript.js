@@ -3,7 +3,7 @@
 // COM JSONP PARA CONTOURNAR CORS
 // ============================================
 
-const URL_DO_SEU_SCRIPT = 'https://script.google.com/macros/s/AKfycby32VA8AImxOsx0pthwUsmKziv_m67UstrWa6FZhJz3CqPjAeeSaUWFX4sca9esutqb_g/exec';
+const URL_DO_SEU_SCRIPT = 'https://script.google.com/macros/s/AKfycbwJvpvhTGLF04XuMkFn5SfKOa_HbCM2_KT0-dP5yoxslubbh9uWvio86z80GSZDW0TF6w/exec';
 
 // ============================================
 // FUNÇÃO PRINCIPAL JSONP
