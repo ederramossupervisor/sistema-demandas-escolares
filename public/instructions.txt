@@ -1,0 +1,38 @@
+📋 INSTRUÇÕES DE CONFIGURAÇÃO DO SISTEMA
+
+==========================================
+1. CONFIGURAÇÃO INICIAL
+==========================================
+✅ JÁ FEITO:
+- Planilha Google criada: "Demandas da Supervisão Escolar"
+- Backend Google Apps Script configurado
+- URL do script: (sua URL já está no código)
+
+==========================================
+2. CONFIGURAR PROPRIEDADES DO SCRIPT
+==========================================
+NO GOOGLE APPS SCRIPT:
+1. Clique na engrenagem ⚙️ (Configurações do projeto)
+2. Em "Propriedades do script", clique em "Adicionar propriedade de script"
+3. Adicione:
+   - Property: EMAIL_SUPERVISAO
+   - Value: ecramos@sedu.es.gov.br
+4. Adicione outra:
+   - Property: NOME_SUPERVISAO  
+   - Value: Supervisão Escolar
+
+==========================================
+3. PUBLICAR APPS SCRIPT
+==========================================
+NO GOOGLE APPS SCRIPT:
+1. Menu "Publicar" > "Implantar como aplicativo da web..."
+2. Configurações:
+   - Descrição: "API Sistema Demandas V1"
+   - Executar como: "Sua conta" (seu email @sedu)
+   - Quem tem acesso: "Qualquer pessoa, mesmo anônimo"
+3. Clique "Implantar"
+4. Autorize o aplicativo quando solicitado
+5. COPIAR a URL gerada
+
+==========================================
+4. CONFIGURAR ARQUIVOS
