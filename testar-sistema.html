@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Teste do Sistema de Demandas</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .teste { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .sucesso { background-color: #d4edda; color: #155724; }
+        .erro { background-color: #f8d7da; color: #721c24; }
+        button { padding: 10px 20px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste do Sistema de Demandas</h1>
+    
+    <div class="teste" id="teste1">
+        <h3>1. Testar Conexão com Google Apps Script</h3>
+        <button onclick="testarConexao()">Testar Conexão</button>
+        <div id="resultado1"></div>
+    </div>
+    
+    <div class="teste" id="teste2">
+        <h3>2. Testar Listagem de Demandas</h3>
+        <button onclick="listarDemandas()">Listar Demandas</button>
+        <div id="resultado2"></div>
+    </div>
+    
+    <div class="teste" id="teste3">
+        <h3>3. Testar Salvamento de Demanda</h3>
+        <button onclick="salvarDemandaTeste()">Salvar Demanda de Teste</button>
+        <div id="resultado3"></div>
+    </div>
+    
+    <div class="teste" id="teste4">
+        <h3>4. Testar Service Worker (PWA)</h3>
+        <button onclick="testarServiceWorker()">Testar PWA</button>
+        <div id="resultado4"></div>
+    </div>
+    
+    <script>
+        const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbxOxjD9QRRhmyygYItYtrpfqGef6XbSyYYRet9Nk7Vl8gnp59IP-wrIEhG6Z9q49AviEg/exec';
+        
+        async function testarConexao() {
+            const resultado = document.getElementById('resultado1');
+            resultado.innerHTML = 'Testando...';
+            
+            try {
+                const resposta = await fetch(URL_SCRIPT + '?teste=' + Date.now());
+                const dados = await resposta.json();
+                
+                resultado.innerHTML = `
+                    <div class="sucesso">
+                        <strong>✅ Conexão bem-sucedida!</strong><br>
+                        Sistema: ${dados.sistema}<br>
+                        Versão: ${dados.versao}<br>
+                        Status: ${dados.status}
+                    </div>
+                `;
+            } catch (erro) {
+                resultado.innerHTML = `
+                    <div class="erro">
+                        <strong>❌ Falha na conexão</strong><br>
+                        Erro: ${erro.message}<br>
+                        Verifique:<br>
+                        1. Se o Apps Script está publicado<br>
+                        2. Se a URL está correta<br>
+                        3. Sua conexão com a internet
+                    </div>
+                `;
+            }
+        }
+        
+        async function listarDemandas() {
+            const resultado = document.getElementById('resultado2');
+            resultado.innerHTML = 'Carregando...';
+            
+            try {
+                const resposta = await fetch(URL_SCRIPT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ acao: 'listarDemandas' })
+                });
+                
+                const dados = await resposta.json();
+                
+                if (dados.sucesso) {
+                    resultado.innerHTML = `
+                        <div class="sucesso">
+                            <strong>✅ ${dados.dados.length} demandas encontradas</strong><br>
+                            ${dados.dados.length > 0 ? 
+                                `Última: "${dados.dados[0].titulo}"` : 
+                                'Nenhuma demanda cadastrada ainda.'}
+                        </div>
+                    `;
+                } else {
+                    resultado.innerHTML = `
+                        <div class="erro">
+                            <strong>❌ Erro no servidor</strong><br>
+                            ${dados.erro || 'Erro desconhecido'}
+                        </div>
+                    `;
+                }
+            } catch (erro) {
+                resultado.innerHTML = `
+                    <div class="erro">
+                        <strong>❌ Falha na comunicação</strong><br>
+                        ${erro.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function salvarDemandaTeste() {
+            const resultado = document.getElementById('resultado3');
+            resultado.innerHTML = 'Salvando...';
+            
+            const dadosTeste = {
+                acao: 'salvarDemanda',
+                titulo: 'Demanda de Teste ' + new Date().toLocaleTimeString(),
+                descricao: 'Esta é uma demanda criada pelo teste automático do sistema.',
+                escolas: ['EEEFM Pedra Azul'],
+                responsavel: 'Supervisor',
+                prazo: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+            };
+            
+            try {
+                const resposta = await fetch(URL_SCRIPT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dadosTeste)
+                });
+                
+                const dados = await resposta.json();
+                
+                if (dados.sucesso) {
+                    resultado.innerHTML = `
+                        <div class="sucesso">
+                            <strong>✅ Demanda salva com sucesso!</strong><br>
+                            ID: ${dados.dados.id}<br>
+                            Data: ${new Date(dados.dados.dataCriacao).toLocaleString()}<br>
+                            <button onclick="listarDemandas()">Verificar na lista</button>
+                        </div>
+                    `;
+                } else {
+                    resultado.innerHTML = `
+                        <div class="erro">
+                            <strong>❌ Erro ao salvar</strong><br>
+                            ${dados.erro || 'Erro desconhecido'}
+                        </div>
+                    `;
+                }
+            } catch (erro) {
+                resultado.innerHTML = `
+                    <div class="erro">
+                        <strong>❌ Falha na comunicação</strong><br>
+                        ${erro.message}
+                    </div>
+                `;
+            }
+        }
+        
+        function testarServiceWorker() {
+            const resultado = document.getElementById('resultado4');
+            
+            if ('serviceWorker' in navigator) {
+                resultado.innerHTML = `
+                    <div class="sucesso">
+                        <strong>✅ Service Worker suportado</strong><br>
+                        Seu navegador suporta PWA!<br>
+                        <button onclick="instalarPWA()">Instalar como App</button>
+                    </div>
+                `;
+            } else {
+                resultado.innerHTML = `
+                    <div class="erro">
+                        <strong>❌ Service Worker não suportado</strong><br>
+                        Seu navegador não suporta PWA.<br>
+                        Use Chrome, Edge ou Safari no iOS.
+                    </div>
+                `;
+            }
+        }
+        
+        function instalarPWA() {
+            window.open('src/index.html', '_blank');
+        }
+        
+        // Testar automaticamente a conexão
+        window.onload = testarConexao;
+    </script>
+</body>
+</html>
