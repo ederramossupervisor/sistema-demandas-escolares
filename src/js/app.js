@@ -8,7 +8,7 @@
 const APP_CONFIG = {
     // URLs serão configuradas em googleAppsScript.js
     schools: [
-        { nome: "EEEFM Pedra Azul", email: "escolapedreiras@sedu.es.gov.br" },
+        { nome: "EEEFM Pedra Azul", email: "eder.ramos@educador.edu.es.gov.br" },
         { nome: "EEEFM Fioravante Caliman", email: "escolafioravante@sedu.es.gov.br" },
         { nome: "EEEFM Alto Rio Possmoser", email: "escolapossmoser@sedu.es.gov.br" }
     ],
