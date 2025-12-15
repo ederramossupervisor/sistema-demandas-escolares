@@ -91,6 +91,7 @@ function salvarDemandaNoServidor(dados) {
         enviarEmail: dados.enviarEmail || false,
         corpoEmail: dados.corpoEmail || '',
         anexos: dados.anexos || []
+        // idDemanda será adicionado pelo Apps Script
     });
 }
 
