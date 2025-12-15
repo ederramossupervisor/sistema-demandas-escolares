@@ -756,25 +756,76 @@ async function salvarDemanda(e) {
         
         // 2. Fazer upload dos anexos se houver
         let linksAnexos = [];
-        if (state.arquivosSelecionados.length > 0) {
-            mostrarToast('Upload', 'Enviando anexos...', 'info');
+        // 🔥 BLOCO DE UPLOAD CORRIGIDO:
+if (state.arquivosSelecionados.length > 0) {
+    mostrarToast('Upload', 'Enviando anexos...', 'info');
+    
+    for (const arquivo of state.arquivosSelecionados) {
+        try {
+            console.log(`📤 Enviando arquivo: ${arquivo.name} (${formatarTamanhoArquivo(arquivo.size)})`);
             
-            for (const arquivo of state.arquivosSelecionados) {
-                try {
-                    const resultado = await fazerUploadArquivo(arquivo);
-                    linksAnexos.push({
-                        nome: arquivo.name,
-                        url: resultado.url,
-                        tamanho: arquivo.size
-                    });
-                } catch (erro) {
-                    console.error('Erro no upload do arquivo:', erro);
-                    mostrarToast('Atenção', `Não foi possível enviar ${arquivo.name}`, 'warning');
-                }
+            const resultado = await fazerUploadArquivo(arquivo);
+            
+            console.log('📥 Resultado do upload:', resultado);
+            
+            // 🔥 VERIFICAÇÃO ROBUSTA DA URL
+            let urlFinal = null;
+            let mensagemStatus = '';
+            
+            if (resultado.sucesso !== false && resultado.dados && resultado.dados.url) {
+                // Formato novo: resultado.dados.url
+                urlFinal = resultado.dados.url;
+                mensagemStatus = '✅ Enviado com sucesso';
+                
+            } else if (resultado.url && resultado.url.startsWith('http')) {
+                // Formato antigo: resultado.url
+                urlFinal = resultado.url;
+                mensagemStatus = '✅ Enviado com sucesso (formato antigo)';
+                
+            } else if (resultado.modo && resultado.modo.includes('simulado')) {
+                // Modo simulado - upload falhou
+                urlFinal = '#upload-simulado';
+                mensagemStatus = `⚠️ Modo simulado: ${resultado.mensagem || 'Arquivo grande demais'}`;
+                
+            } else {
+                // Outro erro
+                urlFinal = '#upload-falhou';
+                mensagemStatus = `❌ Falha: ${resultado.mensagem || 'Erro desconhecido'}`;
             }
             
-            dadosDemanda.anexos = linksAnexos;
+            // Só adicionar se tem URL válida
+            if (urlFinal && urlFinal.startsWith('http')) {
+                linksAnexos.push({
+                    nome: arquivo.name,
+                    url: urlFinal,
+                    tamanho: arquivo.size,
+                    status: 'sucesso'
+                });
+                
+                console.log(`🎯 Arquivo ${arquivo.name}: ${mensagemStatus}`);
+                console.log(`🔗 URL: ${urlFinal}`);
+                
+            } else {
+                console.warn(`⚠️ Arquivo ${arquivo.name} não tem URL válida:`, urlFinal);
+                mostrarToast('Atenção', `${arquivo.name}: ${mensagemStatus}`, 'warning');
+            }
+            
+        } catch (erro) {
+            console.error(`❌ Erro no upload de ${arquivo.name}:`, erro);
+            mostrarToast('Atenção', `Erro ao enviar ${arquivo.name}: ${erro.message}`, 'warning');
         }
+    }
+    
+    // Só adicionar anexos se realmente tiver URLs válidas
+    dadosDemanda.anexos = linksAnexos.filter(a => a.url.startsWith('http'));
+    
+    if (dadosDemanda.anexos.length > 0) {
+        console.log(`✅ ${dadosDemanda.anexos.length} anexos prontos para salvar`);
+    } else {
+        console.warn('⚠️ Nenhum anexo válido para salvar');
+        delete dadosDemanda.anexos; // Não enviar anexos vazios
+    }
+}
         
         // 3. Salvar demanda no servidor
         mostrarToast('Salvando', 'Salvando demanda...', 'info');
@@ -1137,3 +1188,14 @@ window.mostrarDetalhesDemanda = mostrarDetalhesDemanda;
 window.fecharModalDetalhes = fecharModalDetalhes;
 window.alterarStatusDemanda = alterarStatusDemanda;
 window.reenviarEmailDemanda = reenviarEmailDemanda;
+// ✅ VERIFICAÇÃO FINAL
+console.log('📋 Resumo da demanda salva:');
+console.log('- ID:', resultadoSalvar.id);
+console.log('- Título:', dadosDemanda.titulo);
+console.log('- Anexos:', dadosDemanda.anexos ? dadosDemanda.anexos.length : 0);
+
+if (dadosDemanda.anexos) {
+    dadosDemanda.anexos.forEach((anexo, i) => {
+        console.log(`  ${i+1}. ${anexo.nome}: ${anexo.url}`);
+    });
+}
