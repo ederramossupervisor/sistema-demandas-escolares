@@ -436,6 +436,153 @@
             prazoInput.max = maxDate.toISOString().split('T')[0];
         }
     });
+        // ============================================
+// CORREÇÃO PARA GITHUB PAGES - ADICIONE ESTE CÓDIGO
+// ============================================
+
+// 1. Verificar se estamos na URL correta
+const APP_PATH = '/sistema-demandas-escolares/';
+const currentPath = window.location.pathname;
+
+// Se não está no caminho correto E não é localhost
+if (!currentPath.startsWith(APP_PATH) && 
+    !window.location.hostname.includes('localhost') && 
+    window.location.hostname !== '127.0.0.1') {
+  
+  console.log('🔧 Corrigindo URL para GitHub Pages...');
+  
+  // Monta a URL correta
+  const newUrl = window.location.origin + APP_PATH + 
+                 currentPath.replace(/^\//, '') + 
+                 window.location.search + 
+                 window.location.hash;
+  
+  // Redireciona silenciosamente
+  window.history.replaceState(null, null, newUrl);
+  
+  console.log('✅ URL corrigida para:', newUrl);
+}
+
+// 2. Corrigir o registro do Service Worker
+const originalRegisterSW = window.registerSW; // Se houver
+
+// Função corrigida para registrar o Service Worker
+function registrarServiceWorkerCorrigido() {
+  if ('serviceWorker' in navigator) {
+    // Usa o caminho absoluto
+    const swPath = APP_PATH + 'public/service-worker.js';
+    
+    navigator.serviceWorker.register(swPath)
+      .then(registration => {
+        console.log('✅ Service Worker registrado com sucesso:', registration.scope);
+        
+        // Verifica se está controlando a página atual
+        if (navigator.serviceWorker.controller) {
+          console.log('🔄 Página controlada pelo Service Worker');
+        }
+        
+        // Verifica atualizações
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          console.log('🔄 Nova versão do Service Worker encontrada!');
+          
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // Nova versão disponível
+              console.log('🆕 Nova versão pronta! Recarregue para atualizar.');
+            }
+          });
+        });
+      })
+      .catch(error => {
+        console.error('❌ Erro ao registrar Service Worker:', error);
+      });
+  }
+}
+
+// 3. Executar após o carregamento
+window.addEventListener('DOMContentLoaded', () => {
+  console.log('🚀 Sistema de Demandas iniciando...');
+  console.log('📍 Path atual:', window.location.pathname);
+  console.log('📍 Path correto:', APP_PATH);
+  
+  // Registrar Service Worker corrigido
+  setTimeout(registrarServiceWorkerCorrigido, 1000);
+  
+  // Detectar se é PWA
+  if (window.matchMedia('(display-mode: standalone)').matches) {
+    console.log('📱 Executando como PWA instalado');
+    document.body.classList.add('pwa-mode');
+  }
+});
+
+// 4. Função para instalar PWA
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  
+  console.log('📲 PWA pronto para instalação');
+  
+  // Mostrar botão após 3 segundos
+  setTimeout(() => {
+    if (deferredPrompt && !window.matchMedia('(display-mode: standalone)').matches) {
+      mostrarBotaoInstalarPWA();
+    }
+  }, 3000);
+});
+
+function mostrarBotaoInstalarPWA() {
+  // Verificar se já existe botão
+  if (document.querySelector('.btn-instalar-pwa')) return;
+  
+  const botao = document.createElement('button');
+  botao.className = 'btn-instalar-pwa';
+  botao.innerHTML = '<i class="fas fa-download"></i> Instalar App';
+  botao.style.cssText = `
+    position: fixed;
+    bottom: 100px;
+    right: 20px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  `;
+  
+  botao.onclick = () => {
+    botao.style.display = 'none';
+    deferredPrompt.prompt();
+    
+    deferredPrompt.userChoice.then(choiceResult => {
+      if (choiceResult.outcome === 'accepted') {
+        console.log('✅ Usuário instalou o PWA');
+      }
+      deferredPrompt = null;
+    });
+  };
+  
+  document.body.appendChild(botao);
+  
+  // Remover após 30 segundos
+  setTimeout(() => {
+    if (botao.parentNode) {
+      botao.remove();
+    }
+  }, 30000);
+}
+
+// ============================================
+// FIM DA CORREÇÃO PARA GITHUB PAGES
+// ============================================
     </script>
 </body>
 </html>
