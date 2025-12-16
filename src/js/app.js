@@ -1131,7 +1131,9 @@ async function reenviarEmailDemanda(idDemanda) {
         const dadosEmail = {
             titulo: demanda.titulo,
             descricao: demanda.descricao,
-            escolas: demanda.escolas ? demanda.escolas.split(', ') : [],
+            escolas: demanda.escolas ? 
+                (typeof demanda.escolas === 'string' ? demanda.escolas.split(',').map(e => e.trim()) : []) 
+        : [],
             responsavel: demanda.responsavel,
             prazo: demanda.prazo,
             corpoEmail: 'Este e-mail está sendo reenviado.',
