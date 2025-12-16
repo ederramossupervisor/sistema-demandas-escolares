@@ -12,55 +12,55 @@
   
   "icons": [
     {
-      "src": "/sistema-demandas-escolares/icons/72x72.png",
+      "src": "icons/72x72.png",
       "sizes": "72x72",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/sistema-demandas-escolares/icons/96x96.png",
+      "src": "icons/96x96.png",
       "sizes": "96x96",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/sistema-demandas-escolares/icons/128x128.png",
+      "src": "icons/128x128.png",
       "sizes": "128x128",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/sistema-demandas-escolares/icons/144x144.png",
+      "src": "icons/144x144.png",
       "sizes": "144x144",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/sistema-demandas-escolares/icons/152x152.png",
+      "src": "icons/152x152.png",
       "sizes": "152x152",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/sistema-demandas-escolares/icons/192x192.png",
+      "src": "icons/192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/sistema-demandas-escolares/icons/256x256.png",
+      "src": "icons/256x256.png",
       "sizes": "256x256",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/sistema-demandas-escolares/icons/384x384.png",
+      "src": "icons/384x384.png",
       "sizes": "384x384",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/sistema-demandas-escolares/icons/512x512.png",
+      "src": "icons/512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
@@ -77,7 +77,7 @@
       "url": "/sistema-demandas-escolares/?nova=1",
       "icons": [
         {
-          "src": "/sistema-demandas-escolares/icons/96x96.png",
+          "src": "icons/96x96.png",
           "sizes": "96x96",
           "type": "image/png"
         }
@@ -90,7 +90,7 @@
       "url": "/sistema-demandas-escolares/?filtro=pendentes",
       "icons": [
         {
-          "src": "/sistema-demandas-escolares/icons/96x96.png",
+          "src": "icons/96x96.png",
           "sizes": "96x96",
           "type": "image/png"
         }
@@ -100,7 +100,7 @@
   
   "screenshots": [
     {
-      "src": "/sistema-demandas-escolares/icons/512x512.png",
+      "src": "icons/512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "wide",
