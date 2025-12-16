@@ -919,9 +919,8 @@ function validarFormulario() {
     
     return true;
 }
-
 /**
- * Mostra os detalhes de uma demanda
+ * Mostra os detalhes de uma demanda (VERSÃO CORRIGIDA)
  */
 function mostrarDetalhesDemanda(idDemanda) {
     const demanda = state.demandas.find(d => d.id == idDemanda);
@@ -931,54 +930,100 @@ function mostrarDetalhesDemanda(idDemanda) {
         return;
     }
     
-    // Preparar dados
+    // Preparar dados com proteção
     const dataCriacao = formatarData(demanda.criado_em);
     const dataAtualizacao = formatarData(demanda.atualizado_em);
     const dataPrazo = demanda.prazo ? formatarData(demanda.prazo) : 'Não definido';
     
-    // Calcular dias restantes
+    // Calcular dias restantes com proteção
     let diasRestantes = 'N/A';
     let prazoStatus = '';
     
     if (demanda.prazo) {
-        const hoje = new Date();
-        const prazo = new Date(demanda.prazo);
-        const dias = Math.ceil((prazo - hoje) / (1000 * 60 * 60 * 24));
-        
-        if (dias < 0) {
-            diasRestantes = `${Math.abs(dias)} dias atrasado`;
-            prazoStatus = 'atrasado';
-        } else if (dias === 0) {
-            diasRestantes = 'Vence hoje';
-            prazoStatus = 'urgente';
-        } else if (dias <= 3) {
-            diasRestantes = `${dias} dias`;
-            prazoStatus = 'alerta';
-        } else {
-            diasRestantes = `${dias} dias`;
-            prazoStatus = 'ok';
+        try {
+            const hoje = new Date();
+            const prazo = new Date(demanda.prazo);
+            const dias = Math.ceil((prazo - hoje) / (1000 * 60 * 60 * 24));
+            
+            if (dias < 0) {
+                diasRestantes = `${Math.abs(dias)} dias atrasado`;
+                prazoStatus = 'atrasado';
+            } else if (dias === 0) {
+                diasRestantes = 'Vence hoje';
+                prazoStatus = 'urgente';
+            } else if (dias <= 3) {
+                diasRestantes = `${dias} dias`;
+                prazoStatus = 'alerta';
+            } else {
+                diasRestantes = `${dias} dias`;
+                prazoStatus = 'ok';
+            }
+        } catch (e) {
+            diasRestantes = 'Erro no cálculo';
         }
     }
     
-    // Preparar histórico
+    // Preparar histórico com proteção
     let historicoHTML = '';
-    if (demanda.historico) {
-        const entradas = demanda.historico.split('\n').filter(h => h.trim());
-        entradas.forEach((entrada, index) => {
-            const [data, ...texto] = entrada.split(' - ');
-            historicoHTML += `
-                <div class="historico-item ${index === 0 ? 'nova' : 'atualizacao'}">
-                    <div class="historico-data">${data}</div>
-                    <div class="historico-texto">${texto.join(' - ')}</div>
-                </div>
-            `;
-        });
+    if (demanda.historico && typeof demanda.historico === 'string') {
+        try {
+            const entradas = demanda.historico.split('\n').filter(h => h && h.trim());
+            entradas.forEach((entrada, index) => {
+                if (entrada && entrada.includes(' - ')) {
+                    const [data, ...texto] = entrada.split(' - ');
+                    historicoHTML += `
+                        <div class="historico-item ${index === 0 ? 'nova' : 'atualizacao'}">
+                            <div class="historico-data">${data || 'Data desconhecida'}</div>
+                            <div class="historico-texto">${texto.join(' - ') || 'Sem detalhes'}</div>
+                        </div>
+                    `;
+                }
+            });
+        } catch (e) {
+            console.warn('Erro ao processar histórico:', e);
+        }
     }
     
-    // Criar modal de detalhes
+    // Preparar anexos com proteção
+    let anexosHTML = '';
+    if (demanda.anexos && typeof demanda.anexos === 'string' && demanda.anexos.trim()) {
+        try {
+            // Separar por vírgula com proteção
+            const anexosArray = demanda.anexos.split(',').filter(a => a && a.trim());
+            if (anexosArray.length > 0) {
+                anexosHTML = `
+                    <div class="form-group mt-3">
+                        <label><i class="fas fa-paperclip"></i> Anexos</label>
+                        <div style="padding: 10px; background-color: #f9f9f9; border-radius: var(--border-radius-sm);">
+                            ${anexosArray.map(anexo => {
+                                const url = anexo.trim();
+                                const nome = url.substring(url.lastIndexOf('/') + 1) || 'Arquivo';
+                                return `
+                                    <div style="margin-bottom: 5px;">
+                                        <a href="${url}" target="_blank" style="color: var(--secondary-color);">
+                                            <i class="fas fa-external-link-alt"></i> ${nome}
+                                        </a>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+        } catch (e) {
+            console.warn('Erro ao processar anexos:', e);
+        }
+    }
+    
+    // Contar escolas com proteção
+    const numEscolas = demanda.escolas ? 
+        (typeof demanda.escolas === 'string' ? demanda.escolas.split(',').filter(e => e.trim()).length : 1) 
+        : 0;
+    
+    // Criar modal de detalhes (CORRIGIDO)
     const modalHTML = `
         <div class="modal-header">
-            <h2><i class="fas fa-file-lines"></i> Detalhes da Demanda #${demanda.id}</h2>
+            <h2><i class="fas fa-file-lines"></i> Detalhes da Demanda #${demanda.id || 'N/A'}</h2>
             <button class="btn-close" onclick="fecharModalDetalhes()">
                 <i class="fas fa-times"></i>
             </button>
@@ -994,14 +1039,14 @@ function mostrarDetalhesDemanda(idDemanda) {
                     
                     <div class="detalhe-item">
                         <div class="detalhe-label"><i class="fas fa-user-tag"></i> Responsável</div>
-                        <div class="detalhe-valor ${demanda.responsavel === 'Supervisor' ? 'supervisor' : 'escola'}">
+                        <div class="detalhe-valor ${(demanda.responsavel || '').includes('Supervisor') ? 'supervisor' : 'escola'}">
                             ${demanda.responsavel || 'Não definido'}
                         </div>
                     </div>
                     
                     <div class="detalhe-item">
                         <div class="detalhe-label"><i class="fas fa-tasks"></i> Status</div>
-                        <div class="detalhe-valor status-${demanda.status ? demanda.status.toLowerCase().replace(' ', '-') : 'pendente'}">
+                        <div class="detalhe-valor status-${(demanda.status || 'pendente').toLowerCase().replace(' ', '-')}">
                             ${demanda.status || 'Pendente'}
                         </div>
                     </div>
@@ -1014,7 +1059,7 @@ function mostrarDetalhesDemanda(idDemanda) {
                     
                     <div class="detalhe-item">
                         <div class="detalhe-label"><i class="fas fa-school"></i> Escolas</div>
-                        <div class="detalhe-valor">${demanda.escolas ? demanda.escolas.split(',').length : 0}</div>
+                        <div class="detalhe-valor">${numEscolas}</div>
                         <small>${demanda.escolas || 'Nenhuma escola'}</small>
                     </div>
                     
@@ -1031,20 +1076,7 @@ function mostrarDetalhesDemanda(idDemanda) {
                     </div>
                 </div>
                 
-                ${demanda.anexos ? `
-                <div class="form-group mt-3">
-                    <label><i class="fas fa-paperclip"></i> Anexos</label>
-                    <div style="padding: 10px; background-color: #f9f9f9; border-radius: var(--border-radius-sm);">
-                        ${demanda.anexos.split(',').map(anexo => `
-                            <div style="margin-bottom: 5px;">
-                                <a href="${anexo}" target="_blank" style="color: var(--secondary-color);">
-                                    <i class="fas fa-external-link-alt"></i> ${anexo.substring(anexo.lastIndexOf('/') + 1)}
-                                </a>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                ` : ''}
+                ${anexosHTML}
                 
                 ${historicoHTML ? `
                 <div class="historico-container mt-3">
