@@ -2,7 +2,6 @@
   "name": "Sistema de Gestão de Demandas - Supervisão Escolar",
   "short_name": "Demandas Escolares",
   "description": "Sistema para gerenciamento de demandas da supervisão escolar",
-  
   "start_url": "/sistema-demandas-escolares/",
   "scope": "/sistema-demandas-escolares/",
   "display": "standalone",
@@ -13,25 +12,28 @@
   
   "icons": [
     {
-      "src": "/sistema-demandas-escolares/public/icons/192x192.png",
+      "src": "/sistema-demandas-escolares/icons/192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/sistema-demandas-escolares/public/icons/512x512.png",
+      "src": "/sistema-demandas-escolares/icons/512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/sistema-demandas-escolares/public/icons/144x144.png",
+      "src": "/sistema-demandas-escolares/icons/144x144.png",
       "sizes": "144x144",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/sistema-demandas-escolares/public/icons/96x96.png",
+      "src": "/sistema-demandas-escolares/icons/96x96.png",
       "sizes": "96x96",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   
@@ -43,14 +45,36 @@
       "short_name": "Nova",
       "description": "Criar uma nova demanda",
       "url": "/sistema-demandas-escolares/?nova=1",
-      "icons": [{ "src": "/sistema-demandas-escolares/public/icons/96x96.png", "sizes": "96x96" }]
+      "icons": [
+        {
+          "src": "/sistema-demandas-escolares/icons/96x96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "Demandas Pendentes",
       "short_name": "Pendentes",
       "description": "Ver demandas pendentes",
       "url": "/sistema-demandas-escolares/?filtro=pendentes",
-      "icons": [{ "src": "/sistema-demandas-escolares/public/icons/96x96.png", "sizes": "96x96" }]
+      "icons": [
+        {
+          "src": "/sistema-demandas-escolares/icons/96x96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  
+  "screenshots": [
+    {
+      "src": "/sistema-demandas-escolares/icons/512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Tela principal do sistema"
     }
   ]
 }
