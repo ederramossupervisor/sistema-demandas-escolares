@@ -1252,6 +1252,89 @@ async function alterarStatusDemanda(idDemanda, novoStatus) {
 /**
  * Mostra uma mensagem toast
  */
+/**
+ * EXCLUI UMA DEMANDA
+ * @param {number} idDemanda - ID da demanda a excluir
+ */
+async function excluirDemanda(idDemanda) {
+    // Buscar a demanda para mostrar detalhes
+    const demanda = state.demandas.find(d => d.id == idDemanda);
+    
+    if (!demanda) {
+        mostrarToast('Erro', 'Demanda não encontrada.', 'error');
+        return;
+    }
+    
+    // Confirmar exclusão
+    const confirmacao = confirm(`Tem certeza que deseja EXCLUIR PERMANENTEMENTE a demanda?\n\n` +
+                               `ID: #${demanda.id}\n` +
+                               `Título: ${demanda.titulo}\n` +
+                               `Escolas: ${demanda.escolas || 'Nenhuma'}\n\n` +
+                               `⚠️ ATENÇÃO: Esta ação não pode ser desfeita!`);
+    
+    if (!confirmacao) {
+        return;
+    }
+    
+    mostrarLoading();
+    
+    try {
+        // 1. Chamar função para excluir no servidor
+        const resultado = await excluirDemandaNoServidor(idDemanda);
+        
+        // 2. Verificar se foi bem-sucedido
+        if (resultado && resultado.sucesso !== false) {
+            // Remover da lista local
+            state.demandas = state.demandas.filter(d => d.id != idDemanda);
+            
+            // Atualizar interface
+            renderizarDemandas();
+            atualizarEstatisticas();
+            
+            // Fechar modal se estiver aberto
+            fecharModalDetalhes();
+            
+            // Mostrar mensagem de sucesso
+            mostrarToast('Sucesso', `Demanda #${idDemanda} excluída permanentemente!`, 'success');
+            
+            // Log adicional
+            console.log(`🗑️ Demanda #${idDemanda} excluída:`, {
+                titulo: demanda.titulo,
+                escolas: demanda.escolas,
+                data: new Date().toISOString()
+            });
+            
+        } else {
+            throw new Error(resultado?.erro || 'Erro desconhecido');
+        }
+        
+    } catch (erro) {
+        console.error('❌ Erro ao excluir demanda:', erro);
+        
+        // Verificar se é erro de conexão
+        if (erro.message.includes('não foi possível conectar') || 
+            erro.message.includes('NetworkError') ||
+            erro.message.includes('Failed to fetch')) {
+            
+            // Modo offline: remover apenas localmente
+            if (confirm('Servidor offline. Deseja remover apenas localmente?')) {
+                state.demandas = state.demandas.filter(d => d.id != idDemanda);
+                renderizarDemandas();
+                atualizarEstatisticas();
+                fecharModalDetalhes();
+                
+                mostrarToast('Atenção', 
+                    'Demanda removida localmente (modo offline). ' +
+                    'Reinicie o sistema para sincronizar com o servidor.', 
+                    'warning');
+            }
+        } else {
+            mostrarToast('Erro', `Falha ao excluir: ${erro.message}`, 'error');
+        }
+    } finally {
+        esconderLoading();
+    }
+}
 function mostrarToast(titulo, mensagem, tipo = 'info') {
     if (!elementos.toastContainer) return;
     
