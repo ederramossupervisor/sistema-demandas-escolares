@@ -1,7 +1,7 @@
 // ============================================
-// SISTEMA DE GESTÃO DE DEMANDAS - SUPERVIÃO ESCOLAR
+// SISTEMA DE GESTÃO DE DEMANDAS - SUPERVISÃO ESCOLAR
 // Arquivo: app.js
-// Lógica principal da interface
+// Lógica principal da interface COM SPLASH SCREEN
 // ============================================
 
 // CONFIGURAÇÕES GLOBAIS
@@ -25,7 +25,8 @@ let state = {
         status: '',
         prazo: ''
     },
-    arquivosSelecionados: []
+    arquivosSelecionados: [],
+    splashScreenActive: true
 };
 
 // ELEMENTOS DO DOM
@@ -33,22 +34,111 @@ let elementos = {};
 
 // INICIALIZAÇÃO
 document.addEventListener('DOMContentLoaded', function() {
-    inicializarElementos();
-    inicializarEventos();
-    carregarDemandas();
-    esconderLoading();
+    console.log("🚀 Sistema iniciando...");
     
-    // Verificar se é PWA instalado
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-        console.log("Aplicativo PWA em execução");
+    // 1. Inicializar elementos
+    inicializarElementos();
+    
+    // 2. Se houver splash screen, iniciar sequência
+    if (elementos.splashScreen) {
+        console.log("🎬 Iniciando splash screen...");
+        iniciarSplashScreen();
+    } else {
+        // Se não tiver splash, iniciar normalmente
+        iniciarAplicacao();
     }
 });
+
+/**
+ * INICIALIZAÇÃO COM SPLASH SCREEN
+ */
+function iniciarSplashScreen() {
+    // Configurar progresso da splash
+    const statusEl = elementos.splashScreen.querySelector('.splash-status');
+    const etapas = [
+        { tempo: 500, texto: 'Inicializando sistema...' },
+        { tempo: 1200, texto: 'Carregando configurações...' },
+        { tempo: 2000, texto: 'Conectando ao servidor...' },
+        { tempo: 2800, texto: 'Preparando interface...' },
+        { tempo: 3500, texto: 'Pronto para uso!' }
+    ];
+    
+    // Executar etapas
+    etapas.forEach((etapa, index) => {
+        setTimeout(() => {
+            if (statusEl && !state.splashScreenActive) return;
+            statusEl.textContent = etapa.texto;
+            console.log(`🔧 ${etapa.texto}`);
+            
+            // Última etapa: iniciar aplicação
+            if (index === etapas.length - 1) {
+                setTimeout(() => {
+                    iniciarAplicacao();
+                }, 500);
+            }
+        }, etapa.tempo);
+    });
+    
+    // Fallback: esconder após 5 segundos se algo falhar
+    setTimeout(() => {
+        if (state.splashScreenActive) {
+            console.log("⚠️ Fallback: escondendo splash screen");
+            esconderSplashScreen();
+            iniciarAplicacao();
+        }
+    }, 5000);
+}
+
+/**
+ * INICIALIZAR APLICAÇÃO PRINCIPAL
+ */
+function iniciarAplicacao() {
+    console.log("📱 Iniciando aplicação principal...");
+    
+    // 1. Esconder splash screen
+    esconderSplashScreen();
+    
+    // 2. Inicializar resto da aplicação
+    inicializarEventos();
+    carregarDemandas();
+    
+    // 3. Verificar se é PWA
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        console.log("📲 Aplicativo PWA em execução");
+        document.body.classList.add('pwa-mode');
+    }
+}
+
+/**
+ * ESCONDER SPLASH SCREEN
+ */
+function esconderSplashScreen() {
+    if (!elementos.splashScreen || !state.splashScreenActive) return;
+    
+    state.splashScreenActive = false;
+    elementos.splashScreen.classList.add('hidden');
+    
+    console.log("✅ Splash screen escondida");
+    
+    // Remover do DOM após animação
+    setTimeout(() => {
+        if (elementos.splashScreen && elementos.splashScreen.parentNode) {
+            elementos.splashScreen.remove();
+            elementos.splashScreen = null;
+        }
+    }, 500);
+}
 
 /**
  * Inicializa todos os elementos do DOM
  */
 function inicializarElementos() {
+    console.log("🔍 Inicializando elementos do DOM...");
+    
     elementos = {
+        // SPLASH SCREEN
+        splashScreen: document.getElementById('splash-screen'),
+        
         // Containers principais
         loading: document.getElementById('loading'),
         mainContainer: document.getElementById('main-container'),
@@ -105,107 +195,176 @@ function inicializarElementos() {
     
     // Configurar data mínima como hoje
     const hoje = new Date().toISOString().split('T')[0];
-    elementos.prazo.min = hoje;
+    if (elementos.prazo) {
+        elementos.prazo.min = hoje;
+    }
+    
+    console.log("✅ Elementos inicializados:", Object.keys(elementos).length);
 }
 
 /**
  * Configura todos os eventos da aplicação
  */
 function inicializarEventos() {
+    console.log("🔗 Configurando eventos...");
+    
     // Botão nova demanda
-    elementos.btnNovaDemanda.addEventListener('click', mostrarModalNovaDemanda);
-    elementos.btnFecharModal.addEventListener('click', fecharModalNovaDemanda);
-    elementos.btnCancelar.addEventListener('click', fecharModalNovaDemanda);
+    if (elementos.btnNovaDemanda) {
+        elementos.btnNovaDemanda.addEventListener('click', mostrarModalNovaDemanda);
+    }
+    
+    if (elementos.btnFecharModal) {
+        elementos.btnFecharModal.addEventListener('click', fecharModalNovaDemanda);
+    }
+    
+    if (elementos.btnCancelar) {
+        elementos.btnCancelar.addEventListener('click', fecharModalNovaDemanda);
+    }
     
     // Formulário nova demanda
-    elementos.formNovaDemanda.addEventListener('submit', salvarDemanda);
+    if (elementos.formNovaDemanda) {
+        elementos.formNovaDemanda.addEventListener('submit', salvarDemanda);
+    }
     
     // Filtros
-    elementos.filtroEscola.addEventListener('change', aplicarFiltros);
-    elementos.filtroResponsavel.addEventListener('change', aplicarFiltros);
-    elementos.filtroStatus.addEventListener('change', aplicarFiltros);
-    elementos.filtroPrazo.addEventListener('change', aplicarFiltros);
-    elementos.btnLimparFiltros.addEventListener('click', limparFiltros);
-    elementos.btnAtualizar.addEventListener('click', carregarDemandas);
+    if (elementos.filtroEscola) {
+        elementos.filtroEscola.addEventListener('change', aplicarFiltros);
+    }
+    
+    if (elementos.filtroResponsavel) {
+        elementos.filtroResponsavel.addEventListener('change', aplicarFiltros);
+    }
+    
+    if (elementos.filtroStatus) {
+        elementos.filtroStatus.addEventListener('change', aplicarFiltros);
+    }
+    
+    if (elementos.filtroPrazo) {
+        elementos.filtroPrazo.addEventListener('change', aplicarFiltros);
+    }
+    
+    if (elementos.btnLimparFiltros) {
+        elementos.btnLimparFiltros.addEventListener('click', limparFiltros);
+    }
+    
+    if (elementos.btnAtualizar) {
+        elementos.btnAtualizar.addEventListener('click', carregarDemandas);
+    }
     
     // Checkbox "Selecionar todas"
-    elementos.escolaTodas.addEventListener('change', function() {
-        const checked = this.checked;
-        elementos.escolasCheckboxes.forEach(cb => {
-            cb.checked = checked;
-            cb.disabled = checked;
+    if (elementos.escolaTodas) {
+        elementos.escolaTodas.addEventListener('change', function() {
+            const checked = this.checked;
+            elementos.escolasCheckboxes.forEach(cb => {
+                cb.checked = checked;
+                cb.disabled = checked;
+            });
+            atualizarPreviewEmail();
         });
-        atualizarPreviewEmail();
-    });
+    }
     
     // Checkboxes individuais
-    elementos.escolasCheckboxes.forEach(cb => {
-        cb.addEventListener('change', function() {
-            // Atualizar checkbox "Selecionar todas"
-            const todasMarcadas = Array.from(elementos.escolasCheckboxes)
-                .every(cb => cb.checked);
-            elementos.escolaTodas.checked = todasMarcadas;
-            
-            atualizarPreviewEmail();
+    if (elementos.escolasCheckboxes) {
+        elementos.escolasCheckboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                // Atualizar checkbox "Selecionar todas"
+                const todasMarcadas = Array.from(elementos.escolasCheckboxes)
+                    .every(cb => cb.checked);
+                if (elementos.escolaTodas) {
+                    elementos.escolaTodas.checked = todasMarcadas;
+                }
+                
+                atualizarPreviewEmail();
+            });
         });
-    });
+    }
     
     // Opção de enviar e-mail
-    elementos.enviarEmail.addEventListener('change', function() {
-        elementos.emailContent.style.display = this.checked ? 'block' : 'none';
-        if (this.checked) {
-            atualizarPreviewEmail();
-        }
-    });
+    if (elementos.enviarEmail) {
+        elementos.enviarEmail.addEventListener('change', function() {
+            if (elementos.emailContent) {
+                elementos.emailContent.style.display = this.checked ? 'block' : 'none';
+            }
+            if (this.checked) {
+                atualizarPreviewEmail();
+            }
+        });
+    }
     
     // Campos que afetam o preview do e-mail
-    elementos.titulo.addEventListener('input', atualizarPreviewEmail);
-    elementos.descricao.addEventListener('input', atualizarPreviewEmail);
-    elementos.corpoEmail.addEventListener('input', atualizarPreviewEmail);
+    if (elementos.titulo) {
+        elementos.titulo.addEventListener('input', atualizarPreviewEmail);
+    }
+    
+    if (elementos.descricao) {
+        elementos.descricao.addEventListener('input', atualizarPreviewEmail);
+    }
+    
+    if (elementos.corpoEmail) {
+        elementos.corpoEmail.addEventListener('input', atualizarPreviewEmail);
+    }
     
     // Upload de arquivos
-    elementos.uploadArea.addEventListener('click', () => elementos.fileInput.click());
-    elementos.uploadArea.addEventListener('dragover', handleDragOver);
-    elementos.uploadArea.addEventListener('drop', handleFileDrop);
-    elementos.fileInput.addEventListener('change', handleFileSelect);
+    if (elementos.uploadArea) {
+        elementos.uploadArea.addEventListener('click', () => elementos.fileInput.click());
+        elementos.uploadArea.addEventListener('dragover', handleDragOver);
+        elementos.uploadArea.addEventListener('drop', handleFileDrop);
+    }
+    
+    if (elementos.fileInput) {
+        elementos.fileInput.addEventListener('change', handleFileSelect);
+    }
     
     // Tabs do formulário
-    elementos.tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            const tabId = tab.getAttribute('data-tab');
-            alternarTab(tabId);
+    if (elementos.tabs) {
+        elementos.tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabId = tab.getAttribute('data-tab');
+                alternarTab(tabId);
+            });
         });
-    });
+    }
+    
+    console.log("✅ Eventos configurados");
 }
 
 /**
  * Mostra/esconde tela de loading
  */
 function mostrarLoading() {
-    elementos.loading.style.display = 'flex';
-    elementos.mainContainer.style.opacity = '0.5';
-    elementos.mainContainer.style.pointerEvents = 'none';
+    if (elementos.loading) {
+        elementos.loading.style.display = 'flex';
+    }
+    
+    if (elementos.mainContainer) {
+        elementos.mainContainer.style.opacity = '0.5';
+        elementos.mainContainer.style.pointerEvents = 'none';
+    }
 }
 
 function esconderLoading() {
-    elementos.loading.style.display = 'none';
-    elementos.mainContainer.style.opacity = '1';
-    elementos.mainContainer.style.pointerEvents = 'auto';
+    if (elementos.loading) {
+        elementos.loading.style.display = 'none';
+    }
+    
+    if (elementos.mainContainer) {
+        elementos.mainContainer.style.opacity = '1';
+        elementos.mainContainer.style.pointerEvents = 'auto';
+    }
 }
 
 /**
  * Carrega as demandas do servidor
  */
 async function carregarDemandas() {
+    console.log("🔄 Carregando demandas...");
     mostrarLoading();
     
     try {
-        console.log("🔄 Carregando demandas do servidor...");
-        
         // Tentar carregar do servidor
         const demandas = await listarDemandasDoServidor();
         
-        console.log(`✅ ${demandas.length} demandas recebidas do servidor`);
+        console.log(`✅ ${demandas.length} demandas recebidas`);
         
         state.demandas = demandas;
         renderizarDemandas();
@@ -219,16 +378,14 @@ async function carregarDemandas() {
     } catch (erro) {
         console.error('❌ Erro ao carregar demandas do servidor:', erro);
         
-        // ⭐⭐ MODO DE CONTINGÊNCIA ⭐⭐
-        // Dados de exemplo para demonstração
+        // MODO DE CONTINGÊNCIA
         state.demandas = obterDadosDemonstracao();
         
         renderizarDemandas();
         atualizarEstatisticas();
         
-        // Mensagem amigável
         mostrarToast('Modo Demonstração', 
-            'Conectado ao servidor, mas usando dados de exemplo. Você pode criar novas demandas normalmente.', 
+            'Usando dados de exemplo. Você pode criar novas demandas normalmente.', 
             'info');
     } finally {
         esconderLoading();
@@ -287,6 +444,7 @@ function obterDadosDemonstracao() {
  */
 function renderizarDemandas() {
     const container = elementos.demandasContainer;
+    if (!container) return;
     
     // Aplicar filtros
     let demandasFiltradas = filtrarDemandas(state.demandas);
@@ -452,10 +610,10 @@ function filtrarDemandas(demandas) {
  */
 function aplicarFiltros() {
     state.filtros = {
-        escola: elementos.filtroEscola.value,
-        responsavel: elementos.filtroResponsavel.value,
-        status: elementos.filtroStatus.value,
-        prazo: elementos.filtroPrazo.value
+        escola: elementos.filtroEscola ? elementos.filtroEscola.value : '',
+        responsavel: elementos.filtroResponsavel ? elementos.filtroResponsavel.value : '',
+        status: elementos.filtroStatus ? elementos.filtroStatus.value : '',
+        prazo: elementos.filtroPrazo ? elementos.filtroPrazo.value : ''
     };
     
     renderizarDemandas();
@@ -466,10 +624,10 @@ function aplicarFiltros() {
  * Limpa todos os filtros
  */
 function limparFiltros() {
-    elementos.filtroEscola.value = '';
-    elementos.filtroResponsavel.value = '';
-    elementos.filtroStatus.value = '';
-    elementos.filtroPrazo.value = '';
+    if (elementos.filtroEscola) elementos.filtroEscola.value = '';
+    if (elementos.filtroResponsavel) elementos.filtroResponsavel.value = '';
+    if (elementos.filtroStatus) elementos.filtroStatus.value = '';
+    if (elementos.filtroPrazo) elementos.filtroPrazo.value = '';
     
     aplicarFiltros();
 }
@@ -490,9 +648,9 @@ function atualizarEstatisticas() {
         return prazo < hoje;
     }).length;
     
-    elementos.totalDemandas.textContent = total;
-    elementos.pendentes.textContent = pendentes;
-    elementos.atrasadas.textContent = atrasadas;
+    if (elementos.totalDemandas) elementos.totalDemandas.textContent = total;
+    if (elementos.pendentes) elementos.pendentes.textContent = pendentes;
+    if (elementos.atrasadas) elementos.atrasadas.textContent = atrasadas;
 }
 
 /**
@@ -517,42 +675,58 @@ function formatarData(dataString) {
  * Mostra modal de nova demanda
  */
 function mostrarModalNovaDemanda() {
+    if (!elementos.modalNovaDemanda) return;
+    
     elementos.modalNovaDemanda.style.display = 'flex';
     document.body.style.overflow = 'hidden';
     
     // Resetar formulário
-    elementos.formNovaDemanda.reset();
-    elementos.arquivosList.innerHTML = '';
+    if (elementos.formNovaDemanda) elementos.formNovaDemanda.reset();
+    if (elementos.arquivosList) elementos.arquivosList.innerHTML = '';
     state.arquivosSelecionados = [];
     
     // Voltar para a primeira aba
     alternarTab('principal');
     
-    // Configurar data mínima como hoje
+    // Configurar data mínima como amanhã
     const hoje = new Date();
     const amanha = new Date(hoje);
     amanha.setDate(hoje.getDate() + 1);
     
-    elementos.prazo.min = amanha.toISOString().split('T')[0];
-    elementos.prazo.value = '';
+    if (elementos.prazo) {
+        elementos.prazo.min = amanha.toISOString().split('T')[0];
+        elementos.prazo.value = '';
+    }
     
     // Resetar checkboxes
-    elementos.escolasCheckboxes.forEach(cb => {
-        cb.checked = false;
-        cb.disabled = false;
-    });
-    elementos.escolaTodas.checked = false;
+    if (elementos.escolasCheckboxes) {
+        elementos.escolasCheckboxes.forEach(cb => {
+            cb.checked = false;
+            cb.disabled = false;
+        });
+    }
+    
+    if (elementos.escolaTodas) {
+        elementos.escolaTodas.checked = false;
+    }
     
     // Esconder conteúdo de e-mail
-    elementos.emailContent.style.display = 'none';
-    elementos.enviarEmail.checked = false;
+    if (elementos.emailContent) {
+        elementos.emailContent.style.display = 'none';
+    }
+    
+    if (elementos.enviarEmail) {
+        elementos.enviarEmail.checked = false;
+    }
 }
 
 /**
  * Fecha modal de nova demanda
  */
 function fecharModalNovaDemanda() {
-    elementos.modalNovaDemanda.style.display = 'none';
+    if (elementos.modalNovaDemanda) {
+        elementos.modalNovaDemanda.style.display = 'none';
+    }
     document.body.style.overflow = 'auto';
 }
 
@@ -561,8 +735,13 @@ function fecharModalNovaDemanda() {
  */
 function alternarTab(tabId) {
     // Remover classe active de todas as tabs
-    elementos.tabs.forEach(tab => tab.classList.remove('active'));
-    elementos.tabContents.forEach(content => content.classList.remove('active'));
+    if (elementos.tabs) {
+        elementos.tabs.forEach(tab => tab.classList.remove('active'));
+    }
+    
+    if (elementos.tabContents) {
+        elementos.tabContents.forEach(content => content.classList.remove('active'));
+    }
     
     // Adicionar classe active na tab clicada
     const tabSelecionada = document.querySelector(`.tab[data-tab="${tabId}"]`);
@@ -578,16 +757,19 @@ function alternarTab(tabId) {
  * Atualiza o preview do e-mail
  */
 function atualizarPreviewEmail() {
+    if (!elementos.titulo || !elementos.emailPreview) return;
+    
     const titulo = elementos.titulo.value || '[Título da demanda]';
-    const corpo = elementos.corpoEmail.value || 'Sem mensagem adicional.';
     
     // Obter escolas selecionadas
     const escolasSelecionadas = [];
-    elementos.escolasCheckboxes.forEach(cb => {
-        if (cb.checked) {
-            escolasSelecionadas.push(cb.value);
-        }
-    });
+    if (elementos.escolasCheckboxes) {
+        elementos.escolasCheckboxes.forEach(cb => {
+            if (cb.checked) {
+                escolasSelecionadas.push(cb.value);
+            }
+        });
+    }
     
     const previewHtml = `
         <p><strong>Assunto:</strong> [DEMANDA] ${titulo}</p>
@@ -613,8 +795,10 @@ function atualizarPreviewEmail() {
 function handleDragOver(e) {
     e.preventDefault();
     e.stopPropagation();
-    elementos.uploadArea.style.borderColor = '#3498db';
-    elementos.uploadArea.style.backgroundColor = 'rgba(52, 152, 219, 0.1)';
+    if (elementos.uploadArea) {
+        elementos.uploadArea.style.borderColor = '#3498db';
+        elementos.uploadArea.style.backgroundColor = 'rgba(52, 152, 219, 0.1)';
+    }
 }
 
 /**
@@ -624,8 +808,10 @@ function handleFileDrop(e) {
     e.preventDefault();
     e.stopPropagation();
     
-    elementos.uploadArea.style.borderColor = '#ddd';
-    elementos.uploadArea.style.backgroundColor = '';
+    if (elementos.uploadArea) {
+        elementos.uploadArea.style.borderColor = '#ddd';
+        elementos.uploadArea.style.backgroundColor = '';
+    }
     
     const files = e.dataTransfer.files;
     processarArquivosSelecionados(files);
@@ -639,7 +825,9 @@ function handleFileSelect(e) {
     processarArquivosSelecionados(files);
     
     // Resetar input para permitir selecionar o mesmo arquivo novamente
-    elementos.fileInput.value = '';
+    if (elementos.fileInput) {
+        elementos.fileInput.value = '';
+    }
 }
 
 /**
@@ -672,6 +860,8 @@ function processarArquivosSelecionados(files) {
  * Adiciona um arquivo na lista visível
  */
 function adicionarArquivoNaLista(file) {
+    if (!elementos.arquivosList) return;
+    
     const tamanho = formatarTamanhoArquivo(file.size);
     
     const item = document.createElement('div');
@@ -738,20 +928,23 @@ async function salvarDemanda(e) {
     try {
         // 1. Preparar dados básicos
         const escolasSelecionadas = [];
-        elementos.escolasCheckboxes.forEach(cb => {
-            if (cb.checked) {
-                escolasSelecionadas.push(cb.value);
-            }
-        });
+        if (elementos.escolasCheckboxes) {
+            elementos.escolasCheckboxes.forEach(cb => {
+                if (cb.checked) {
+                    escolasSelecionadas.push(cb.value);
+                }
+            });
+        }
         
         const dadosDemanda = {
-            titulo: elementos.titulo.value.trim(),
-            descricao: elementos.descricao.value.trim(),
+            titulo: elementos.titulo ? elementos.titulo.value.trim() : '',
+            descricao: elementos.descricao ? elementos.descricao.value.trim() : '',
             escolas: escolasSelecionadas,
-            responsavel: document.querySelector('input[name="responsavel"]:checked').value,
-            prazo: elementos.prazo.value,
-            enviarEmail: elementos.enviarEmail.checked,
-            corpoEmail: elementos.corpoEmail.value.trim()
+            responsavel: document.querySelector('input[name="responsavel"]:checked') ? 
+                document.querySelector('input[name="responsavel"]:checked').value : '',
+            prazo: elementos.prazo ? elementos.prazo.value : '',
+            enviarEmail: elementos.enviarEmail ? elementos.enviarEmail.checked : false,
+            corpoEmail: elementos.corpoEmail ? elementos.corpoEmail.value.trim() : ''
         };
         
         // 2. Fazer upload dos anexos se houver
@@ -762,39 +955,20 @@ async function salvarDemanda(e) {
             
             for (const arquivo of state.arquivosSelecionados) {
                 try {
-                    console.log(`📤 Enviando arquivo: ${arquivo.name} (${formatarTamanhoArquivo(arquivo.size)})`);
+                    console.log(`📤 Enviando arquivo: ${arquivo.name}`);
                     
-                    // Fazer upload do arquivo (apenas UMA declaração da variável resultado)
                     const resultadoUpload = await fazerUploadArquivo(arquivo);
                     
                     console.log('📥 Resultado do upload:', resultadoUpload);
                     
-                    // 🔥 VERIFICAÇÃO ROBUSTA DA URL
                     let urlFinal = null;
-                    let mensagemStatus = '';
                     
                     if (resultadoUpload.sucesso !== false && resultadoUpload.dados && resultadoUpload.dados.url) {
-                        // Formato novo: resultado.dados.url
                         urlFinal = resultadoUpload.dados.url;
-                        mensagemStatus = '✅ Enviado com sucesso';
-                        
                     } else if (resultadoUpload.url && resultadoUpload.url.startsWith('http')) {
-                        // Formato antigo: resultado.url
                         urlFinal = resultadoUpload.url;
-                        mensagemStatus = '✅ Enviado com sucesso (formato antigo)';
-                        
-                    } else if (resultadoUpload.modo && resultadoUpload.modo.includes('simulado')) {
-                        // Modo simulado - upload falhou
-                        urlFinal = '#upload-simulado';
-                        mensagemStatus = `⚠️ Modo simulado: ${resultadoUpload.mensagem || 'Arquivo grande demais'}`;
-                        
-                    } else {
-                        // Outro erro
-                        urlFinal = '#upload-falhou';
-                        mensagemStatus = `❌ Falha: ${resultadoUpload.mensagem || 'Erro desconhecido'}`;
                     }
                     
-                    // Só adicionar se tem URL válida
                     if (urlFinal && urlFinal.startsWith('http')) {
                         linksAnexos.push({
                             nome: arquivo.name,
@@ -802,29 +976,16 @@ async function salvarDemanda(e) {
                             tamanho: arquivo.size,
                             status: 'sucesso'
                         });
-                        
-                        console.log(`🎯 Arquivo ${arquivo.name}: ${mensagemStatus}`);
-                        console.log(`🔗 URL: ${urlFinal}`);
-                        
-                    } else {
-                        console.warn(`⚠️ Arquivo ${arquivo.name} não tem URL válida:`, urlFinal);
-                        mostrarToast('Atenção', `${arquivo.name}: ${mensagemStatus}`, 'warning');
                     }
                     
                 } catch (erro) {
-                    console.error(`❌ Erro no upload de ${arquivo.name}:`, erro);
-                    mostrarToast('Atenção', `Erro ao enviar ${arquivo.name}: ${erro.message}`, 'warning');
+                    console.error(`❌ Erro no upload:`, erro);
+                    mostrarToast('Atenção', `Erro ao enviar ${arquivo.name}`, 'warning');
                 }
             }
             
-            // Só adicionar anexos se realmente tiver URLs válidas
-            dadosDemanda.anexos = linksAnexos.filter(a => a.url.startsWith('http'));
-            
-            if (dadosDemanda.anexos.length > 0) {
-                console.log(`✅ ${dadosDemanda.anexos.length} anexos prontos para salvar`);
-            } else {
-                console.warn('⚠️ Nenhum anexo válido para salvar');
-                delete dadosDemanda.anexos; // Não enviar anexos vazios
+            if (linksAnexos.length > 0) {
+                dadosDemanda.anexos = linksAnexos;
             }
         }
         
@@ -844,7 +1005,6 @@ async function salvarDemanda(e) {
                 
                 await enviarEmailDemanda(dadosEmail);
                 
-                mostrarToast('Sucesso', 'E-mail enviado com sucesso!', 'success');
             } catch (erroEmail) {
                 console.error('Erro ao enviar e-mail:', erroEmail);
                 mostrarToast('Atenção', 'Demanda salva, mas e-mail não foi enviado.', 'warning');
@@ -871,22 +1031,22 @@ async function salvarDemanda(e) {
  */
 function validarFormulario() {
     // Título
-    if (!elementos.titulo.value.trim()) {
+    if (!elementos.titulo || !elementos.titulo.value.trim()) {
         mostrarToast('Validação', 'Digite um título para a demanda.', 'warning');
-        elementos.titulo.focus();
+        if (elementos.titulo) elementos.titulo.focus();
         return false;
     }
     
     // Descrição
-    if (!elementos.descricao.value.trim()) {
+    if (!elementos.descricao || !elementos.descricao.value.trim()) {
         mostrarToast('Validação', 'Digite uma descrição para a demanda.', 'warning');
-        elementos.descricao.focus();
+        if (elementos.descricao) elementos.descricao.focus();
         return false;
     }
     
     // Escolas
-    const escolasSelecionadas = Array.from(elementos.escolasCheckboxes)
-        .filter(cb => cb.checked).length;
+    const escolasSelecionadas = elementos.escolasCheckboxes ? 
+        Array.from(elementos.escolasCheckboxes).filter(cb => cb.checked).length : 0;
     
     if (escolasSelecionadas === 0) {
         mostrarToast('Validação', 'Selecione pelo menos uma escola.', 'warning');
@@ -901,9 +1061,9 @@ function validarFormulario() {
     }
     
     // Prazo
-    if (!elementos.prazo.value) {
+    if (!elementos.prazo || !elementos.prazo.value) {
         mostrarToast('Validação', 'Defina um prazo para a demanda.', 'warning');
-        elementos.prazo.focus();
+        if (elementos.prazo) elementos.prazo.focus();
         return false;
     }
     
@@ -913,14 +1073,15 @@ function validarFormulario() {
     
     if (prazoSelecionado < hoje) {
         mostrarToast('Validação', 'O prazo deve ser uma data futura.', 'warning');
-        elementos.prazo.focus();
+        if (elementos.prazo) elementos.prazo.focus();
         return false;
     }
     
     return true;
 }
+
 /**
- * Mostra os detalhes de uma demanda (VERSÃO CORRIGIDA)
+ * Mostra os detalhes de uma demanda
  */
 function mostrarDetalhesDemanda(idDemanda) {
     const demanda = state.demandas.find(d => d.id == idDemanda);
@@ -930,12 +1091,12 @@ function mostrarDetalhesDemanda(idDemanda) {
         return;
     }
     
-    // Preparar dados com proteção
+    // Preparar dados
     const dataCriacao = formatarData(demanda.criado_em);
     const dataAtualizacao = formatarData(demanda.atualizado_em);
     const dataPrazo = demanda.prazo ? formatarData(demanda.prazo) : 'Não definido';
     
-    // Calcular dias restantes com proteção
+    // Calcular dias restantes
     let diasRestantes = 'N/A';
     let prazoStatus = '';
     
@@ -963,64 +1124,7 @@ function mostrarDetalhesDemanda(idDemanda) {
         }
     }
     
-    // Preparar histórico com proteção
-    let historicoHTML = '';
-    if (demanda.historico && typeof demanda.historico === 'string') {
-        try {
-            const entradas = demanda.historico.split('\n').filter(h => h && h.trim());
-            entradas.forEach((entrada, index) => {
-                if (entrada && entrada.includes(' - ')) {
-                    const [data, ...texto] = entrada.split(' - ');
-                    historicoHTML += `
-                        <div class="historico-item ${index === 0 ? 'nova' : 'atualizacao'}">
-                            <div class="historico-data">${data || 'Data desconhecida'}</div>
-                            <div class="historico-texto">${texto.join(' - ') || 'Sem detalhes'}</div>
-                        </div>
-                    `;
-                }
-            });
-        } catch (e) {
-            console.warn('Erro ao processar histórico:', e);
-        }
-    }
-    
-    // Preparar anexos com proteção
-    let anexosHTML = '';
-    if (demanda.anexos && typeof demanda.anexos === 'string' && demanda.anexos.trim()) {
-        try {
-            // Separar por vírgula com proteção
-            const anexosArray = demanda.anexos.split(',').filter(a => a && a.trim());
-            if (anexosArray.length > 0) {
-                anexosHTML = `
-                    <div class="form-group mt-3">
-                        <label><i class="fas fa-paperclip"></i> Anexos</label>
-                        <div style="padding: 10px; background-color: #f9f9f9; border-radius: var(--border-radius-sm);">
-                            ${anexosArray.map(anexo => {
-                                const url = anexo.trim();
-                                const nome = url.substring(url.lastIndexOf('/') + 1) || 'Arquivo';
-                                return `
-                                    <div style="margin-bottom: 5px;">
-                                        <a href="${url}" target="_blank" style="color: var(--secondary-color);">
-                                            <i class="fas fa-external-link-alt"></i> ${nome}
-                                        </a>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-        } catch (e) {
-            console.warn('Erro ao processar anexos:', e);
-        }
-    }
-    
-    // Contar escolas com proteção
-    const numEscolas = demanda.escolas ? 
-        (typeof demanda.escolas === 'string' ? demanda.escolas.split(',').filter(e => e.trim()).length : 1) 
-        : 0;
-    
-    // Criar modal de detalhes (CORRIGIDO)
+    // Preparar modal HTML
     const modalHTML = `
         <div class="modal-header">
             <h2><i class="fas fa-file-lines"></i> Detalhes da Demanda #${demanda.id || 'N/A'}</h2>
@@ -1059,7 +1163,7 @@ function mostrarDetalhesDemanda(idDemanda) {
                     
                     <div class="detalhe-item">
                         <div class="detalhe-label"><i class="fas fa-school"></i> Escolas</div>
-                        <div class="detalhe-valor">${numEscolas}</div>
+                        <div class="detalhe-valor">${demanda.escolas ? demanda.escolas.split(',').length : 0}</div>
                         <small>${demanda.escolas || 'Nenhuma escola'}</small>
                     </div>
                     
@@ -1076,15 +1180,6 @@ function mostrarDetalhesDemanda(idDemanda) {
                     </div>
                 </div>
                 
-                ${anexosHTML}
-                
-                ${historicoHTML ? `
-                <div class="historico-container mt-3">
-                    <h3><i class="fas fa-history"></i> Histórico</h3>
-                    ${historicoHTML}
-                </div>
-                ` : ''}
-                
                 <div class="form-group mt-3">
                     <label><i class="fas fa-edit"></i> Ações</label>
                     <div style="display: flex; gap: 10px; margin-top: 10px;">
@@ -1094,25 +1189,26 @@ function mostrarDetalhesDemanda(idDemanda) {
                         <button class="btn btn-success" onclick="alterarStatusDemanda(${demanda.id}, 'Concluída')">
                             <i class="fas fa-check"></i> Concluir
                         </button>
-                        <button class="btn btn-secondary" onclick="reenviarEmailDemanda(${demanda.id})">
-                            <i class="fas fa-envelope"></i> Reenviar E-mail
-                        </button>
                     </div>
                 </div>
             </div>
         </div>
     `;
     
-    elementos.modalDetalhes.querySelector('.modal').innerHTML = modalHTML;
-    elementos.modalDetalhes.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
+    if (elementos.modalDetalhes) {
+        elementos.modalDetalhes.querySelector('.modal').innerHTML = modalHTML;
+        elementos.modalDetalhes.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
 }
 
 /**
  * Fecha o modal de detalhes
  */
 function fecharModalDetalhes() {
-    elementos.modalDetalhes.style.display = 'none';
+    if (elementos.modalDetalhes) {
+        elementos.modalDetalhes.style.display = 'none';
+    }
     document.body.style.overflow = 'auto';
 }
 
@@ -1143,50 +1239,11 @@ async function alterarStatusDemanda(idDemanda, novoStatus) {
 }
 
 /**
- * Reenvia e-mail de uma demanda
- */
-async function reenviarEmailDemanda(idDemanda) {
-    if (!confirm('Deseja reenviar o e-mail desta demanda?')) {
-        return;
-    }
-    
-    const demanda = state.demandas.find(d => d.id == idDemanda);
-    
-    if (!demanda) {
-        mostrarToast('Erro', 'Demanda não encontrada.', 'error');
-        return;
-    }
-    
-    mostrarLoading();
-    
-    try {
-        const dadosEmail = {
-            titulo: demanda.titulo,
-            descricao: demanda.descricao,
-            escolas: demanda.escolas ? 
-                (typeof demanda.escolas === 'string' ? demanda.escolas.split(',').map(e => e.trim()) : []) 
-        : [],
-            responsavel: demanda.responsavel,
-            prazo: demanda.prazo,
-            corpoEmail: 'Este e-mail está sendo reenviado.',
-            idDemanda: demanda.id
-        };
-        
-        await enviarEmailDemanda(dadosEmail);
-        mostrarToast('Sucesso', 'E-mail reenviado com sucesso!', 'success');
-        
-    } catch (erro) {
-        console.error('Erro ao reenviar e-mail:', erro);
-        mostrarToast('Erro', 'Não foi possível reenviar o e-mail.', 'error');
-    } finally {
-        esconderLoading();
-    }
-}
-
-/**
  * Mostra uma mensagem toast
  */
 function mostrarToast(titulo, mensagem, tipo = 'info') {
+    if (!elementos.toastContainer) return;
+    
     const toast = document.createElement('div');
     toast.className = `toast ${tipo}`;
     
@@ -1222,19 +1279,5 @@ function mostrarToast(titulo, mensagem, tipo = 'info') {
 window.mostrarDetalhesDemanda = mostrarDetalhesDemanda;
 window.fecharModalDetalhes = fecharModalDetalhes;
 window.alterarStatusDemanda = alterarStatusDemanda;
-window.reenviarEmailDemanda = reenviarEmailDemanda;
 
-/**
- * Função auxiliar para criar barra de progresso de upload (se necessário)
- */
-function criarBarraProgressoUpload(arquivo) {
-    // Implementação opcional para mostrar progresso
-    return {
-        completar: function(sucesso) {
-            console.log(`Upload ${sucesso ? 'completo' : 'falhou'} para ${arquivo.name}`);
-        },
-        remover: function() {
-            console.log(`Removendo indicador para ${arquivo.name}`);
-        }
-    };
-}
+console.log("✅ app.js carregado com sucesso!");
