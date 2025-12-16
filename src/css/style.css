@@ -1431,3 +1431,59 @@ a:hover {
         padding: 15px;
     }
 }
+/* Estilo para o container de ações no modal */
+.acoes-container {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+/* Estilo específico para o botão de excluir */
+.btn-danger {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-danger:hover {
+    background-color: #c0392b;
+}
+
+.btn-danger:active {
+    background-color: #a93226;
+}
+
+/* Modal de confirmação personalizado */
+.confirmacao-exclusao {
+    background: white;
+    padding: 20px;
+    border-radius: var(--border-radius);
+    max-width: 400px;
+    margin: 50px auto;
+    box-shadow: var(--shadow-lg);
+}
+
+.confirmacao-exclusao h3 {
+    color: #e74c3c;
+    margin-bottom: 15px;
+}
+
+.confirmacao-exclusao p {
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.confirmacao-botoes {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
