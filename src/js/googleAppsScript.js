@@ -1,27 +1,33 @@
-// googleAppsScript.js - VERSÃO DEFINITIVA CORRIGIDA
+// googleAppsScript.js - VERSÃO FINAL OTIMIZADA
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3FX285_JgX7S41xPQ_37P1P6B1R7AmK5EZgT9EVEwQr7j34gYQ55PP7aF0cKoLojn1A/exec';
 
 // ============================================
-// CONFIGURAÇÕES DE UPLOAD
+// CONFIGURAÇÕES INTELIGENTES
 // ============================================
 
-const UPLOAD_CONFIG = {
-    // Tamanhos
-    TAMANHO_MAX_SIMPLES: 30000, // 30KB para upload simples
-    TAMANHO_CHUNK: 24 * 1024,   // 24KB por chunk
-    LIMITE_MAXIMO: 50 * 1024 * 1024, // 50MB máximo
+const CONFIG = {
+    // Limites de upload (otimizados para GAS)
+    LIMITE_SIMPLES: 30000,           // 30KB - seguro para JSONP
+    LIMITE_ALERTA: 1024 * 1024,      // 1MB - arquivos médios
+    LIMITE_MAXIMO: 10 * 1024 * 1024, // 10MB - máximo recomendado
     
     // Timeouts
-    TIMEOUT_JSONP: 15000,
-    TIMEOUT_POST: 30000
+    TIMEOUT: 20000,                  // 20 segundos
+    
+    // Modos de operação
+    MODOS: {
+        DIRETO: 'direto',           // JSONP para arquivos pequenos
+        POST: 'post',               // POST para arquivos médios
+        LINK_EXTERNO: 'link'        // Link do Drive para arquivos grandes
+    }
 };
 
 // ============================================
-// FUNÇÃO PRINCIPAL JSONP (COMPATIBILIDADE)
+// FUNÇÃO PRINCIPAL DE COMUNICAÇÃO (JSONP)
 // ============================================
 
 function enviarParaGoogleAppsScript(dados) {
-    console.log('📤 Enviando ação via JSONP:', dados.acao);
+    console.log('📤 Enviando ação:', dados.acao);
     
     return new Promise((resolve, reject) => {
         const callbackName = 'callback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -32,7 +38,6 @@ function enviarParaGoogleAppsScript(dados) {
             // Limpar callback
             delete window[callbackName];
             
-            // Processar resposta
             if (resposta && resposta.sucesso !== false) {
                 resolve(resposta.dados || resposta);
             } else {
@@ -40,16 +45,16 @@ function enviarParaGoogleAppsScript(dados) {
             }
         };
         
-        // Criar elemento script
+        // Criar script
         const script = document.createElement('script');
         
-        // Montar URL
+        // Montar URL JSONP (compatível com seu GAS)
         let url = SCRIPT_URL;
         url += '?callback=' + encodeURIComponent(callbackName);
         url += '&dados=' + encodeURIComponent(JSON.stringify(dados));
         url += '&_=' + Date.now();
         
-        console.log('🔗 URL chamada:', url.substring(0, 80) + '...');
+        console.log('🔗 URL JSONP:', url.substring(0, 120) + '...');
         
         script.src = url;
         
@@ -57,18 +62,16 @@ function enviarParaGoogleAppsScript(dados) {
         const timeoutId = setTimeout(() => {
             if (window[callbackName]) {
                 delete window[callbackName];
-                reject(new Error('Timeout: Servidor não respondeu em 15s'));
+                reject(new Error('Timeout: Servidor não respondeu em 20 segundos'));
             }
-        }, UPLOAD_CONFIG.TIMEOUT_JSONP);
+        }, CONFIG.TIMEOUT);
         
         // Eventos
         script.onload = () => clearTimeout(timeoutId);
         script.onerror = () => {
             clearTimeout(timeoutId);
-            if (window[callbackName]) {
-                delete window[callbackName];
-            }
-            reject(new Error('Falha ao conectar com o servidor'));
+            if (window[callbackName]) delete window[callbackName];
+            reject(new Error('Falha na conexão com o servidor'));
         };
         
         // Adicionar ao DOM
@@ -77,45 +80,80 @@ function enviarParaGoogleAppsScript(dados) {
 }
 
 // ============================================
-// FUNÇÃO DE UPLOAD - VERSÃO SIMPLIFICADA
+// FUNÇÃO DE UPLOAD INTELIGENTE
 // ============================================
 
 async function fazerUploadArquivo(arquivo) {
     console.log(`📎 Iniciando upload: ${arquivo.name} (${formatarTamanho(arquivo.size)})`);
     
-    // Verificar tamanho máximo
-    if (arquivo.size > UPLOAD_CONFIG.LIMITE_MAXIMO) {
-        return {
-            sucesso: false,
-            modo: 'muito-grande',
-            url: '#muito-grande',
-            nome: arquivo.name,
-            tamanho: arquivo.size,
-            mensagem: `Arquivo muito grande (${formatarTamanho(arquivo.size)}). Máximo: ${formatarTamanho(UPLOAD_CONFIG.LIMITE_MAXIMO)}`
-        };
+    // Mostrar progresso inicial
+    if (typeof window.atualizarProgressoUpload === 'function') {
+        window.atualizarProgressoUpload({
+            progresso: 5,
+            mensagem: 'Analisando arquivo...',
+            arquivo: arquivo.name
+        });
     }
     
-    // Decidir estratégia baseada no tamanho
-    if (arquivo.size <= UPLOAD_CONFIG.TAMANHO_MAX_SIMPLES) {
-        // Upload simples via JSONP
-        console.log('📤 Usando upload simples...');
-        return await fazerUploadSimples(arquivo);
-    } else {
-        // Upload via POST
-        console.log('🚀 Usando upload via POST...');
-        return await fazerUploadViaPOST(arquivo);
+    try {
+        // Verificar tamanho
+        if (arquivo.size > CONFIG.LIMITE_MAXIMO) {
+            return criarRespostaArquivoGrande(arquivo, 'muito_grande');
+        }
+        
+        // Decidir estratégia baseada no tamanho
+        if (arquivo.size <= CONFIG.LIMITE_SIMPLES) {
+            console.log('📤 Usando upload direto (até 30KB)...');
+            return await fazerUploadDireto(arquivo);
+            
+        } else if (arquivo.size <= CONFIG.LIMITE_ALERTA) {
+            console.log('🚀 Tentando upload via POST (até 1MB)...');
+            return await tentarUploadViaPOST(arquivo);
+            
+        } else {
+            console.log('🔗 Arquivo grande, sugerindo link externo...');
+            return criarRespostaArquivoGrande(arquivo, 'sugerir_link');
+        }
+        
+    } catch (erro) {
+        console.error('❌ Erro no upload:', erro);
+        
+        // Fallback seguro
+        return criarRespostaFallback(arquivo, erro);
     }
 }
 
+// ============================================
+// ESTRATÉGIAS DE UPLOAD
+// ============================================
+
 /**
- * Upload simples para arquivos pequenos (até 30KB)
+ * Upload direto para arquivos pequenos (até 30KB)
  */
-async function fazerUploadSimples(arquivo) {
+async function fazerUploadDireto(arquivo) {
     try {
+        // Atualizar progresso
+        if (typeof window.atualizarProgressoUpload === 'function') {
+            window.atualizarProgressoUpload({
+                progresso: 20,
+                mensagem: 'Convertendo para base64...',
+                arquivo: arquivo.name
+            });
+        }
+        
         // Converter para base64
         const base64Data = await arquivoParaBase64(arquivo);
         
-        console.log(`📊 Base64 tamanho: ${Math.round(base64Data.length / 1024)}KB`);
+        console.log(`📊 Tamanho base64: ${Math.round(base64Data.length / 1024)}KB`);
+        
+        // Atualizar progresso
+        if (typeof window.atualizarProgressoUpload === 'function') {
+            window.atualizarProgressoUpload({
+                progresso: 50,
+                mensagem: 'Enviando para o servidor...',
+                arquivo: arquivo.name
+            });
+        }
         
         // Enviar via JSONP
         const resultado = await enviarParaGoogleAppsScript({
@@ -123,109 +161,199 @@ async function fazerUploadSimples(arquivo) {
             arquivoBase64: base64Data,
             nomeArquivo: arquivo.name,
             tamanho: arquivo.size,
-            tipo: arquivo.type
+            tipo: arquivo.type,
+            metodo: 'direto'
         });
+        
+        // Atualizar progresso
+        if (typeof window.atualizarProgressoUpload === 'function') {
+            window.atualizarProgressoUpload({
+                progresso: 100,
+                mensagem: 'Upload concluído!',
+                arquivo: arquivo.name
+            });
+        }
+        
+        console.log('✅ Upload direto bem-sucedido:', resultado);
         
         return {
             sucesso: true,
-            modo: 'simples',
-            url: resultado.url || '#upload-simples',
+            modo: CONFIG.MODOS.DIRETO,
+            url: resultado.url || resultado.linkDireto || '#upload-sucesso',
             nome: arquivo.name,
             tamanho: arquivo.size,
-            dados: resultado
+            dados: resultado,
+            mensagem: 'Arquivo enviado com sucesso!'
         };
         
     } catch (erro) {
-        console.error('❌ Erro no upload simples:', erro);
-        
-        return {
-            sucesso: false,
-            modo: 'simples-falhou',
-            url: '#upload-falhou',
-            nome: arquivo.name,
-            tamanho: arquivo.size,
-            mensagem: erro.message
-        };
+        console.error('❌ Erro no upload direto:', erro);
+        throw erro;
     }
 }
 
 /**
- * Upload via POST para arquivos maiores
+ * Tentar upload via POST (experimental para arquivos médios)
  */
-async function fazerUploadViaPOST(arquivo) {
+async function tentarUploadViaPOST(arquivo) {
     try {
-        console.log(`📤 Preparando upload POST: ${arquivo.name}`);
-        
-        // Mostrar progresso
-        if (typeof window.atualizarProgressoUpload === 'function') {
-            window.atualizarProgressoUpload({
-                progresso: 10,
-                mensagem: 'Preparando upload...',
-                arquivo: arquivo.name
-            });
-        }
-        
-        // Criar FormData
-        const formData = new FormData();
-        formData.append('acao', 'uploadArquivo');
-        formData.append('nomeArquivo', arquivo.name);
-        formData.append('tamanho', arquivo.size.toString());
-        formData.append('tipo', arquivo.type);
-        formData.append('arquivo', arquivo);
-        
-        // Mostrar progresso de envio
+        // Primeiro tentar via POST
         if (typeof window.atualizarProgressoUpload === 'function') {
             window.atualizarProgressoUpload({
                 progresso: 30,
-                mensagem: 'Enviando dados...',
+                mensagem: 'Tentando upload via POST...',
                 arquivo: arquivo.name
             });
         }
         
-        // Fazer requisição POST
-        const resposta = await fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: formData,
-            mode: 'cors'
-        });
+        // Tentar fazer upload via POST (método experimental)
+        const resultadoPOST = await tentarPOSTExperimental(arquivo);
         
-        if (!resposta.ok) {
-            throw new Error(`HTTP ${resposta.status}: ${resposta.statusText}`);
+        if (resultadoPOST.sucesso) {
+            return resultadoPOST;
         }
         
-        const resultado = await resposta.json();
+        // Se POST falhar, tentar via JSONP (pode ser lento)
+        console.log('🔄 POST falhou, tentando via JSONP...');
         
-        if (resultado.sucesso && resultado.dados) {
-            console.log('✅ Upload via POST bem-sucedido!');
-            
-            // Progresso completo
-            if (typeof window.atualizarProgressoUpload === 'function') {
-                window.atualizarProgressoUpload({
-                    progresso: 100,
-                    mensagem: 'Upload completo!',
-                    arquivo: arquivo.name
-                });
-            }
-            
-            return {
-                sucesso: true,
-                modo: 'post',
-                url: resultado.dados.url,
-                nome: arquivo.name,
-                tamanho: arquivo.size,
-                dados: resultado.dados
-            };
-            
-        } else {
-            throw new Error(resultado.erro || 'Erro no upload');
+        if (typeof window.atualizarProgressoUpload === 'function') {
+            window.atualizarProgressoUpload({
+                progresso: 40,
+                mensagem: 'Usando método alternativo...',
+                arquivo: arquivo.name
+            });
         }
+        
+        return await fazerUploadDireto(arquivo);
         
     } catch (erro) {
-        console.error('❌ Erro no upload POST:', erro);
-        
-        // Fallback para modo simulado
-        return criarRespostaSimulada(arquivo);
+        console.error('❌ Erro no upload via POST:', erro);
+        throw erro;
     }
+}
+
+/**
+ * Tentativa experimental de POST
+ */
+async function tentarPOSTExperimental(arquivo) {
+    return new Promise((resolve) => {
+        // Para arquivos médios, converter para base64 e usar POST com JSON
+        setTimeout(async () => {
+            try {
+                const base64Data = await arquivoParaBase64(arquivo);
+                
+                // Criar requisição POST com JSON
+                const resposta = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        'acao': 'uploadArquivo',
+                        'nomeArquivo': arquivo.name,
+                        'arquivoBase64': base64Data,
+                        'tamanho': arquivo.size.toString(),
+                        'tipo': arquivo.type
+                    })
+                });
+                
+                if (resposta.ok) {
+                    const resultado = await resposta.json();
+                    
+                    if (resultado.sucesso && resultado.dados) {
+                        resolve({
+                            sucesso: true,
+                            modo: CONFIG.MODOS.POST,
+                            url: resultado.dados.url || '#upload-post',
+                            nome: arquivo.name,
+                            tamanho: arquivo.size,
+                            dados: resultado.dados,
+                            mensagem: 'Upload via POST realizado!'
+                        });
+                        return;
+                    }
+                }
+                
+                // Se falhar, resolver como falso
+                resolve({
+                    sucesso: false,
+                    modo: 'post-falhou',
+                    mensagem: 'Método POST não disponível'
+                });
+                
+            } catch (erro) {
+                console.warn('⚠️ POST experimental falhou:', erro.message);
+                resolve({
+                    sucesso: false,
+                    modo: 'post-falhou',
+                    mensagem: erro.message
+                });
+            }
+        }, 100);
+    });
+}
+
+// ============================================
+// RESPOSTAS INTELIGENTES
+// ============================================
+
+function criarRespostaArquivoGrande(arquivo, motivo) {
+    const tamanhoFormatado = formatarTamanho(arquivo.size);
+    const tamanhoMB = (arquivo.size / (1024 * 1024)).toFixed(1);
+    
+    let mensagem, acaoRecomendada;
+    
+    switch(motivo) {
+        case 'muito_grande':
+            mensagem = `Arquivo muito grande (${tamanhoFormatado}).`;
+            acaoRecomendada = `O limite é ${formatarTamanho(CONFIG.LIMITE_MAXIMO)}.`;
+            break;
+            
+        case 'sugerir_link':
+            mensagem = `Para arquivos acima de 1MB (${tamanhoFormatado}), recomendamos:`;
+            acaoRecomendada = '1. Enviar para seu Google Drive\n2. Compartilhar como "Qualquer pessoa com o link"\n3. Colar o link abaixo';
+            break;
+            
+        default:
+            mensagem = `Arquivo grande detectado (${tamanhoFormatado}).`;
+            acaoRecomendada = 'Use o método alternativo.';
+    }
+    
+    return {
+        sucesso: false,
+        modo: CONFIG.MODOS.LINK_EXTERNO,
+        url: '#aguardando-link',
+        nome: arquivo.name,
+        tamanho: arquivo.size,
+        tamanhoFormatado: tamanhoFormatado,
+        mensagem: mensagem,
+        acaoRecomendada: acaoRecomendada,
+        permiteLinkManual: true,
+        instrucoes: [
+            '📁 Envie o arquivo para seu Google Drive',
+            '🔗 Compartilhe como "Qualquer pessoa com o link"',
+            '📋 Cole o link na caixa abaixo'
+        ]
+    };
+}
+
+function criarRespostaFallback(arquivo, erro) {
+    const tamanhoFormatado = formatarTamanho(arquivo.size);
+    
+    return {
+        sucesso: false,
+        modo: 'fallback',
+        url: '#upload-falhou',
+        nome: arquivo.name,
+        tamanho: arquivo.size,
+        tamanhoFormatado: tamanhoFormatado,
+        mensagem: `Não foi possível enviar "${arquivo.name}"`,
+        erro: erro.message,
+        solucao: arquivo.size > CONFIG.LIMITE_SIMPLES 
+            ? `Arquivo muito grande para envio direto (${tamanhoFormatado}). Use o método alternativo.`
+            : 'Tente novamente ou use um arquivo menor.',
+        permiteLinkManual: arquivo.size > CONFIG.LIMITE_SIMPLES
+    };
 }
 
 // ============================================
@@ -253,30 +381,16 @@ function formatarTamanho(bytes) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-function criarRespostaSimulada(arquivo) {
-    const tamanhoFormatado = formatarTamanho(arquivo.size);
-    
-    return {
-        sucesso: false,
-        modo: "simulado",
-        url: "#upload-simulado",
-        nome: arquivo.name,
-        tamanho: arquivo.size,
-        tamanhoFormatado: tamanhoFormatado,
-        mensagem: arquivo.size > 50000 
-            ? `Arquivo grande (${tamanhoFormatado}). Use Google Drive manualmente.`
-            : "Upload falhou - usando modo simulado"
-    };
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
 // ============================================
-// FUNÇÕES DO SISTEMA (mantidas)
+// FUNÇÕES DO SISTEMA (100% COMPATÍVEIS)
 // ============================================
 
 async function listarDemandasDoServidor(filtros = {}) {
+    console.log('📋 Listando demandas...');
+    
     try {
         const resultado = await enviarParaGoogleAppsScript({
             acao: 'listarDemandas',
@@ -293,6 +407,8 @@ async function listarDemandasDoServidor(filtros = {}) {
 }
 
 async function salvarDemandaNoServidor(dados) {
+    console.log('💾 Salvando demanda...');
+    
     try {
         const resultado = await enviarParaGoogleAppsScript({
             acao: 'salvarDemanda',
@@ -306,7 +422,7 @@ async function salvarDemandaNoServidor(dados) {
             anexos: dados.anexos || []
         });
         
-        console.log('✅ Demanda salva:', resultado);
+        console.log('✅ Demanda salva com sucesso!');
         return resultado;
         
     } catch (erro) {
@@ -316,13 +432,15 @@ async function salvarDemandaNoServidor(dados) {
 }
 
 async function enviarEmailDemanda(dados) {
+    console.log('📧 Enviando e-mail...');
+    
     try {
         const resultado = await enviarParaGoogleAppsScript({
             acao: 'enviarEmailDemanda',
             ...dados
         });
         
-        console.log('✅ E-mail enviado:', resultado);
+        console.log('✅ E-mail enviado com sucesso!');
         return resultado;
         
     } catch (erro) {
@@ -332,6 +450,8 @@ async function enviarEmailDemanda(dados) {
 }
 
 async function atualizarStatusDemanda(id, novoStatus) {
+    console.log(`🔄 Atualizando demanda #${id} para "${novoStatus}"`);
+    
     try {
         const resultado = await enviarParaGoogleAppsScript({
             acao: 'atualizarDemanda',
@@ -340,7 +460,7 @@ async function atualizarStatusDemanda(id, novoStatus) {
             alteracao: `Status alterado para: ${novoStatus}`
         });
         
-        console.log('✅ Status atualizado:', resultado);
+        console.log('✅ Status atualizado!');
         return resultado;
         
     } catch (erro) {
@@ -350,23 +470,26 @@ async function atualizarStatusDemanda(id, novoStatus) {
 }
 
 // ============================================
-// TESTES E UTILITÁRIOS
+// TESTES E DIAGNÓSTICO
 // ============================================
 
 async function testarConexao() {
+    console.log('🔍 Testando conexão com o servidor...');
+    
     try {
         const resultado = await enviarParaGoogleAppsScript({
             acao: 'testarConexao'
         });
         
+        console.log('✅ Conexão OK:', resultado);
         return {
             online: true,
             dados: resultado,
-            mensagem: 'Servidor conectado com sucesso!'
+            mensagem: 'Servidor conectado e funcionando!'
         };
         
     } catch (erro) {
-        console.warn('⚠️ Servidor offline:', erro.message);
+        console.warn('⚠️ Problema de conexão:', erro.message);
         return {
             online: false,
             erro: erro.message,
@@ -375,16 +498,16 @@ async function testarConexao() {
     }
 }
 
-async function testarUpload() {
-    // Criar arquivo de teste pequeno
-    const texto = 'Arquivo de teste - ' + new Date().toISOString();
+async function testarUploadRapido() {
+    console.log('🧪 Teste rápido de upload...');
+    
+    // Criar arquivo de teste minúsculo
+    const texto = 'Teste';
     const blob = new Blob([texto], { type: 'text/plain' });
-    const arquivoTeste = new File([blob], 'teste_upload.txt', {
+    const arquivoTeste = new File([blob], 'teste.txt', {
         type: 'text/plain',
         lastModified: Date.now()
     });
-    
-    console.log('🧪 Testando upload...');
     
     try {
         const resultado = await fazerUploadArquivo(arquivoTeste);
@@ -401,46 +524,61 @@ async function testarUpload() {
 }
 
 // ============================================
-// INICIALIZAÇÃO
+// INICIALIZAÇÃO INTELIGENTE
 // ============================================
 
-console.log('🚀 Sistema de Demandas - Conectado a:', SCRIPT_URL);
-console.log('📁 Upload via POST habilitado para arquivos > 30KB');
+console.log('🚀 Sistema de Demandas - Conectado');
+console.log('📊 Configuração:', {
+    limiteSimples: formatarTamanho(CONFIG.LIMITE_SIMPLES),
+    limiteAlerta: formatarTamanho(CONFIG.LIMITE_ALERTA),
+    limiteMaximo: formatarTamanho(CONFIG.LIMITE_MAXIMO)
+});
 
-// Testar conexão ao iniciar
+// Verificar conexão ao carregar
 document.addEventListener('DOMContentLoaded', function() {
     setTimeout(async () => {
         try {
             const status = await testarConexao();
+            
             if (status.online) {
-                console.log('✅ Servidor online');
+                console.log('✅ Sistema pronto para uso!');
                 
-                // Testar upload POST se suportado
-                const resultado = await enviarParaGoogleAppsScript({
-                    acao: 'testarConexao'
-                });
-                
-                if (resultado && resultado.suportaPOST !== false) {
-                    console.log('✅ Suporte a POST confirmado');
+                // Teste rápido opcional
+                if (window.location.hostname === 'localhost' || window.location.hostname.includes('github')) {
+                    setTimeout(testarUploadRapido, 3000);
+                }
+            } else {
+                console.warn('⚠️ Sistema em modo limitado - servidor offline');
+                // Mostrar aviso amigável
+                if (typeof window.mostrarAvisoConexao === 'function') {
+                    window.mostrarAvisoConexao('Servidor temporariamente indisponível. Algumas funções podem estar limitadas.');
                 }
             }
         } catch (erro) {
-            console.warn('⚠️ Não foi possível verificar status do servidor');
+            console.warn('⚠️ Não foi possível verificar status:', erro.message);
         }
-    }, 1000);
+    }, 1500);
 });
 
 // ============================================
 // EXPORTAÇÃO PARA USO GLOBAL
 // ============================================
 
+// Funções principais (usadas pelo app.js)
 window.fazerUploadArquivo = fazerUploadArquivo;
 window.listarDemandasDoServidor = listarDemandasDoServidor;
 window.salvarDemandaNoServidor = salvarDemandaNoServidor;
 window.enviarEmailDemanda = enviarEmailDemanda;
 window.atualizarStatusDemanda = atualizarStatusDemanda;
+
+// Funções auxiliares
 window.enviarParaGoogleAppsScript = enviarParaGoogleAppsScript;
 window.testarConexao = testarConexao;
-window.testarUpload = testarUpload;
+window.testarUploadRapido = testarUploadRapido;
+
+// Funções utilitárias
+window.formatarTamanhoArquivo = formatarTamanho;
+window.arquivoParaBase64 = arquivoParaBase64;
 
 console.log('✅ googleAppsScript.js carregado com sucesso!');
+console.log('📋 Funções disponíveis:', Object.keys(window).filter(k => k.includes('Upload') || k.includes('Demanda')));
