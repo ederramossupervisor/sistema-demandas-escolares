@@ -543,7 +543,66 @@ function formatarParaCSV(demandas) {
     
     return [cabecalhos.join(','), ...linhas].join('\n');
 }
-
+/**
+ * EXCLUI UMA DEMANDA DO SERVIDOR
+ * @param {number} id - ID da demanda a ser excluída
+ * @returns {Promise} - Resultado da exclusão
+ */
+async function excluirDemandaNoServidor(id) {
+    console.log("🗑️ Iniciando exclusão da demanda ID:", id);
+    
+    const dados = {
+        acao: "excluirDemanda",
+        id: id
+    };
+    
+    try {
+        // Chamar endpoint do Google Apps Script
+        const url = SCRIPT_URL + '?dados=' + encodeURIComponent(JSON.stringify(dados)) + 
+                   '&callback=callback' + Date.now();
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            mode: 'no-cors' // Importante para Google Apps Script
+        }).catch(async (err) => {
+            // Fallback: tentar via JSONP
+            return new Promise((resolve, reject) => {
+                const callbackName = 'callback' + Date.now();
+                window[callbackName] = function(data) {
+                    delete window[callbackName];
+                    document.head.removeChild(script);
+                    resolve({ ok: true, dados: data });
+                };
+                
+                const script = document.createElement('script');
+                script.src = SCRIPT_URL + '?dados=' + encodeURIComponent(JSON.stringify(dados)) + 
+                            '&callback=' + callbackName;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        });
+        
+        // Processar resposta
+        let resultado;
+        if (response.ok) {
+            const data = await response.text();
+            try {
+                resultado = JSON.parse(data);
+            } catch {
+                resultado = { sucesso: true, dados: { idExcluido: id } };
+            }
+        } else {
+            resultado = await response;
+        }
+        
+        console.log("✅ Resultado da exclusão:", resultado);
+        return resultado;
+        
+    } catch (erro) {
+        console.error("❌ Erro na exclusão:", erro);
+        throw new Error("Não foi possível excluir a demanda: " + erro.message);
+    }
+}
 /**
  * Gera um resumo textual das estatísticas
  */
