@@ -327,150 +327,177 @@ function obterDadosExemplo() {
         }
     ];
 }
-// 🔥 NOVA FUNÇÃO PARA UPLOAD DE ARQUIVOS GRANDES EM CHUNKS
-function fazerUploadArquivoGrande(arquivo, onProgress = null) {
+async function fazerUploadArquivoGrande(arquivo) {
+    console.log(`🚀 Iniciando upload GRANDE: ${arquivo.name} (${formatarTamanhoArquivo(arquivo.size)})`);
+    
+    // Definir tamanho do chunk (24KB é seguro para JSONP)
+    const TAMANHO_CHUNK = 24 * 1024; // 24KB
+    
+    const totalChunks = Math.ceil(arquivo.size / TAMANHO_CHUNK);
+    console.log(`📦 Total de chunks: ${totalChunks} (${formatarTamanhoArquivo(TAMANHO_CHUNK)} cada)`);
+    
+    // Array para armazenar os chunks em base64
+    const chunks = [];
+    
+    try {
+        // Ler e processar cada chunk
+        for (let i = 0; i < totalChunks; i++) {
+            const inicio = i * TAMANHO_CHUNK;
+            const fim = Math.min(inicio + TAMANHO_CHUNK, arquivo.size);
+            const chunk = arquivo.slice(inicio, fim);
+            
+            // Converter chunk para base64
+            const base64Chunk = await converterChunkParaBase64(chunk);
+            
+            chunks.push({
+                numero: i + 1,
+                total: totalChunks,
+                dados: base64Chunk
+            });
+            
+            // Atualizar progresso
+            const progresso = Math.round(((i + 1) / totalChunks) * 100);
+            atualizarProgressoUpload(progresso);
+            console.log(`📊 Progresso: ${progresso}% (chunk ${i + 1}/${totalChunks})`);
+        }
+        
+        console.log(`✅ Todos ${totalChunks} chunks processados`);
+        
+        // 🔥 NOVA ABORDAGEM: Enviar um chunk por vez
+        return await enviarChunksSequencialmente(arquivo.name, arquivo.size, chunks);
+        
+    } catch (erro) {
+        console.error('❌ Erro ao processar chunks:', erro);
+        return {
+            sucesso: false,
+            modo: 'chunks-falhou',
+            url: '#chunks-falhou',
+            nome: arquivo.name,
+            tamanho: arquivo.size,
+            mensagem: erro.message
+        };
+    }
+}
+
+/**
+ * Envia chunks sequencialmente para evitar limite de tamanho
+ */
+async function enviarChunksSequencialmente(nomeArquivo, tamanhoArquivo, chunks) {
+    console.log(`🔄 Enviando ${chunks.length} chunks sequencialmente...`);
+    
+    const idSessao = 'sessao_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    
+    try {
+        // 1. Iniciar sessão de upload
+        const iniciarResultado = await enviarParaGoogleAppsScript({
+            acao: 'iniciarUploadGrande',
+            nomeArquivo: nomeArquivo,
+            tamanhoArquivo: tamanhoArquivo,
+            totalChunks: chunks.length,
+            idSessao: idSessao
+        });
+        
+        if (!iniciarResultado.sucesso) {
+            throw new Error('Falha ao iniciar sessão de upload');
+        }
+        
+        console.log(`✅ Sessão iniciada: ${idSessao}`);
+        
+        // 2. Enviar cada chunk sequencialmente
+        for (let i = 0; i < chunks.length; i++) {
+            const chunk = chunks[i];
+            
+            console.log(`📤 Enviando chunk ${chunk.numero}/${chunk.total}...`);
+            
+            const chunkResultado = await enviarParaGoogleAppsScript({
+                acao: 'enviarChunk',
+                idSessao: idSessao,
+                numeroChunk: chunk.numero,
+                totalChunks: chunk.total,
+                dadosChunk: chunk.dados
+            });
+            
+            if (!chunkResultado.sucesso) {
+                throw new Error(`Falha ao enviar chunk ${chunk.numero}`);
+            }
+            
+            console.log(`✅ Chunk ${chunk.numero} enviado`);
+        }
+        
+        // 3. Finalizar upload
+        console.log(`🏁 Finalizando upload...`);
+        const finalizarResultado = await enviarParaGoogleAppsScript({
+            acao: 'finalizarUploadGrande',
+            idSessao: idSessao
+        });
+        
+        if (!finalizarResultado.sucesso) {
+            throw new Error('Falha ao finalizar upload');
+        }
+        
+        console.log(`🎉 Upload completo! URL: ${finalizarResultado.dados.url}`);
+        
+        return {
+            sucesso: true,
+            modo: 'chunks-sequencial',
+            url: finalizarResultado.dados.url,
+            nome: nomeArquivo,
+            tamanho: tamanhoArquivo
+        };
+        
+    } catch (erro) {
+        console.error('❌ Erro no upload sequencial:', erro);
+        
+        // Tentar cancelar sessão se possível
+        try {
+            await enviarParaGoogleAppsScript({
+                acao: 'cancelarUpload',
+                idSessao: idSessao
+            });
+        } catch (e) {
+            // Ignorar erro de cancelamento
+        }
+        
+        return {
+            sucesso: false,
+            modo: 'chunks-falhou',
+            url: '#chunks-falhou',
+            nome: nomeArquivo,
+            tamanho: tamanhoArquivo,
+            mensagem: erro.message
+        };
+    }
+}
+
+/**
+ * Converte um chunk para base64
+ */
+function converterChunkParaBase64(chunk) {
     return new Promise((resolve, reject) => {
-        console.log(`🚀 Iniciando upload GRANDE: ${arquivo.name} (${Math.round(arquivo.size/1024)}KB)`);
+        const reader = new FileReader();
         
-        // Configurações dos chunks
-        const CHUNK_SIZE = 25000; // 25KB por chunk (seguro para JSONP)
-        const TOTAL_CHUNKS = Math.ceil(arquivo.size / CHUNK_SIZE);
-        
-        console.log(`📦 Total de chunks: ${TOTAL_CHUNKS} (${CHUNK_SIZE/1024}KB cada)`);
-        
-        let chunksProcessados = 0;
-        let todosChunks = [];
-        let nomeArquivoFinal = `grande_${Date.now()}_${arquivo.name}`;
-        
-        // Função para processar chunk por chunk
-        const processarChunk = (chunkIndex) => {
-            if (chunkIndex >= TOTAL_CHUNKS) {
-                // Todos chunks processados, enviar para montar
-                console.log(`✅ Todos ${TOTAL_CHUNKS} chunks processados`);
-                montarArquivoNoServidor();
-                return;
-            }
-            
-            const reader = new FileReader();
-            const start = chunkIndex * CHUNK_SIZE;
-            const end = Math.min(start + CHUNK_SIZE, arquivo.size);
-            const chunk = arquivo.slice(start, end);
-            
-            reader.onload = async function(event) {
-                try {
-                    const base64Chunk = event.target.result.split(',')[1];
-                    
-                    // Salvar chunk localmente
-                    todosChunks[chunkIndex] = {
-                        index: chunkIndex,
-                        data: base64Chunk,
-                        size: chunk.size
-                    };
-                    
-                    chunksProcessados++;
-                    
-                    // Atualizar progresso
-                    const progresso = Math.round((chunksProcessados / TOTAL_CHUNKS) * 100);
-                    
-                    if (onProgress) {
-                        onProgress({
-                            progresso: progresso,
-                            chunkAtual: chunkIndex + 1,
-                            totalChunks: TOTAL_CHUNKS,
-                            tamanhoProcessado: chunksProcessados * CHUNK_SIZE,
-                            tamanhoTotal: arquivo.size
-                        });
-                    }
-                    
-                    console.log(`📤 Chunk ${chunkIndex + 1}/${TOTAL_CHUNKS} (${progresso}%)`);
-                    
-                    // Processar próximo chunk (com pequeno delay para não sobrecarregar)
-                    setTimeout(() => processarChunk(chunkIndex + 1), 100);
-                    
-                } catch (erro) {
-                    console.error(`❌ Erro no chunk ${chunkIndex + 1}:`, erro);
-                    reject(erro);
-                }
-            };
-            
-            reader.onerror = reject;
-            reader.readAsDataURL(chunk);
+        reader.onload = function(e) {
+            // Extrair apenas a parte base64 (remover data:application/octet-stream;base64,)
+            const base64Data = e.target.result.split(',')[1];
+            resolve(base64Data);
         };
         
-        // Função para enviar todos chunks ao servidor
-        const montarArquivoNoServidor = async () => {
-            console.log(`🔄 Enviando ${TOTAL_CHUNKS} chunks para o servidor...`);
-            
-            try {
-                // Preparar dados
-                const dadosUpload = {
-                    acao: 'uploadArquivoGrande',
-                    nomeArquivo: arquivo.name,
-                    nomeArquivoFinal: nomeArquivoFinal,
-                    tipoArquivo: arquivo.type,
-                    tamanhoTotal: arquivo.size,
-                    totalChunks: TOTAL_CHUNKS,
-                    chunks: todosChunks.length
-                };
-                
-                // Enviar primeiro chunk com metadados
-                const primeiroChunk = todosChunks[0];
-                
-                const resultado = await enviarParaGoogleAppsScript({
-                    ...dadosUpload,
-                    chunkData: primeiroChunk.data,
-                    chunkIndex: 0,
-                    isPrimeiroChunk: true
-                });
-                
-                console.log('📥 Resposta do primeiro chunk:', resultado);
-                
-                // Enviar chunks restantes
-                for (let i = 1; i < todosChunks.length; i++) {
-                    const chunk = todosChunks[i];
-                    
-                    await enviarParaGoogleAppsScript({
-                        acao: 'uploadArquivoGrandeContinuacao',
-                        nomeArquivoFinal: nomeArquivoFinal,
-                        chunkData: chunk.data,
-                        chunkIndex: i,
-                        isUltimoChunk: (i === todosChunks.length - 1)
-                    });
-                    
-                    console.log(`📤 Chunk ${i + 1}/${TOTAL_CHUNKS} enviado`);
-                    
-                    if (onProgress) {
-                        onProgress({
-                            progresso: Math.round(((i + 1) / TOTAL_CHUNKS) * 100),
-                            status: 'enviando',
-                            chunkAtual: i + 1,
-                            totalChunks: TOTAL_CHUNKS
-                        });
-                    }
-                }
-                
-                // Solicitar montagem final
-                const resultadoFinal = await enviarParaGoogleAppsScript({
-                    acao: 'montarArquivoGrande',
-                    nomeArquivo: arquivo.name,
-                    nomeArquivoFinal: nomeArquivoFinal,
-                    tipoArquivo: arquivo.type,
-                    tamanhoTotal: arquivo.size,
-                    totalChunks: TOTAL_CHUNKS
-                });
-                
-                console.log('🎉 Upload grande concluído:', resultadoFinal);
-                resolve(resultadoFinal);
-                
-            } catch (erro) {
-                console.error('❌ Erro ao montar arquivo:', erro);
-                reject(erro);
-            }
-        };
-        
-        // Iniciar processamento
-        processarChunk(0);
+        reader.onerror = reject;
+        reader.readAsDataURL(chunk);
     });
+}
+
+/**
+ * Função auxiliar para atualizar progresso
+ */
+function atualizarProgressoUpload(progresso) {
+    // Atualizar UI se existir
+    if (window.atualizarProgressoUI) {
+        window.atualizarProgressoUI(progresso);
+    }
+    
+    // Atualizar console
+    console.log(`🔄 Progresso do upload: ${progresso}%`);
 }
 // ============================================
 // FUNÇÃO PARA TESTAR UPLOAD DIRETAMENTE
