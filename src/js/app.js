@@ -6,7 +6,6 @@
 
 // CONFIGURAÇÕES GLOBAIS
 const APP_CONFIG = {
-    // URLs serão configuradas em googleAppsScript.js
     schools: [
         { nome: "EEEFM Pedra Azul", email: "eder.ramos@educador.edu.es.gov.br" },
         { nome: "EEEFM Fioravante Caliman", email: "escolafioravante@sedu.es.gov.br" },
@@ -66,7 +65,7 @@ function iniciarSplashScreen() {
     // Executar etapas
     etapas.forEach((etapa, index) => {
         setTimeout(() => {
-            if (statusEl && !state.splashScreenActive) return;
+            if (!statusEl || !state.splashScreenActive) return;
             statusEl.textContent = etapa.texto;
             console.log(`🔧 ${etapa.texto}`);
             
@@ -193,10 +192,18 @@ function inicializarElementos() {
         toastContainer: document.getElementById('toast-container')
     };
     
-    // Configurar data mínima como hoje
-    const hoje = new Date().toISOString().split('T')[0];
+    // Configurar data mínima como amanhã
+    const hoje = new Date();
+    const amanha = new Date(hoje);
+    amanha.setDate(hoje.getDate() + 1);
+    
     if (elementos.prazo) {
-        elementos.prazo.min = hoje;
+        elementos.prazo.min = amanha.toISOString().split('T')[0];
+        
+        // Data padrão: 7 dias à frente
+        const prazoPadrao = new Date(hoje);
+        prazoPadrao.setDate(hoje.getDate() + 7);
+        elementos.prazo.value = prazoPadrao.toISOString().split('T')[0];
     }
     
     console.log("✅ Elementos inicializados:", Object.keys(elementos).length);
@@ -695,7 +702,11 @@ function mostrarModalNovaDemanda() {
     
     if (elementos.prazo) {
         elementos.prazo.min = amanha.toISOString().split('T')[0];
-        elementos.prazo.value = '';
+        
+        // Data padrão: 7 dias à frente
+        const prazoPadrao = new Date(hoje);
+        prazoPadrao.setDate(hoje.getDate() + 7);
+        elementos.prazo.value = prazoPadrao.toISOString().split('T')[0];
     }
     
     // Resetar checkboxes
