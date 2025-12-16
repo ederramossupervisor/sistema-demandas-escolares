@@ -1200,6 +1200,10 @@ function mostrarDetalhesDemanda(idDemanda) {
                         <button class="btn btn-success" onclick="alterarStatusDemanda(${demanda.id}, 'Concluída')">
                             <i class="fas fa-check"></i> Concluir
                         </button>
+                        <!-- BOTÃO DE EXCLUSÃO ADICIONADO AQUI -->
+                        <button class="btn btn-danger" onclick="excluirDemanda(${demanda.id})">
+                            <i class="fas fa-trash"></i> Excluir
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1373,5 +1377,5 @@ function mostrarToast(titulo, mensagem, tipo = 'info') {
 window.mostrarDetalhesDemanda = mostrarDetalhesDemanda;
 window.fecharModalDetalhes = fecharModalDetalhes;
 window.alterarStatusDemanda = alterarStatusDemanda;
-
+window.excluirDemanda = excluirDemanda;
 console.log("✅ app.js carregado com sucesso!");
