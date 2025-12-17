@@ -1251,9 +1251,9 @@ function validarFormulario() {
     }
     
     console.log('👤 Validando para usuário:', {
-        tipo: usuarioValidacao.tipo_usuario,
-        departamento: usuario.departamento
-    });
+    tipo: usuarioValidacao.tipo_usuario,
+    departamento: usuarioValidacao.departamento 
+});
     
     if (usuarioValidacao.tipo_usuario === 'supervisor') {
         console.log('👑 Validando departamentos para supervisor...');
