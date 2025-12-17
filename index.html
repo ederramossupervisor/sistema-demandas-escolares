@@ -545,8 +545,9 @@ try {
             console.log('👤 Tipo de usuário detectado:', usuario.tipo_usuario);
             
             // Verificar permissões e ajustar interface
-            ajustarInterfacePorTipoUsuario(usuario.tipo_usuario);
-        }
+           if (usuario && usuario.tipo_usuario) {
+    window.ajustarInterfacePorTipoUsuario(usuario.tipo_usuario);
+}
 
         // Configurar botão de logout
         const btnLogout = document.getElementById('btn-logout');
