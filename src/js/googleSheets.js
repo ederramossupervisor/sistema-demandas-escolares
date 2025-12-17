@@ -151,6 +151,7 @@ function processarDadosRecebidos(dadosBrutos) {
             titulo: demanda.titulo || 'Sem título',
             descricao: demanda.descricao || '',
             escolas: demanda.escolas || '',
+            departamento: demanda.departamento || '',
             responsavel: demanda.responsavel || SHEETS_CONFIG.RESPONSAVEIS.SUPERVISOR,
             status: demanda.status || SHEETS_CONFIG.STATUS.PENDENTE,
             prazo: demanda.prazo || null,
