@@ -585,11 +585,24 @@ function filtrarDemandas(demandas) {
             }
         }
         // Filtro por departamento (NOVO)
-        if (state.filtros.departamento && demanda.departamento) {
-            if (!demanda.departamento.includes(state.filtros.departamento)) {
-                return false;
-            }
-        }
+if (state.filtros.departamento && state.filtros.departamento !== '') {
+    // Se a demanda não tem departamento definido, ignora (para demandas antigas)
+    if (!demanda.departamento || demanda.departamento === '') {
+        return false; // Não mostra demandas sem departamento
+    }
+    
+    // Verificar se o departamento da demanda corresponde ao filtro
+    const deptsDemanda = demanda.departamento.split(',').map(d => d.trim());
+    
+    // Se o filtro for vazio ou "Todos", mostrar tudo
+    if (state.filtros.departamento === '') {
+        // Continua (mostra todas)
+    } 
+    // Se for um departamento específico, verificar
+    else if (!deptsDemanda.includes(state.filtros.departamento)) {
+        return false; // Não corresponde, não mostra
+    }
+}
         
         // Filtro por responsável
         if (state.filtros.responsavel && demanda.responsavel !== state.filtros.responsavel) {
