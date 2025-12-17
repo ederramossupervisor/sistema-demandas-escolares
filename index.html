@@ -390,6 +390,33 @@
 
     // 3. Inicialização da aplicação
     document.addEventListener('DOMContentLoaded', function() {
+        // ============================================
+// VERIFICAÇÃO DE LOGIN - BLOQUEAR ACESSO SEM LOGIN
+// ============================================
+
+// Verificar se o usuário está logado
+const usuarioSalvo = localStorage.getItem('usuario_demandas');
+if (!usuarioSalvo) {
+    // Se NÃO está logado, redirecionar para login
+    console.log('🚫 Usuário não logado - Redirecionando para login');
+    window.location.href = 'login.html';
+    return; // Para a execução aqui
+}
+
+// Se está logado, carregar dados do usuário
+let usuario = null;
+try {
+    usuario = JSON.parse(usuarioSalvo);
+    console.log('✅ Usuário logado:', usuario.nome);
+    console.log('🎯 Tipo:', usuario.tipo_usuario);
+    console.log('🏫 Escola:', usuario.escola_sre);
+    console.log('🏢 Departamento:', usuario.departamento);
+} catch (e) {
+    console.error('❌ Erro ao carregar usuário:', e);
+    localStorage.removeItem('usuario_demandas');
+    window.location.href = 'login.html';
+    return;
+}
         console.log('🚀 Sistema de Demandas iniciando...');
         
         // A. Detectar se é PWA instalado
