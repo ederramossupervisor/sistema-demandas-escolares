@@ -817,7 +817,9 @@ function mostrarModalNovaDemanda() {
     if (elementos.enviarEmail) {
         elementos.enviarEmail.checked = false;
     }
-} // ← FECHAMENTO CORRETO DA FUNÇÃO/**
+} 
+
+/**
  * Fecha modal de nova demanda
  */
 function fecharModalNovaDemanda() {
