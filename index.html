@@ -478,29 +478,100 @@ try {
             });
         }
 
-        // ============================================
-        // FUNÇÃO PARA AJUSTAR INTERFACE POR TIPO DE USUÁRIO
-        // ============================================
+// ============================================
+// FUNÇÃO PARA AJUSTAR INTERFACE POR TIPO DE USUÁRIO
+// ============================================
 
-        function ajustarInterfacePorTipoUsuario(tipo) {
-            console.log('🎛️ Ajustando interface para:', tipo);
+function ajustarInterfacePorTipoUsuario(tipo) {
+    console.log('🎛️ Ajustando interface para:', tipo);
+    
+    const btnNovaDemanda = document.getElementById('btn-nova-demanda');
+    const filtroEscola = document.getElementById('filtro-escola');
+    const filtroDepartamento = document.getElementById('filtro-departamento');
+    
+    // REGRA 1: Apenas SUPERVISOR pode criar demandas
+    if (tipo !== 'supervisor' && btnNovaDemanda) {
+        console.log('🚫 Removendo botão de nova demanda para:', tipo);
+        btnNovaDemanda.style.display = 'none';
+    }
+    
+    // REGRA 2: Configurar departamentos conforme tipo de usuário
+    if (filtroDepartamento) {
+        // Limpar opções atuais
+        filtroDepartamento.innerHTML = '';
+        
+        // Opções por tipo de usuário
+        let opcoesDepartamento = [];
+        
+        if (tipo === 'supervisor') {
+            // SUPERVISOR: Vê TODOS os departamentos
+            opcoesDepartamento = [
+                { value: '', text: 'Todos os departamentos' },
+                { value: 'Gestão', text: 'Gestão' },
+                { value: 'Secretaria', text: 'Secretaria' },
+                { value: 'Pedagógico', text: 'Pedagógico' },
+                { value: 'Supervisão', text: 'Supervisão' }
+            ];
+            console.log('👑 Supervisor: acesso a TODOS departamentos');
             
-            const btnNovaDemanda = document.getElementById('btn-nova-demanda');
+        } else if (tipo === 'gestor') {
+            // DIRETOR(A): Vê 3 departamentos (exceto Supervisão)
+            opcoesDepartamento = [
+                { value: '', text: 'Todos os departamentos' },
+                { value: 'Gestão', text: 'Gestão' },
+                { value: 'Secretaria', text: 'Secretaria' },
+                { value: 'Pedagógico', text: 'Pedagógico' }
+            ];
+            console.log('👔 Diretor(a): acesso a 3 departamentos (exceto Supervisão)');
             
-            // REGRA: Apenas SUPERVISOR pode criar demandas
-            if (tipo !== 'supervisor' && btnNovaDemanda) {
-                console.log('🚫 Removendo botão de nova demanda para:', tipo);
-                btnNovaDemanda.style.display = 'none';
-            }
+        } else if (tipo === 'comum') {
+            // USUÁRIO COMUM: Vê APENAS seu departamento
+            const usuario = JSON.parse(localStorage.getItem('usuario_demandas'));
+            const deptUsuario = usuario.departamento || 'Pedagógico';
             
-            // Se for DIRETOR(A) ou USUÁRIO COMUM, ajustaremos filtros depois
-            // Por enquanto, apenas registramos no console
-            if (tipo === 'gestor') {
-                console.log('👔 Diretor(a) detectado - Veremos apenas sua escola');
-            } else if (tipo === 'comum') {
-                console.log('👤 Usuário comum - Veremos apenas seu departamento + escola');
-            }
+            opcoesDepartamento = [
+                { value: deptUsuario, text: deptUsuario }
+            ];
+            console.log('👤 Usuário comum: acesso APENAS ao departamento', deptUsuario);
+            
+            // Filtro FIXO (não pode mudar)
+            filtroDepartamento.disabled = true;
+            filtroDepartamento.title = 'Seu departamento é fixo';
         }
+        
+        // Adicionar opções ao select
+        opcoesDepartamento.forEach(opcao => {
+            const option = document.createElement('option');
+            option.value = opcao.value;
+            option.textContent = opcao.text;
+            filtroDepartamento.appendChild(option);
+        });
+    }
+    
+    // REGRA 3: Configurar escola conforme tipo de usuário
+    if (filtroEscola && tipo !== 'supervisor') {
+        const usuario = JSON.parse(localStorage.getItem('usuario_demandas'));
+        const escolaUsuario = usuario.escola_sre || 'EEEFM Pedra Azul';
+        
+        // Para Diretor(a) e Usuário Comum, escola é FIXA
+        filtroEscola.innerHTML = `
+            <option value="${escolaUsuario}">${escolaUsuario}</option>
+        `;
+        filtroEscola.disabled = true;
+        filtroEscola.title = 'Sua escola é fixa';
+        
+        console.log('🏫 Escola fixa para', tipo + ':', escolaUsuario);
+    }
+    
+    // REGRA 4: Configurar botão de limpar filtros
+    const btnLimparFiltros = document.getElementById('btn-limpar-filtros');
+    if (btnLimparFiltros && tipo !== 'supervisor') {
+        btnLimparFiltros.disabled = true;
+        btnLimparFiltros.title = 'Filtros são fixos para seu tipo de usuário';
+    }
+    
+    console.log('✅ Interface ajustada para tipo:', tipo);
+}
         
         // A. Detectar se é PWA instalado
         if (window.matchMedia('(display-mode: standalone)').matches) {
