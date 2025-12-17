@@ -415,6 +415,7 @@ async function salvarDemandaNoServidor(dados) {
             titulo: dados.titulo || '',
             descricao: dados.descricao || '',
             escolas: dados.escolas || [],
+            departamento: dados.departamento || '',
             responsavel: dados.responsavel || 'Escola(s)',
             prazo: dados.prazo || '',
             enviarEmail: dados.enviarEmail || false,
