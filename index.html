@@ -172,8 +172,6 @@
 // VERSÃO PARA 3 TIPOS DE USUÁRIO
 // ============================================
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbytUwMNrpTqBPIP9UjfqMRa0KX0RCKWuCmEocpYnhI8TcH1wDGAKoE_q_ZaGBY8xdYnhw/exec';
-
 // Verificar se já está logado
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🔐 Sistema de login carregado - 3 tipos de usuário');
@@ -402,8 +400,11 @@ function enviarParaGoogleAppsScript(dados) {
         // Criar elemento script para JSONP
         const script = document.createElement('script');
         
+        // USAR A URL DO googleAppsScript.js OU URL PADRÃO
+        const scriptUrl = window.SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbytUwMNrpTqBPIP9UjfqMRa0KX0RCKWuCmEocpYnhI8TcH1wDGAKoE_q_ZaGBY8xdYnhw/exec';
+        
         // Montar URL JSONP
-        let url = SCRIPT_URL;
+        let url = scriptUrl;
         url += '?callback=' + encodeURIComponent(callbackName);
         url += '&dados=' + encodeURIComponent(JSON.stringify(dados));
         url += '&_=' + Date.now(); // Cache buster
