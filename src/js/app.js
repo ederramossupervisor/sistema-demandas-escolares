@@ -20,6 +20,7 @@ let state = {
     demandas: [],
     filtros: {
         escola: '',
+        departamento: '',
         responsavel: '',
         status: '',
         prazo: ''
