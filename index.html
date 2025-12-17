@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#2c3e50">
-    <title>Sistema de Gestão de Demandas - Supervisão Escolar</title>
+    <title>Sistema de Gestão de Demandas - Login</title>
     
     <!-- Ícone PWA -->
     <link rel="icon" href="favicon.ico" type="image/x-icon">
@@ -23,7 +23,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- SPLASH SCREEN (logo após o body) -->
+    <!-- SPLASH SCREEN -->
     <div id="splash-screen" class="splash-screen">
         <div class="splash-content">
             <div class="splash-logo">
@@ -35,298 +35,127 @@
             <p class="splash-status">Inicializando...</p>
         </div>
     </div>
-    <!-- BARRA DE CARREGAMENTO -->
+    
+    <!-- LOADING -->
     <div class="loading-overlay" id="loading">
         <div class="loading-spinner"></div>
-        <p>Carregando sistema...</p>
+        <p>Carregando...</p>
     </div>
 
-    <!-- CONTAINER PRINCIPAL -->
-    <div class="container" id="main-container">
-        <!-- CABEÇALHO -->
-        <header class="header">
-            <div class="logo-container">
-                <div class="logo-icon">
-                    <i class="fas fa-school"></i>
-                </div>
-                <div class="logo-text">
-                    <h1>Sistema de Gestão de Demandas</h1>
-                    <p>Supervisão Escolar - Estado do Espírito Santo</p>
-                </div>
+    <!-- CONTAINER DE LOGIN -->
+    <div class="container login-container" id="login-container">
+        <!-- LOGO -->
+        <div class="login-logo">
+            <div class="logo-icon">
+                <i class="fas fa-school"></i>
             </div>
-            <div class="user-info">
-                <div class="user-avatar">
-                    <i class="fas fa-user-tie"></i>
-                </div>
-                <div class="user-details">
-                    <span class="user-name">Supervisor</span>
-                    <span class="user-email">ecramos@sedu.es.gov.br</span>
-                </div>
+            <div class="logo-text">
+                <h1>Sistema de Gestão de Demandas</h1>
+                <p>Supervisão Escolar - Estado do Espírito Santo</p>
             </div>
-        </header>
-
-        <!-- BARRA DE CONTROLE -->
-        <div class="control-bar">
-            <div class="filtros">
-                <div class="filtro-group">
-                    <label for="filtro-escola"><i class="fas fa-school"></i> Escola:</label>
-                    <select id="filtro-escola">
-                        <option value="">Todas as escolas</option>
-                        <option value="EEEFM Pedra Azul">EEEFM Pedra Azul</option>
-                        <option value="EEEFM Fioravante Caliman">EEEFM Fioravante Caliman</option>
-                        <option value="EEEFM Alto Rio Possmoser">EEEFM Alto Rio Possmoser</option>
-                    </select>
-                </div>
+        </div>
+        
+        <!-- FORMULÁRIO DE LOGIN -->
+        <div class="login-form-container">
+            <div class="login-card">
+                <h2><i class="fas fa-sign-in-alt"></i> Acesso ao Sistema</h2>
                 
-                <div class="filtro-group">
-                    <label for="filtro-responsavel"><i class="fas fa-user-tag"></i> Responsável:</label>
-                    <select id="filtro-responsavel">
-                        <option value="">Todos</option>
-                        <option value="Supervisor">Supervisor</option>
-                        <option value="Escola(s)">Escola(s)</option>
-                    </select>
-                </div>
+                <form id="form-login">
+                    <div class="form-group">
+                        <label for="login-email"><i class="fas fa-envelope"></i> E-mail</label>
+                        <input type="email" id="login-email" name="email" required 
+                               placeholder="seu.email@escola.edu.br">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="login-senha"><i class="fas fa-lock"></i> Senha</label>
+                        <input type="password" id="login-senha" name="senha" required 
+                               placeholder="Digite sua senha">
+                    </div>
+                    
+                    <div class="form-options">
+                        <label class="checkbox-option">
+                            <input type="checkbox" id="lembrar-login">
+                            <span>Lembrar-me</span>
+                        </label>
+                        <a href="#" class="link-esqueci-senha">Esqueci minha senha</a>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-login" id="btn-login">
+                        <i class="fas fa-sign-in-alt"></i> Entrar
+                    </button>
+                    
+                    <div class="login-divider">
+                        <span>OU</span>
+                    </div>
+                    
+                    <button type="button" class="btn btn-secondary" id="btn-solicitar-acesso">
+                        <i class="fas fa-user-plus"></i> Solicitar Acesso
+                    </button>
+                </form>
                 
-                <div class="filtro-group">
-                    <label for="filtro-status"><i class="fas fa-tasks"></i> Status:</label>
-                    <select id="filtro-status">
-                        <option value="">Todos</option>
-                        <option value="Pendente">Pendente</option>
-                        <option value="Em andamento">Em andamento</option>
-                        <option value="Concluída">Concluída</option>
-                    </select>
-                </div>
-                
-                <div class="filtro-group">
-                    <label for="filtro-prazo"><i class="fas fa-calendar-alt"></i> Prazo:</label>
-                    <select id="filtro-prazo">
-                        <option value="">Todos</option>
-                        <option value="hoje">Vencem hoje</option>
-                        <option value="proximos">Próximos 3 dias</option>
-                        <option value="atrasadas">Atrasadas</option>
-                    </select>
-                </div>
-                
-                <button class="btn btn-secondary" id="btn-limpar-filtros">
-                    <i class="fas fa-filter-circle-xmark"></i> Limpar Filtros
-                </button>
-            </div>
-            
-            <div class="stats">
-                <div class="stat-item">
-                    <span class="stat-label">Total:</span>
-                    <span class="stat-value" id="total-demandas">0</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Pendentes:</span>
-                    <span class="stat-value" id="pendentes">0</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Atrasadas:</span>
-                    <span class="stat-value" id="atrasadas">0</span>
+                <div class="login-info">
+                    <p><i class="fas fa-info-circle"></i> Primeiro acesso? Solicite ao supervisor.</p>
                 </div>
             </div>
         </div>
-
-        <!-- ÁREA PRINCIPAL DE CONTEÚDO -->
-        <main class="main-content">
-            <!-- LISTA DE DEMANDAS -->
-            <section class="demandas-section">
-                <div class="section-header">
-                    <h2><i class="fas fa-list-check"></i> Demandas Registradas</h2>
-                    <div class="section-actions">
-                        <button class="btn btn-refresh" id="btn-atualizar">
-                            <i class="fas fa-arrows-rotate"></i> Atualizar
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- LISTA DE DEMANDAS (SERÁ PREENCHIDA VIA JAVASCRIPT) -->
-                <div class="demandas-container" id="demandas-container">
-                    <div class="empty-state">
-                        <i class="fas fa-clipboard-list fa-3x"></i>
-                        <h3>Nenhuma demanda cadastrada</h3>
-                        <p>Clique no botão "+" abaixo para criar sua primeira demanda</p>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <!-- BOTÃO FLUTUANTE PARA NOVA DEMANDA -->
-        <button class="btn-floating" id="btn-nova-demanda">
-            <i class="fas fa-plus"></i>
-        </button>
+        
+        <!-- MENSAGENS DO LOGIN -->
+        <div class="login-messages" id="login-messages"></div>
     </div>
 
-    <!-- MODAL DE NOVA DEMANDA -->
-    <div class="modal-overlay" id="modal-nova-demanda">
-        <div class="modal modal-large">
+    <!-- MODAL DE SOLICITAÇÃO DE ACESSO -->
+    <div class="modal-overlay" id="modal-solicitar-acesso">
+        <div class="modal">
             <div class="modal-header">
-                <h2><i class="fas fa-file-circle-plus"></i> Nova Demanda</h2>
-                <button class="btn-close" id="btn-fechar-modal">
+                <h2><i class="fas fa-user-plus"></i> Solicitar Acesso</h2>
+                <button class="btn-close" id="btn-fechar-solicitacao">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             
-            <form id="form-nova-demanda">
+            <form id="form-solicitar-acesso">
                 <div class="modal-body">
-                    <!-- ABA PRINCIPAL -->
-                    <div class="form-tabs">
-                        <div class="tab active" data-tab="principal">Informações Principais</div>
-                        <div class="tab" data-tab="email">Configuração de E-mail</div>
-                        <div class="tab" data-tab="anexos">Anexos</div>
+                    <p class="modal-info">
+                        <i class="fas fa-info-circle"></i> 
+                        Preencha os dados abaixo para solicitar acesso ao sistema. 
+                        O supervisor analisará sua solicitação e enviará as credenciais por e-mail.
+                    </p>
+                    
+                    <div class="form-group">
+                        <label for="solicitar-nome"><i class="fas fa-user"></i> Nome Completo *</label>
+                        <input type="text" id="solicitar-nome" name="nome" required 
+                               placeholder="Seu nome completo">
                     </div>
                     
-                    <!-- CONTEÚDO DAS ABAS -->
-                    <div class="tab-content active" id="tab-principal">
-                        <!-- Campo Título - JÁ CORRIGIDO -->
-                        <div class="form-group">
-                            <label for="titulo"><i class="fas fa-heading"></i> Título da Demanda *</label>
-                            <input type="text" id="titulo" name="titulo" required placeholder="Ex: Entrega do relatório bimestral">
-                        </div>
-                        
-                       <!-- Campo Descrição - JÁ CORRIGIDO -->
-                       <div class="form-group">
-                           <label for="descricao"><i class="fas fa-align-left"></i> Descrição Detalhada *</label>
-                           <textarea id="descricao" name="descricao" rows="4" required placeholder="Descreva detalhadamente o que precisa ser feito..."></textarea>
-                        </div>
-                        
-                        <!-- SELEÇÃO DE ESCOLAS -->
-                        <div class="form-group">
-                            <label><i class="fas fa-school"></i> Escolas Destino *</label>
-                            <div class="escolas-container">
-                                <div class="escola-option">
-                                    <input type="checkbox" id="escola-todas" class="escola-checkbox">
-                                    <label for="escola-todas" class="escola-label">
-                                        <span class="escola-nome">Selecionar todas</span>
-                                    </label>
-                                </div>
-                                
-                                <!-- ESCOLAS PRÉ-CADASTRADAS -->
-                                <div class="escola-option">
-                                    <input type="checkbox" id="escola-pedra-azul" 
-                                           value="EEEFM Pedra Azul" class="escola-checkbox">
-                                    <label for="escola-pedra-azul" class="escola-label">
-                                        <span class="escola-nome">EEEFM Pedra Azul</span>
-                                        <span class="escola-email">escolapedreiras@sedu.es.gov.br</span>
-                                    </label>
-                                </div>
-                                
-                                <div class="escola-option">
-                                    <input type="checkbox" id="escola-fioravante" 
-                                           value="EEEFM Fioravante Caliman" class="escola-checkbox">
-                                    <label for="escola-fioravante" class="escola-label">
-                                        <span class="escola-nome">EEEFM Fioravante Caliman</span>
-                                        <span class="escola-email">escolafioravante@sedu.es.gov.br</span>
-                                    </label>
-                                </div>
-                                
-                                <div class="escola-option">
-                                    <input type="checkbox" id="escola-possmoser" 
-                                           value="EEEFM Alto Rio Possmoser" class="escola-checkbox">
-                                    <label for="escola-possmoser" class="escola-label">
-                                        <span class="escola-nome">EEEFM Alto Rio Possmoser</span>
-                                        <span class="escola-email">escolapossmoser@sedu.es.gov.br</span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- RESPONSÁVEL - CORRIGIDO COM checked -->
-                        <div class="form-group">
-                            <label><i class="fas fa-user-tag"></i> Responsável pela Execução *</label>
-                            <div class="radio-group">
-                                <label class="radio-option">
-                                    <input type="radio" name="responsavel" value="Supervisor" required checked>
-                                    <span class="radio-label supervisor">
-                                        <i class="fas fa-user-tie"></i> Supervisor
-                                    </span>
-                                </label>
-                                <label class="radio-option">
-                                    <input type="radio" name="responsavel" value="Escola(s)" required>
-                                    <span class="radio-label escola">
-                                        <i class="fas fa-school"></i> Escola(s)
-                                    </span>
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <!-- PRAZO - CORRIGIDO COM name -->
-                        <div class="form-group">
-                            <label for="prazo"><i class="fas fa-calendar-day"></i> Prazo Final *</label>
-                            <input type="date" id="prazo" name="prazo" required 
-                                   min="2024-01-01">
-                        </div>
+                    <div class="form-group">
+                        <label for="solicitar-email"><i class="fas fa-envelope"></i> E-mail *</label>
+                        <input type="email" id="solicitar-email" name="email" required 
+                               placeholder="seu.email@escola.edu.br">
                     </div>
                     
-                    <!-- ABA DE E-MAIL -->
-                    <div class="tab-content" id="tab-email">
-                        <div class="form-group">
-                            <label class="checkbox-option">
-                                <input type="checkbox" id="enviar-email">
-                                <span>Enviar e-mail automático sobre esta demanda</span>
-                            </label>
-                            <small class="form-help">
-                                Se marcado, um e-mail será enviado para as escolas selecionadas e cópia para a supervisão.
-                            </small>
-                        </div>
-                        
-                        <div class="email-content" id="email-content" style="display: none;">
-                            <div class="form-group">
-                                <label for="corpo-email"><i class="fas fa-envelope"></i> Corpo do E-mail (Opcional)</label>
-                                <textarea id="corpo-email" rows="6"
-                                          placeholder="Digite a mensagem que será enviada por e-mail..."></textarea>
-                                <small class="form-help">
-                                    Esta mensagem será incluída no e-mail automático junto com os dados da demanda.
-                                </small>
-                            </div>
-                            
-                            <div class="email-preview">
-                                <h4><i class="fas fa-eye"></i> Prévia do E-mail:</h4>
-                                <div class="preview-content" id="email-preview">
-                                    <p>Assunto: <span id="preview-assunto">[Título da demanda]</span></p>
-                                    <p>Destinatários: <span id="preview-destinatarios">Escolas selecionadas + Supervisão</span></p>
-                                    <p>Incluirá: Título, descrição, escolas, responsável, prazo e anexos (se houver).</p>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="form-group">
+                        <label for="solicitar-telefone"><i class="fas fa-phone"></i> Telefone *</label>
+                        <input type="tel" id="solicitar-telefone" name="telefone" required 
+                               placeholder="(27) 99999-9999">
                     </div>
                     
-                    <!-- ABA DE ANEXOS -->
-                    <div class="tab-content" id="tab-anexos">
-                        <div class="form-group">
-                            <label><i class="fas fa-paperclip"></i> Anexar Arquivos</label>
-                            <div class="upload-area" id="upload-area">
-                                <i class="fas fa-cloud-upload-alt fa-3x"></i>
-                                <p>Arraste arquivos aqui ou clique para selecionar</p>
-                                <small>Formatos suportados: PDF, DOC, XLS, PPT, JPG, PNG (Máx. 10MB)</small>
-                                <input type="file" id="file-input" multiple 
-                                       accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png">
-                            </div>
-                            
-                            <div class="arquivos-list" id="arquivos-list">
-                                <!-- Lista de arquivos será inserida aqui -->
-                            </div>
-                        </div>
+                    <div class="form-group">
+                        <label for="solicitar-mensagem"><i class="fas fa-comment"></i> Mensagem (opcional)</label>
+                        <textarea id="solicitar-mensagem" name="mensagem" rows="3"
+                                  placeholder="Explique brevemente por que precisa de acesso..."></textarea>
                     </div>
                 </div>
                 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="btn-cancelar">
+                    <button type="button" class="btn btn-secondary" id="btn-cancelar-solicitacao">
                         Cancelar
                     </button>
-                    <button type="submit" class="btn btn-primary" id="btn-salvar">
-                        <i class="fas fa-save"></i> Salvar Demanda
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Enviar Solicitação
                     </button>
                 </div>
             </form>
-        </div>
-    </div>
-
-    <!-- MODAL DE DETALHES DA DEMANDA -->
-    <div class="modal-overlay" id="modal-detalhes">
-        <div class="modal modal-large">
-            <!-- Conteúdo será preenchido via JavaScript -->
         </div>
     </div>
 
@@ -337,6 +166,7 @@
     <script src="src/js/googleAppsScript.js"></script>
     <script src="src/js/googleSheets.js"></script>
     <script src="src/js/app.js"></script>
+    <script src="src/js/login.js"></script>
 
     <!-- SERVICE WORKER REGISTRATION -->
     <script>
@@ -369,18 +199,6 @@
             navigator.serviceWorker.register(swPath)
                 .then(function(registration) {
                     console.log('✅ Service Worker registrado:', registration.scope);
-                    
-                    // Verificar atualizações
-                    registration.addEventListener('updatefound', () => {
-                        const newWorker = registration.installing;
-                        console.log('🔄 Nova versão do Service Worker disponível');
-                        
-                        newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                console.log('🆕 Nova versão pronta! Recarregue para atualizar.');
-                            }
-                        });
-                    });
                 })
                 .catch(function(error) {
                     console.error('❌ Erro no Service Worker:', error);
@@ -388,111 +206,18 @@
         });
     }
 
-    // 3. Inicialização da aplicação
+    // 3. Inicialização
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 Sistema de Demandas iniciando...');
+        console.log('🚀 Sistema de Login iniciando...');
         
-        // A. Detectar se é PWA instalado
+        // Verificar se é PWA
         if (window.matchMedia('(display-mode: standalone)').matches) {
             console.log('📱 Executando como PWA instalado');
             document.body.classList.add('pwa-mode');
         }
         
-        // B. Configurar data do prazo no formulário
-        const hoje = new Date();
-        const amanha = new Date(hoje);
-        amanha.setDate(hoje.getDate() + 1);
-        
-        const prazoInput = document.getElementById('prazo');
-        if (prazoInput) {
-            // Data mínima: amanhã
-            prazoInput.min = amanha.toISOString().split('T')[0];
-            
-            // Data padrão: 7 dias à frente
-            const prazoPadrao = new Date(hoje);
-            prazoPadrao.setDate(hoje.getDate() + 7);
-            prazoInput.value = prazoPadrao.toISOString().split('T')[0];
-            
-            // Data máxima: 2 anos à frente
-            const maxDate = new Date(hoje);
-            maxDate.setFullYear(hoje.getFullYear() + 2);
-            prazoInput.max = maxDate.toISOString().split('T')[0];
-        }
-        
-        console.log('✅ Sistema configurado e pronto!');
+        console.log('✅ Sistema de login configurado!');
     });
-
-    // 4. Instalação do PWA (apenas uma vez)
-    let deferredPrompt;
-    
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        
-        console.log('📲 PWA pronto para instalação');
-        
-        // Mostrar botão de instalação após 3 segundos (apenas se não for PWA)
-        setTimeout(() => {
-            if (deferredPrompt && !window.matchMedia('(display-mode: standalone)').matches) {
-                mostrarBotaoInstalacao();
-            }
-        }, 3000);
-    });
-
-    function mostrarBotaoInstalacao() {
-        // Evitar múltiplos botões
-        if (document.querySelector('.btn-instalar-pwa')) return;
-        
-        const botao = document.createElement('button');
-        botao.className = 'btn-instalar-pwa';
-        botao.innerHTML = '<i class="fas fa-download"></i> Instalar App';
-        botao.style.cssText = `
-            position: fixed;
-            bottom: 100px;
-            right: 20px;
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 25px;
-            font-size: 14px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        `;
-        
-        botao.onclick = () => {
-            botao.style.display = 'none';
-            deferredPrompt.prompt();
-            
-            deferredPrompt.userChoice.then(choiceResult => {
-                if (choiceResult.outcome === 'accepted') {
-                    console.log('✅ PWA instalado com sucesso!');
-                }
-                deferredPrompt = null;
-            });
-        };
-        
-        document.body.appendChild(botao);
-        
-        // Remover após 30 segundos
-        setTimeout(() => {
-            if (botao.parentNode) {
-                botao.remove();
-            }
-        }, 30000);
-    }
-
-    window.addEventListener('appinstalled', () => {
-        console.log('🎉 PWA instalado com sucesso!');
-    });
-
-    // ============================================
-    // FIM DA CONFIGURAÇÃO
-    // ============================================
     </script>
 </body>
 </html>
