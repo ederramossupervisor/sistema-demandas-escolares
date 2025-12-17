@@ -1033,26 +1033,78 @@ async function salvarDemanda(e) {
     mostrarLoading();
     
     try {
-        // 1. Preparar dados básicos
-        const escolasSelecionadas = [];
-        if (elementos.escolasCheckboxes) {
-            elementos.escolasCheckboxes.forEach(cb => {
-                if (cb.checked) {
-                    escolasSelecionadas.push(cb.value);
-                }
-            });
+       // 1. Preparar dados básicos
+const escolasSelecionadas = [];
+if (elementos.escolasCheckboxes) {
+    elementos.escolasCheckboxes.forEach(cb => {
+        if (cb.checked) {
+            escolasSelecionadas.push(cb.value);
         }
-        
-        const dadosDemanda = {
-            titulo: elementos.titulo ? elementos.titulo.value.trim() : '',
-            descricao: elementos.descricao ? elementos.descricao.value.trim() : '',
-            escolas: escolasSelecionadas,
-            responsavel: document.querySelector('input[name="responsavel"]:checked') ? 
-                document.querySelector('input[name="responsavel"]:checked').value : '',
-            prazo: elementos.prazo ? elementos.prazo.value : '',
-            enviarEmail: elementos.enviarEmail ? elementos.enviarEmail.checked : false,
-            corpoEmail: elementos.corpoEmail ? elementos.corpoEmail.value.trim() : ''
-        };
+    });
+}
+
+// 1.1. Preparar departamentos selecionados
+const departamentosSelecionados = [];
+const usuarioSalvo = localStorage.getItem('usuario_demandas');
+let usuario = null;
+
+try {
+    usuario = usuarioSalvo ? JSON.parse(usuarioSalvo) : {};
+} catch (e) {
+    usuario = {};
+    console.error('❌ Erro ao ler usuário do localStorage:', e);
+}
+
+console.log('👤 Usuário atual:', {
+    tipo: usuario.tipo_usuario,
+    departamento: usuario.departamento
+});
+
+// Se for supervisor, pega os departamentos selecionados no formulário
+if (usuario.tipo_usuario === 'supervisor') {
+    console.log('👑 Supervisor: capturando departamentos do formulário');
+    
+    const departamentoCheckboxes = document.querySelectorAll('.departamento-checkbox:not(#departamento-todas)');
+    if (departamentoCheckboxes && departamentoCheckboxes.length > 0) {
+        departamentoCheckboxes.forEach(cb => {
+            if (cb.checked) {
+                departamentosSelecionados.push(cb.value);
+                console.log('✅ Departamento selecionado:', cb.value);
+            }
+        });
+    }
+    
+    // Se não selecionou nenhum, usa o departamento do usuário
+    if (departamentosSelecionados.length === 0) {
+        departamentosSelecionados.push(usuario.departamento || 'Supervisão');
+        console.log('⚠️ Nenhum departamento selecionado. Usando padrão:', departamentosSelecionados[0]);
+    }
+} else {
+    // Para não-supervisores, usa apenas o departamento do usuário
+    departamentosSelecionados.push(usuario.departamento || 'Pedagógico');
+    console.log('👤 Não-supervisor. Usando departamento:', departamentosSelecionados[0]);
+}
+
+console.log('📋 Departamentos a serem salvos:', departamentosSelecionados);
+
+const dadosDemanda = {
+    titulo: elementos.titulo ? elementos.titulo.value.trim() : '',
+    descricao: elementos.descricao ? elementos.descricao.value.trim() : '',
+    escolas: escolasSelecionadas,
+    departamento: departamentosSelecionados.join(', '), // NOVO: departamentos
+    responsavel: document.querySelector('input[name="responsavel"]:checked') ? 
+        document.querySelector('input[name="responsavel"]:checked').value : '',
+    prazo: elementos.prazo ? elementos.prazo.value : '',
+    enviarEmail: elementos.enviarEmail ? elementos.enviarEmail.checked : false,
+    corpoEmail: elementos.corpoEmail ? elementos.corpoEmail.value.trim() : ''
+};
+
+console.log('📤 Dados da demanda preparados:', {
+    titulo: dadosDemanda.titulo.substring(0, 50) + '...',
+    escolas: dadosDemanda.escolas.length,
+    departamento: dadosDemanda.departamento,
+    responsavel: dadosDemanda.responsavel
+});
         
         // 2. Fazer upload dos anexos se houver
         let linksAnexos = [];
