@@ -1189,6 +1189,8 @@ console.log('📤 Dados da demanda preparados:', {
  * Valida o formulário antes de enviar
  */
 function validarFormulario() {
+    console.log('🔍 Validando formulário...');
+    
     // Título
     if (!elementos.titulo || !elementos.titulo.value.trim()) {
         mostrarToast('Validação', 'Digite um título para a demanda.', 'warning');
@@ -1225,53 +1227,7 @@ function validarFormulario() {
         if (elementos.prazo) elementos.prazo.focus();
         return false;
     }
-    // Verificar se a data é futura
-const hoje = new Date();
-const prazoSelecionado = new Date(elementos.prazo.value);
-
-if (prazoSelecionado < hoje) {
-    mostrarToast('Validação', 'O prazo deve ser uma data futura.', 'warning');
-    if (elementos.prazo) elementos.prazo.focus();
-    return false;
-}
-
-// ============================================
-// NOVO: VALIDAÇÃO DE DEPARTAMENTOS (APENAS PARA SUPERVISOR)
-// ============================================
-const usuarioSalvoValidacao = localStorage.getItem('usuario_demandas');
-let usuarioValidacao = null;
-
-try {
-    usuarioValidacao = usuarioSalvoValidacao ? JSON.parse(usuarioSalvoValidacao) : {};
-} catch (e) {
-    usuarioValidacao = {};
-}
-
-if (usuarioValidacao.tipo_usuario === 'supervisor') {
-    const departamentoCheckboxes = document.querySelectorAll('.departamento-checkbox:not(#departamento-todas)');
-    const departamentosSelecionados = Array.from(departamentoCheckboxes).filter(cb => cb.checked);
     
-    if (departamentosSelecionados.length === 0) {
-        mostrarToast('Validação', 'Selecione pelo menos um departamento.', 'warning');
-        
-        // Destacar a seção de departamentos
-        const departamentoContainer = document.getElementById('departamento-container');
-        if (departamentoContainer) {
-            departamentoContainer.style.border = '2px solid #e74c3c';
-            departamentoContainer.style.borderRadius = '8px';
-            departamentoContainer.style.padding = '10px';
-            
-            setTimeout(() => {
-                departamentoContainer.style.border = '';
-                departamentoContainer.style.padding = '';
-            }, 3000);
-        }
-        
-        return false;
-    }
-}
-
-return true;
     // Verificar se a data é futura
     const hoje = new Date();
     const prazoSelecionado = new Date(elementos.prazo.value);
@@ -1282,6 +1238,57 @@ return true;
         return false;
     }
     
+    // ============================================
+    // NOVO: VALIDAÇÃO DE DEPARTAMENTOS (APENAS PARA SUPERVISOR)
+    // ============================================
+    const usuarioSalvoValidacao = localStorage.getItem('usuario_demandas');
+    let usuarioValidacao = null;
+    
+    try {
+        usuarioValidacao = usuarioSalvoValidacao ? JSON.parse(usuarioSalvoValidacao) : {};
+    } catch (e) {
+        usuarioValidacao = {};
+        console.error('❌ Erro ao ler usuário para validação:', e);
+    }
+    
+    console.log('👤 Validando para usuário:', {
+        tipo: usuarioValidacao.tipo_usuario,
+        departamento: usuario.departamento
+    });
+    
+    if (usuarioValidacao.tipo_usuario === 'supervisor') {
+        console.log('👑 Validando departamentos para supervisor...');
+        
+        const departamentoContainer = document.getElementById('departamento-container');
+        const departamentoCheckboxes = document.querySelectorAll('.departamento-checkbox:not(#departamento-todas)');
+        const departamentosSelecionados = Array.from(departamentoCheckboxes).filter(cb => cb.checked);
+        
+        console.log('📋 Departamentos selecionados:', departamentosSelecionados.length);
+        
+        if (departamentosSelecionados.length === 0) {
+            mostrarToast('Validação', 'Selecione pelo menos um departamento.', 'warning');
+            
+            // Destacar a seção de departamentos
+            if (departamentoContainer) {
+                departamentoContainer.classList.add('departamento-container-error');
+                
+                // Rolar até a seção
+                departamentoContainer.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+                
+                // Remover destaque após 3 segundos
+                setTimeout(() => {
+                    departamentoContainer.classList.remove('departamento-container-error');
+                }, 3000);
+            }
+            
+            return false;
+        }
+    }
+    
+    console.log('✅ Validação do formulário concluída com sucesso!');
     return true;
 }
 
