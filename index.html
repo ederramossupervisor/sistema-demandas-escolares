@@ -539,22 +539,50 @@ try {
 function ajustarInterfacePorTipoUsuario(tipo) {
     console.log('🎛️ Ajustando interface para:', tipo);
     
+    // Obter dados do usuário logado
+    const usuarioSalvo = localStorage.getItem('usuario_demandas');
+    let usuario = null;
+    try {
+        usuario = usuarioSalvo ? JSON.parse(usuarioSalvo) : {};
+    } catch (e) {
+        console.error('❌ Erro ao ler usuário:', e);
+        return;
+    }
+    
+    console.log('👤 Dados do usuário:', {
+        nome: usuario.nome,
+        tipo: usuario.tipo_usuario,
+        escola: usuario.escola_sre,
+        departamento: usuario.departamento
+    });
+    
+    // Elementos da interface
     const btnNovaDemanda = document.getElementById('btn-nova-demanda');
     const filtroEscola = document.getElementById('filtro-escola');
     const filtroDepartamento = document.getElementById('filtro-departamento');
+    const btnLimparFiltros = document.getElementById('btn-limpar-filtros');
+    const userEmail = document.getElementById('user-email');
     
-    // REGRA 1: Apenas SUPERVISOR pode criar demandas
-    if (tipo !== 'supervisor' && btnNovaDemanda) {
-        console.log('🚫 Removendo botão de nova demanda para:', tipo);
-        btnNovaDemanda.style.display = 'none';
+    // ============================================
+    // REGRA 1: APENAS SUPERVISOR PODE CRIAR DEMANDAS
+    // ============================================
+    if (btnNovaDemanda) {
+        if (tipo === 'supervisor') {
+            btnNovaDemanda.style.display = 'flex';
+            console.log('✅ Supervisor: botão "+" visível');
+        } else {
+            btnNovaDemanda.style.display = 'none';
+            console.log('🚫 Não-supervisor: botão "+" oculto');
+        }
     }
     
-    // REGRA 2: Configurar departamentos conforme tipo de usuário
+    // ============================================
+    // REGRA 2: CONFIGURAR FILTRO DE DEPARTAMENTO
+    // ============================================
     if (filtroDepartamento) {
         // Limpar opções atuais
         filtroDepartamento.innerHTML = '';
         
-        // Opções por tipo de usuário
         let opcoesDepartamento = [];
         
         if (tipo === 'supervisor') {
@@ -566,7 +594,7 @@ function ajustarInterfacePorTipoUsuario(tipo) {
                 { value: 'Pedagógico', text: 'Pedagógico' },
                 { value: 'Supervisão', text: 'Supervisão' }
             ];
-            console.log('👑 Supervisor: acesso a TODOS departamentos');
+            console.log('👑 Supervisor: acesso a TODOS departamentos (5)');
             
         } else if (tipo === 'gestor') {
             // DIRETOR(A): Vê 3 departamentos (exceto Supervisão)
@@ -575,22 +603,22 @@ function ajustarInterfacePorTipoUsuario(tipo) {
                 { value: 'Gestão', text: 'Gestão' },
                 { value: 'Secretaria', text: 'Secretaria' },
                 { value: 'Pedagógico', text: 'Pedagógico' }
+                // NÃO INCLUI Supervisão!
             ];
             console.log('👔 Diretor(a): acesso a 3 departamentos (exceto Supervisão)');
             
         } else if (tipo === 'comum') {
             // USUÁRIO COMUM: Vê APENAS seu departamento
-            const usuario = JSON.parse(localStorage.getItem('usuario_demandas'));
             const deptUsuario = usuario.departamento || 'Pedagógico';
             
             opcoesDepartamento = [
                 { value: deptUsuario, text: deptUsuario }
             ];
-            console.log('👤 Usuário comum: acesso APENAS ao departamento', deptUsuario);
             
             // Filtro FIXO (não pode mudar)
             filtroDepartamento.disabled = true;
-            filtroDepartamento.title = 'Seu departamento é fixo';
+            filtroDepartamento.title = 'Seu departamento é fixo: ' + deptUsuario;
+            console.log('👤 Usuário comum: acesso APENAS ao departamento', deptUsuario);
         }
         
         // Adicionar opções ao select
@@ -602,31 +630,61 @@ function ajustarInterfacePorTipoUsuario(tipo) {
         });
     }
     
-    // REGRA 3: Configurar escola conforme tipo de usuário
-    if (filtroEscola && tipo !== 'supervisor') {
-        const usuario = JSON.parse(localStorage.getItem('usuario_demandas'));
-        const escolaUsuario = usuario.escola_sre || 'EEEFM Pedra Azul';
-        
-        // Para Diretor(a) e Usuário Comum, escola é FIXA
-        filtroEscola.innerHTML = `
-            <option value="${escolaUsuario}">${escolaUsuario}</option>
-        `;
-        filtroEscola.disabled = true;
-        filtroEscola.title = 'Sua escola é fixa';
-        
-        console.log('🏫 Escola fixa para', tipo + ':', escolaUsuario);
+    // ============================================
+    // REGRA 3: CONFIGURAR FILTRO DE ESCOLA
+    // ============================================
+    if (filtroEscola) {
+        if (tipo === 'supervisor') {
+            // SUPERVISOR: Vê TODAS as escolas
+            console.log('👑 Supervisor: acesso a TODAS escolas');
+            // Já está configurado no HTML
+        } else {
+            // DIRETOR(A) e USUÁRIO COMUM: Escola FIXA
+            const escolaUsuario = usuario.escola_sre || 'EEEFM Pedra Azul';
+            
+            // Limpar e definir apenas sua escola
+            filtroEscola.innerHTML = `
+                <option value="${escolaUsuario}">${escolaUsuario}</option>
+            `;
+            
+            // Filtro FIXO (não pode mudar)
+            filtroEscola.disabled = true;
+            filtroEscola.title = 'Sua escola é fixa: ' + escolaUsuario;
+            console.log('🏫 Escola fixa para', tipo + ':', escolaUsuario);
+        }
     }
     
-    // REGRA 4: Configurar botão de limpar filtros
-    const btnLimparFiltros = document.getElementById('btn-limpar-filtros');
-    if (btnLimparFiltros && tipo !== 'supervisor') {
-        btnLimparFiltros.disabled = true;
-        btnLimparFiltros.title = 'Filtros são fixos para seu tipo de usuário';
+    // ============================================
+    // REGRA 4: BOTÃO LIMPAR FILTROS
+    // ============================================
+    if (btnLimparFiltros) {
+        if (tipo === 'supervisor') {
+            btnLimparFiltros.disabled = false;
+            btnLimparFiltros.title = 'Limpar todos os filtros';
+            console.log('✅ Supervisor: botão limpar filtros habilitado');
+        } else {
+            btnLimparFiltros.disabled = true;
+            btnLimparFiltros.title = 'Filtros são fixos para seu tipo de usuário';
+            console.log('🚫 Não-supervisor: botão limpar filtros desabilitado');
+        }
+    }
+    
+    // ============================================
+    // REGRA 5: MOSTRAR TIPO DE USUÁRIO NO CABEÇALHO
+    // ============================================
+    if (userEmail) {
+        let tipoTexto = '';
+        
+        if (tipo === 'supervisor') tipoTexto = 'Supervisor';
+        else if (tipo === 'gestor') tipoTexto = 'Diretor(a)';
+        else if (tipo === 'comum') tipoTexto = 'Usuário';
+        
+        userEmail.textContent = `${tipoTexto} • ${usuario.escola_sre || ''}`;
+        console.log('📋 Cabeçalho atualizado:', tipoTexto);
     }
     
     console.log('✅ Interface ajustada para tipo:', tipo);
-}
-        
+}        
         // A. Detectar se é PWA instalado
         if (window.matchMedia('(display-mode: standalone)').matches) {
             console.log('📱 Executando como PWA instalado');
