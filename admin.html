@@ -514,642 +514,387 @@
     <div class="toast-container" id="toast-container"></div>
 
     <!-- SCRIPTS -->
-    <script src="src/js/googleAppsScript.js"></script>
-    <script src="src/js/googleSheets.js"></script>
+   <script src="src/js/googleAppsScript.js"></script>
+   <script src="src/js/googleSheets.js"></script>
+   <script src="src/js/admin.js"></script>
     
     <!-- SCRIPT PRINCIPAL DO PAINEL ADMIN -->
-    <script>
-        // ============================================
-        // SISTEMA DE PAINEL DO SUPERVISOR
-        // ============================================
+<script>
+// ============================================
+// PAINEL DO SUPERVISOR - SCRIPT PRINCIPAL
+// Compatível com sistema existente
+// ============================================
 
-        // Estado da aplicação
-        const adminState = {
-            solicitacoes: [],
-            usuarios: [],
-            filtros: {
-                solicitacoes: '',
-                usuarios: '',
-                tipo: '',
-                departamento: ''
-            }
-        };
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('👑 Painel do Supervisor iniciando...');
+    
+    // 1. Verificar se é supervisor
+    const usuarioSalvo = localStorage.getItem('usuario_demandas');
+    if (!usuarioSalvo) {
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    let usuario = null;
+    try {
+        usuario = JSON.parse(usuarioSalvo);
+        if (usuario.tipo_usuario !== 'supervisor') {
+            alert('Apenas supervisores podem acessar este painel.');
+            window.location.href = 'index.html';
+            return;
+        }
+    } catch (e) {
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    // 2. Atualizar nome do usuário
+    const userName = document.getElementById('user-name');
+    if (userName) {
+        userName.textContent = usuario.nome || 'Supervisor';
+    }
+    
+    // 3. Esconder splash screen
+    setTimeout(() => {
+        const splash = document.getElementById('splash-screen');
+        if (splash) {
+            splash.classList.add('hidden');
+        }
+    }, 1000);
+    
+    // 4. Carregar dados
+    await carregarDados();
+    
+    console.log('✅ Painel do Supervisor pronto!');
+});
 
-        // Inicialização
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('👑 Painel do Supervisor iniciando...');
+// ============================================
+// FUNÇÕES DE CARREGAMENTO
+// ============================================
+
+async function carregarDados() {
+    mostrarLoading(true);
+    
+    try {
+        // 1. Testar conexão
+        const conexao = await AdminSystem.testarConexao();
+        if (!conexao.online) {
+            AdminSystem.mostrarToast('Erro', 'Servidor offline', 'error');
+            return;
+        }
+        
+        // 2. Carregar solicitações pendentes
+        await carregarSolicitacoes();
+        
+        // 3. Carregar usuários cadastrados
+        await carregarUsuarios();
+        
+    } catch (erro) {
+        console.error('❌ Erro ao carregar dados:', erro);
+        AdminSystem.mostrarToast('Erro', 'Não foi possível carregar os dados', 'error');
+    } finally {
+        mostrarLoading(false);
+    }
+}
+
+async function carregarSolicitacoes() {
+    try {
+        const resultado = await AdminSystem.listarSolicitacoesPendentes();
+        
+        const container = document.getElementById('solicitacoes-body');
+        const emptyState = document.getElementById('solicitacoes-empty');
+        
+        if (!container) return;
+        
+        if (!resultado.sucesso || !resultado.solicitacoes || resultado.solicitacoes.length === 0) {
+            if (emptyState) emptyState.style.display = 'block';
+            container.innerHTML = '';
+            return;
+        }
+        
+        if (emptyState) emptyState.style.display = 'none';
+        
+        let html = '';
+        resultado.solicitacoes.forEach((solicitacao, index) => {
+            const data = AdminSystem.formatarData(solicitacao.data_solicitacao || solicitacao.timestamp);
             
-            // Verificar se é supervisor
-            const usuarioSalvo = localStorage.getItem('usuario_demandas');
-            if (!usuarioSalvo) {
-                window.location.href = 'login.html';
-                return;
-            }
-            
-            let usuario = null;
-            try {
-                usuario = JSON.parse(usuarioSalvo);
-                if (usuario.tipo_usuario !== 'supervisor') {
-                    mostrarToast('Acesso Negado', 'Apenas supervisores podem acessar este painel.', 'error');
-                    setTimeout(() => window.location.href = 'index.html', 2000);
-                    return;
-                }
-            } catch (e) {
-                window.location.href = 'login.html';
-                return;
-            }
-            
-            // Esconder splash screen após 1.5s
-            setTimeout(() => {
-                const splash = document.getElementById('splash-screen');
-                if (splash) {
-                    splash.classList.add('hidden');
-                    setTimeout(() => {
-                        if (splash.parentNode) {
-                            splash.remove();
-                        }
-                    }, 500);
-                }
-            }, 1500);
-            
-            // Carregar dados
-            await carregarDados();
+            html += `
+                <tr>
+                    <td>${data}</td>
+                    <td><strong>${solicitacao.nome || 'N/A'}</strong></td>
+                    <td>${solicitacao.email || 'N/A'}</td>
+                    <td>${solicitacao.telefone || 'N/A'}</td>
+                    <td>${solicitacao.mensagem || 'Sem mensagem'}</td>
+                    <td>
+                        <button class="btn btn-success btn-small" onclick="abrirModalAutorizar('${solicitacao.email}', '${solicitacao.nome || ''}', '${solicitacao.telefone || ''}', '${solicitacao.mensagem || ''}')">
+                            <i class="fas fa-check"></i> Autorizar
+                        </button>
+                        <button class="btn btn-danger btn-small" onclick="recusarSolicitacao('${solicitacao.email}')">
+                            <i class="fas fa-times"></i> Recusar
+                        </button>
+                    </td>
+                </tr>
+            `;
         });
+        
+        container.innerHTML = html;
+        
+    } catch (erro) {
+        console.error('❌ Erro ao carregar solicitações:', erro);
+    }
+}
 
-        // ============================================
-        // FUNÇÕES DE CARREGAMENTO DE DADOS
-        // ============================================
-
-        async function carregarDados() {
-            mostrarLoading(true);
-            
-            try {
-                // Carregar solicitações pendentes
-                await carregarSolicitacoes();
-                
-                // Carregar usuários cadastrados
-                await carregarUsuarios();
-                
-                // Atualizar estatísticas
-                atualizarEstatisticas();
-                
-            } catch (erro) {
-                console.error('❌ Erro ao carregar dados:', erro);
-                mostrarToast('Erro', 'Não foi possível carregar os dados.', 'error');
-            } finally {
-                mostrarLoading(false);
-            }
+async function carregarUsuarios() {
+    try {
+        const resultado = await AdminSystem.listarUsuarios();
+        
+        const container = document.getElementById('usuarios-body');
+        const emptyState = document.getElementById('usuarios-empty');
+        
+        if (!container) return;
+        
+        if (!resultado.sucesso || !resultado.usuarios || resultado.usuarios.length === 0) {
+            if (emptyState) emptyState.style.display = 'block';
+            container.innerHTML = '';
+            return;
         }
-
-        async function carregarSolicitacoes() {
-            try {
-                const dados = {
-                    acao: 'listarSolicitacoesPendentes'
-                };
-                
-                const resultado = await enviarParaGoogleAppsScript(dados);
-                
-                if (resultado.sucesso) {
-                    adminState.solicitacoes = resultado.solicitacoes || [];
-                    renderizarSolicitacoes();
-                } else {
-                    throw new Error(resultado.erro || 'Erro desconhecido');
-                }
-                
-            } catch (erro) {
-                console.error('❌ Erro ao carregar solicitações:', erro);
-                adminState.solicitacoes = [];
-                renderizarSolicitacoes();
-            }
-        }
-
-        async function carregarUsuarios() {
-            try {
-                const dados = {
-                    acao: 'listarUsuarios'
-                };
-                
-                const resultado = await enviarParaGoogleAppsScript(dados);
-                
-                if (resultado.sucesso) {
-                    adminState.usuarios = resultado.usuarios || [];
-                    renderizarUsuarios();
-                } else {
-                    throw new Error(resultado.erro || 'Erro desconhecido');
-                }
-                
-            } catch (erro) {
-                console.error('❌ Erro ao carregar usuários:', erro);
-                adminState.usuarios = [];
-                renderizarUsuarios();
-            }
-        }
-
-        // ============================================
-        // FUNÇÕES DE RENDERIZAÇÃO
-        // ============================================
-
-        function renderizarSolicitacoes() {
-            const tbody = document.getElementById('solicitacoes-body');
-            const emptyState = document.getElementById('solicitacoes-empty');
+        
+        if (emptyState) emptyState.style.display = 'none';
+        
+        let html = '';
+        resultado.usuarios.forEach((usuario, index) => {
+            let tipoClass = 'tipo-comum';
+            let tipoTexto = 'Usuário';
             
-            if (!tbody) return;
-            
-            // Aplicar filtro
-            let solicitacoes = adminState.solicitacoes;
-            if (adminState.filtros.solicitacoes) {
-                const termo = adminState.filtros.solicitacoes.toLowerCase();
-                solicitacoes = solicitacoes.filter(s => 
-                    (s.nome && s.nome.toLowerCase().includes(termo)) ||
-                    (s.email && s.email.toLowerCase().includes(termo)) ||
-                    (s.mensagem && s.mensagem.toLowerCase().includes(termo))
-                );
+            if (usuario.tipo_usuario === 'supervisor') {
+                tipoClass = 'tipo-supervisor';
+                tipoTexto = 'Supervisor';
+            } else if (usuario.tipo_usuario === 'gestor') {
+                tipoClass = 'tipo-gestor';
+                tipoTexto = 'Diretor(a)';
             }
             
-            if (solicitacoes.length === 0) {
-                tbody.innerHTML = '';
-                emptyState.style.display = 'block';
-                return;
-            }
-            
-            emptyState.style.display = 'none';
-            
-            let html = '';
-            solicitacoes.forEach((solicitacao, index) => {
-                const data = new Date(solicitacao.data_solicitacao || solicitacao.timestamp || new Date());
-                const dataFormatada = data.toLocaleDateString('pt-BR');
-                
-                html += `
-                    <tr>
-                        <td>${dataFormatada}</td>
-                        <td><strong>${solicitacao.nome || 'N/A'}</strong></td>
-                        <td>${solicitacao.email || 'N/A'}</td>
-                        <td>${solicitacao.telefone || 'N/A'}</td>
-                        <td>${solicitacao.mensagem || 'Sem mensagem'}</td>
-                        <td>
-                            <div class="btn-group">
-                                <button class="btn btn-success btn-small" onclick="abrirModalAutorizar('${solicitacao.email}', '${solicitacao.nome || ''}', '${solicitacao.telefone || ''}', '${solicitacao.mensagem || ''}')">
-                                    <i class="fas fa-check"></i> Autorizar
-                                </button>
-                                <button class="btn btn-danger btn-small" onclick="recusarSolicitacao('${solicitacao.email}')">
-                                    <i class="fas fa-times"></i> Recusar
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            });
-            
-            tbody.innerHTML = html;
-        }
-
-        function renderizarUsuarios() {
-            const tbody = document.getElementById('usuarios-body');
-            const emptyState = document.getElementById('usuarios-empty');
-            
-            if (!tbody) return;
-            
-            // Aplicar filtros
-            let usuarios = adminState.usuarios;
-            
-            if (adminState.filtros.usuarios) {
-                const termo = adminState.filtros.usuarios.toLowerCase();
-                usuarios = usuarios.filter(u => 
-                    (u.nome && u.nome.toLowerCase().includes(termo)) ||
-                    (u.email && u.email.toLowerCase().includes(termo)) ||
-                    (u.departamento && u.departamento.toLowerCase().includes(termo))
-                );
-            }
-            
-            if (adminState.filtros.tipo) {
-                usuarios = usuarios.filter(u => u.tipo_usuario === adminState.filtros.tipo);
-            }
-            
-            if (adminState.filtros.departamento) {
-                usuarios = usuarios.filter(u => u.departamento === adminState.filtros.departamento);
-            }
-            
-            if (usuarios.length === 0) {
-                tbody.innerHTML = '';
-                emptyState.style.display = 'block';
-                return;
-            }
-            
-            emptyState.style.display = 'none';
-            
-            let html = '';
-            usuarios.forEach((usuario, index) => {
-                let tipoClass = 'tipo-comum';
-                let tipoTexto = 'Usuário Comum';
-                
-                if (usuario.tipo_usuario === 'supervisor') {
-                    tipoClass = 'tipo-supervisor';
-                    tipoTexto = 'Supervisor';
-                } else if (usuario.tipo_usuario === 'gestor') {
-                    tipoClass = 'tipo-gestor';
-                    tipoTexto = 'Diretor(a)';
-                }
-                
-                const status = usuario.autorizado === 'sim' ? 'Autorizado' : 'Pendente';
-                const statusClass = usuario.autorizado === 'sim' ? 'status-autorizado' : 'status-pendente';
-                
-                html += `
-                    <tr>
-                        <td><strong>${usuario.nome || 'N/A'}</strong></td>
-                        <td>${usuario.email || 'N/A'}</td>
-                        <td><span class="tipo-badge ${tipoClass}">${tipoTexto}</span></td>
-                        <td>${usuario.departamento || 'N/A'}</td>
-                        <td>${usuario.escola_sre || 'N/A'}</td>
-                        <td><span class="status-badge ${statusClass}">${status}</span></td>
-                        <td>
-                            <div class="btn-group">
-                                <button class="btn btn-primary btn-small" onclick="abrirModalEditar('${usuario.email}', '${usuario.nome || ''}', '${usuario.tipo_usuario || 'comum'}', '${usuario.departamento || ''}', '${usuario.escola_sre || ''}')">
-                                    <i class="fas fa-edit"></i> Editar
-                                </button>
-                                <button class="btn btn-warning btn-small" onclick="resetarSenha('${usuario.email}', '${usuario.nome || ''}')">
-                                    <i class="fas fa-key"></i> Resetar Senha
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            });
-            
-            tbody.innerHTML = html;
-        }
-
-        function atualizarEstatisticas() {
-            const container = document.getElementById('estatisticas');
-            if (!container) return;
-            
-            const totalSolicitacoes = adminState.solicitacoes.length;
-            const totalUsuarios = adminState.usuarios.length;
-            
-            const tipos = {
-                supervisor: adminState.usuarios.filter(u => u.tipo_usuario === 'supervisor').length,
-                gestor: adminState.usuarios.filter(u => u.tipo_usuario === 'gestor').length,
-                comum: adminState.usuarios.filter(u => u.tipo_usuario === 'comum').length
-            };
-            
-            const departamentos = {};
-            adminState.usuarios.forEach(u => {
-                if (u.departamento) {
-                    departamentos[u.departamento] = (departamentos[u.departamento] || 0) + 1;
-                }
-            });
-            
-            let html = `
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
-                    <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; border-left: 4px solid #3498db;">
-                        <h3 style="margin: 0 0 10px 0; color: #2c3e50;">Solicitações Pendentes</h3>
-                        <p style="font-size: 2rem; font-weight: bold; color: #3498db; margin: 0;">${totalSolicitacoes}</p>
-                    </div>
-                    
-                    <div style="background: #e8f8f0; padding: 20px; border-radius: 8px; border-left: 4px solid #27ae60;">
-                        <h3 style="margin: 0 0 10px 0; color: #2c3e50;">Total de Usuários</h3>
-                        <p style="font-size: 2rem; font-weight: bold; color: #27ae60; margin: 0;">${totalUsuarios}</p>
-                    </div>
-                    
-                    <div style="background: #fef9e7; padding: 20px; border-radius: 8px; border-left: 4px solid #f39c12;">
-                        <h3 style="margin: 0 0 10px 0; color: #2c3e50;">Distribuição por Tipo</h3>
-                        <p style="margin: 5px 0; color: #21618c;"><i class="fas fa-user-tie"></i> Supervisores: ${tipos.supervisor}</p>
-                        <p style="margin: 5px 0; color: #196f3d;"><i class="fas fa-user-tie"></i> Diretores: ${tipos.gestor}</p>
-                        <p style="margin: 5px 0; color: #9c640c;"><i class="fas fa-user"></i> Usuários Comuns: ${tipos.comum}</p>
-                    </div>
-                </div>
+            html += `
+                <tr>
+                    <td><strong>${usuario.nome || 'N/A'}</strong></td>
+                    <td>${usuario.email || 'N/A'}</td>
+                    <td><span class="tipo-badge ${tipoClass}">${tipoTexto}</span></td>
+                    <td>${usuario.departamento || 'N/A'}</td>
+                    <td>${usuario.escola_sre || 'N/A'}</td>
+                    <td>
+                        <button class="btn btn-primary btn-small" onclick="abrirModalEditar('${usuario.email}', '${usuario.nome || ''}', '${usuario.tipo_usuario || 'comum'}', '${usuario.departamento || ''}', '${usuario.escola_sre || ''}')">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button class="btn btn-warning btn-small" onclick="resetarSenhaUsuario('${usuario.email}', '${usuario.nome || ''}')">
+                            <i class="fas fa-key"></i> Resetar Senha
+                        </button>
+                    </td>
+                </tr>
             `;
-            
-            container.innerHTML = html;
-        }
+        });
+        
+        container.innerHTML = html;
+        
+    } catch (erro) {
+        console.error('❌ Erro ao carregar usuários:', erro);
+    }
+}
 
-        // ============================================
-        // FUNÇÕES DE FILTRO
-        // ============================================
+// ============================================
+// FUNÇÕES DE INTERAÇÃO
+// ============================================
 
-        function filtrarSolicitacoes() {
-            const searchBox = document.getElementById('search-solicitacoes');
-            adminState.filtros.solicitacoes = searchBox ? searchBox.value : '';
-            renderizarSolicitacoes();
-        }
+function abrirModalAutorizar(email, nome, telefone, mensagem) {
+    document.getElementById('modal-nome').textContent = nome || 'N/A';
+    document.getElementById('modal-email').textContent = email || 'N/A';
+    document.getElementById('modal-telefone').textContent = telefone || 'N/A';
+    document.getElementById('modal-mensagem').textContent = mensagem || 'Sem mensagem';
+    document.getElementById('modal-email-hidden').value = email;
+    
+    // Resetar formulário
+    document.getElementById('modal-tipo').value = 'comum';
+    document.getElementById('modal-departamento').value = 'Pedagógico';
+    document.getElementById('modal-escola').value = 'EEEFM Pedra Azul';
+    document.getElementById('modal-senha').value = AdminSystem.gerarSenhaAleatoria();
+    
+    document.getElementById('modal-autorizar').style.display = 'flex';
+}
 
-        function filtrarUsuarios() {
-            const searchBox = document.getElementById('search-usuarios');
-            const filterTipo = document.getElementById('filter-tipo');
-            const filterDepartamento = document.getElementById('filter-departamento');
-            
-            adminState.filtros.usuarios = searchBox ? searchBox.value : '';
-            adminState.filtros.tipo = filterTipo ? filterTipo.value : '';
-            adminState.filtros.departamento = filterDepartamento ? filterDepartamento.value : '';
-            
-            renderizarUsuarios();
-        }
+function fecharModalAutorizar() {
+    document.getElementById('modal-autorizar').style.display = 'none';
+}
 
-        // ============================================
-        // FUNÇÕES DE AUTORIZAÇÃO
-        // ============================================
-
-        function abrirModalAutorizar(email, nome, telefone, mensagem) {
-            document.getElementById('modal-email-hidden').value = email;
-            document.getElementById('modal-nome').textContent = nome || 'N/A';
-            document.getElementById('modal-email').textContent = email || 'N/A';
-            document.getElementById('modal-telefone').textContent = telefone || 'N/A';
-            document.getElementById('modal-mensagem').textContent = mensagem || 'Sem mensagem';
-            
-            // Resetar formulário
-            document.getElementById('modal-tipo').value = 'comum';
-            document.getElementById('modal-departamento').value = 'Pedagógico';
-            document.getElementById('modal-escola').value = 'EEEFM Pedra Azul';
-            document.getElementById('modal-senha').value = '123456';
-            
-            document.getElementById('modal-autorizar').style.display = 'flex';
-        }
-
-        function fecharModalAutorizar() {
-            document.getElementById('modal-autorizar').style.display = 'none';
-        }
-
-        async function autorizarUsuario() {
-            const email = document.getElementById('modal-email-hidden').value;
-            const tipo = document.getElementById('modal-tipo').value;
-            const departamento = document.getElementById('modal-departamento').value;
-            const escola = document.getElementById('modal-escola').value;
-            const senha = document.getElementById('modal-senha').value;
-            const nome = document.getElementById('modal-nome').textContent;
-            
-            // Validação
-            if (!tipo || !departamento || !escola) {
-                mostrarToast('Validação', 'Preencha todos os campos obrigatórios.', 'warning');
-                return;
-            }
-            
-            mostrarLoading(true);
-            
-            try {
-                const dados = {
-                    acao: 'autorizarUsuario',
-                    email: email,
-                    nome: nome,
-                    telefone: document.getElementById('modal-telefone').textContent,
-                    tipo_usuario: tipo,
-                    departamento: departamento,
-                    escola_sre: escola,
-                    senha: senha
-                };
-                
-                const resultado = await enviarParaGoogleAppsScript(dados);
-                
-                if (resultado.sucesso) {
-                    mostrarToast('Sucesso', `Usuário ${email} autorizado com sucesso!`, 'success');
-                    
-                    // Fechar modal
-                    fecharModalAutorizar();
-                    
-                    // Atualizar dados
-                    await carregarDados();
-                    
-                } else {
-                    throw new Error(resultado.erro || 'Erro desconhecido');
-                }
-                
-            } catch (erro) {
-                console.error('❌ Erro ao autorizar usuário:', erro);
-                mostrarToast('Erro', `Falha ao autorizar usuário: ${erro.message}`, 'error');
-            } finally {
-                mostrarLoading(false);
-            }
-        }
-
-        async function recusarSolicitacao(email) {
-            if (!confirm(`Deseja recusar a solicitação de ${email}?`)) {
-                return;
-            }
-            
-            mostrarLoading(true);
-            
-            try {
-                // Marcar como recusado na planilha
-                const dados = {
-                    acao: 'recusarSolicitacao', // Você precisa adicionar esta função no Apps Script
-                    email: email
-                };
-                
-                const resultado = await enviarParaGoogleAppsScript(dados);
-                
-                if (resultado.sucesso) {
-                    mostrarToast('Sucesso', `Solicitação de ${email} recusada.`, 'success');
-                    await carregarSolicitacoes();
-                    atualizarEstatisticas();
-                } else {
-                    // Se não tiver a função específica, apenas remover da lista local
-                    adminState.solicitacoes = adminState.solicitacoes.filter(s => s.email !== email);
-                    renderizarSolicitacoes();
-                    atualizarEstatisticas();
-                    mostrarToast('Aviso', 'Solicitação removida localmente.', 'info');
-                }
-                
-            } catch (erro) {
-                console.error('❌ Erro ao recusar solicitação:', erro);
-                mostrarToast('Erro', 'Não foi possível recusar a solicitação.', 'error');
-            } finally {
-                mostrarLoading(false);
-            }
-        }
-
-        // ============================================
-        // FUNÇÕES DE EDIÇÃO DE USUÁRIOS
-        // ============================================
-
-        function abrirModalEditar(email, nome, tipo, departamento, escola) {
-            document.getElementById('edit-email-hidden').value = email;
-            document.getElementById('edit-nome').value = nome || '';
-            document.getElementById('edit-email').value = email || '';
-            document.getElementById('edit-tipo').value = tipo || 'comum';
-            document.getElementById('edit-departamento').value = departamento || 'Pedagógico';
-            document.getElementById('edit-escola').value = escola || 'EEEFM Pedra Azul';
-            document.getElementById('edit-senha').value = '';
-            
-            document.getElementById('modal-editar').style.display = 'flex';
-        }
-
-        function fecharModalEditar() {
-            document.getElementById('modal-editar').style.display = 'none';
-        }
-
-        function gerarSenha() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-            let senha = '';
-            for (let i = 0; i < 8; i++) {
-                senha += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            document.getElementById('edit-senha').value = senha;
-        }
-
-        async function salvarEdicaoUsuario() {
-            const email = document.getElementById('edit-email-hidden').value;
-            const tipo = document.getElementById('edit-tipo').value;
-            const departamento = document.getElementById('edit-departamento').value;
-            const escola = document.getElementById('edit-escola').value;
-            const senha = document.getElementById('edit-senha').value;
-            
-            mostrarLoading(true);
-            
-            try {
-                const dados = {
-                    acao: 'alterarUsuario',
-                    email: email,
-                    tipo_usuario: tipo,
-                    departamento: departamento,
-                    escola_sre: escola
-                };
-                
-                // Se tiver senha nova, adicionar ao dados
-                if (senha && senha.trim() !== '') {
-                    dados.senha = senha;
-                }
-                
-                const resultado = await enviarParaGoogleAppsScript(dados);
-                
-                if (resultado.sucesso) {
-                    mostrarToast('Sucesso', `Usuário ${email} atualizado com sucesso!`, 'success');
-                    
-                    // Fechar modal
-                    fecharModalEditar();
-                    
-                    // Atualizar dados
-                    await carregarDados();
-                    
-                } else {
-                    throw new Error(resultado.erro || 'Erro desconhecido');
-                }
-                
-            } catch (erro) {
-                console.error('❌ Erro ao editar usuário:', erro);
-                mostrarToast('Erro', `Falha ao editar usuário: ${erro.message}`, 'error');
-            } finally {
-                mostrarLoading(false);
-            }
-        }
-
-        async function resetarSenha(email, nome) {
-            const novaSenha = prompt(`Digite a nova senha para ${nome} (${email}):`, '123456');
-            
-            if (!novaSenha || novaSenha.trim() === '') {
-                mostrarToast('Cancelado', 'Operação cancelada.', 'info');
-                return;
-            }
-            
-            if (!confirm(`Confirmar reset de senha para:\n\n${nome}\n${email}\n\nNova senha: ${novaSenha}`)) {
-                return;
-            }
-            
-            mostrarLoading(true);
-            
-            try {
-                const dados = {
-                    acao: 'resetarSenha', // Você precisa adicionar esta função no Apps Script
-                    email: email,
-                    senha: novaSenha
-                };
-                
-                const resultado = await enviarParaGoogleAppsScript(dados);
-                
-                if (resultado.sucesso) {
-                    mostrarToast('Sucesso', `Senha de ${email} resetada com sucesso!`, 'success');
-                    
-                    // Enviar e-mail com a nova senha
-                    const dadosEmail = {
-                        acao: 'enviarEmailSenha',
-                        email: email,
-                        nome: nome,
-                        senha: novaSenha
-                    };
-                    
-                    try {
-                        await enviarParaGoogleAppsScript(dadosEmail);
-                    } catch (erroEmail) {
-                        console.warn('⚠️ Não foi possível enviar e-mail:', erroEmail);
-                    }
-                    
-                } else {
-                    throw new Error(resultado.erro || 'Erro desconhecido');
-                }
-                
-            } catch (erro) {
-                console.error('❌ Erro ao resetar senha:', erro);
-                mostrarToast('Erro', `Falha ao resetar senha: ${erro.message}`, 'error');
-            } finally {
-                mostrarLoading(false);
-            }
-        }
-
-        // ============================================
-        // FUNÇÕES UTILITÁRIAS
-        // ============================================
-
-        function mostrarLoading(mostrar) {
-            const loading = document.getElementById('loading');
-            if (loading) {
-                loading.style.display = mostrar ? 'flex' : 'none';
-            }
-            
-            const mainContainer = document.getElementById('main-container');
-            if (mainContainer) {
-                mainContainer.style.opacity = mostrar ? '0.5' : '1';
-                mainContainer.style.pointerEvents = mostrar ? 'none' : 'auto';
-            }
-        }
-
-        function mostrarToast(titulo, mensagem, tipo = 'info') {
-            const container = document.getElementById('toast-container');
-            if (!container) return;
-            
-            const toast = document.createElement('div');
-            toast.className = `toast ${tipo}`;
-            
-            let icon = 'fas fa-info-circle';
-            if (tipo === 'success') icon = 'fas fa-check-circle';
-            if (tipo === 'error') icon = 'fas fa-exclamation-circle';
-            if (tipo === 'warning') icon = 'fas fa-exclamation-triangle';
-            
-            toast.innerHTML = `
-                <div class="toast-icon">
-                    <i class="${icon}"></i>
-                </div>
-                <div class="toast-content">
-                    <div class="toast-title">${titulo}</div>
-                    <div class="toast-message">${mensagem}</div>
-                </div>
-                <button class="toast-close" onclick="this.parentElement.remove()">
-                    <i class="fas fa-times"></i>
-                </button>
-            `;
-            
-            container.appendChild(toast);
-            
-            setTimeout(() => {
-                if (toast.parentElement) {
-                    toast.remove();
-                }
-            }, 5000);
-        }
-
-        // Função global para atualizar dados
-        window.atualizarDados = async function() {
+async function autorizarUsuario() {
+    const email = document.getElementById('modal-email-hidden').value;
+    const tipo = document.getElementById('modal-tipo').value;
+    const departamento = document.getElementById('modal-departamento').value;
+    const escola = document.getElementById('modal-escola').value;
+    const senha = document.getElementById('modal-senha').value;
+    const nome = document.getElementById('modal-nome').textContent;
+    
+    if (!tipo || !departamento || !escola) {
+        AdminSystem.mostrarToast('Validação', 'Preencha todos os campos', 'warning');
+        return;
+    }
+    
+    const confirmacao = confirm(`Autorizar usuário?\n\nNome: ${nome}\nEmail: ${email}\nTipo: ${tipo}\nDepartamento: ${departamento}\nEscola: ${escola}`);
+    
+    if (!confirmacao) return;
+    
+    mostrarLoading(true);
+    
+    try {
+        const resultado = await AdminSystem.autorizarUsuario(email, nome, tipo, departamento, escola, senha);
+        
+        if (resultado.sucesso) {
+            AdminSystem.mostrarToast('Sucesso', `Usuário ${email} autorizado!`, 'success');
+            fecharModalAutorizar();
             await carregarDados();
-            mostrarToast('Atualizado', 'Dados atualizados com sucesso!', 'success');
-        };
+        } else {
+            AdminSystem.mostrarToast('Erro', resultado.erro || 'Erro ao autorizar', 'error');
+        }
+    } catch (erro) {
+        AdminSystem.mostrarToast('Erro', 'Falha na comunicação', 'error');
+    } finally {
+        mostrarLoading(false);
+    }
+}
 
-        // Exportar funções para uso global
-        window.mostrarToast = mostrarToast;
-        window.filtrarSolicitacoes = filtrarSolicitacoes;
-        window.filtrarUsuarios = filtrarUsuarios;
-        window.autorizarUsuario = autorizarUsuario;
-        window.recusarSolicitacao = recusarSolicitacao;
-        window.gerarSenha = gerarSenha;
-        window.salvarEdicaoUsuario = salvarEdicaoUsuario;
-        window.resetarSenha = resetarSenha;
+async function recusarSolicitacao(email) {
+    if (!confirm(`Recusar solicitação de ${email}?`)) return;
+    
+    mostrarLoading(true);
+    
+    try {
+        const resultado = await AdminSystem.recusarSolicitacao(email);
+        
+        if (resultado.sucesso) {
+            AdminSystem.mostrarToast('Sucesso', 'Solicitação recusada', 'success');
+            await carregarSolicitacoes();
+        } else {
+            AdminSystem.mostrarToast('Erro', resultado.erro || 'Erro ao recusar', 'error');
+        }
+    } catch (erro) {
+        AdminSystem.mostrarToast('Erro', 'Falha na comunicação', 'error');
+    } finally {
+        mostrarLoading(false);
+    }
+}
 
-        console.log('✅ Painel do Supervisor carregado com sucesso!');
-    </script>
+function abrirModalEditar(email, nome, tipo, departamento, escola) {
+    document.getElementById('edit-email-hidden').value = email;
+    document.getElementById('edit-nome').value = nome || '';
+    document.getElementById('edit-email').value = email || '';
+    document.getElementById('edit-tipo').value = tipo || 'comum';
+    document.getElementById('edit-departamento').value = departamento || 'Pedagógico';
+    document.getElementById('edit-escola').value = escola || 'EEEFM Pedra Azul';
+    document.getElementById('edit-senha').value = '';
+    
+    document.getElementById('modal-editar').style.display = 'flex';
+}
+
+function fecharModalEditar() {
+    document.getElementById('modal-editar').style.display = 'none';
+}
+
+function gerarSenha() {
+    document.getElementById('edit-senha').value = AdminSystem.gerarSenhaAleatoria();
+}
+
+async function salvarEdicaoUsuario() {
+    const email = document.getElementById('edit-email-hidden').value;
+    const tipo = document.getElementById('edit-tipo').value;
+    const departamento = document.getElementById('edit-departamento').value;
+    const escola = document.getElementById('edit-escola').value;
+    const senha = document.getElementById('edit-senha').value;
+    
+    const confirmacao = confirm(`Salvar alterações para ${email}?\n\nTipo: ${tipo}\nDepartamento: ${departamento}\nEscola: ${escola}`);
+    
+    if (!confirmacao) return;
+    
+    mostrarLoading(true);
+    
+    try {
+        const resultado = await AdminSystem.alterarUsuario(email, tipo, departamento, escola, senha);
+        
+        if (resultado.sucesso) {
+            AdminSystem.mostrarToast('Sucesso', 'Usuário atualizado!', 'success');
+            fecharModalEditar();
+            await carregarUsuarios();
+        } else {
+            AdminSystem.mostrarToast('Erro', resultado.erro || 'Erro ao atualizar', 'error');
+        }
+    } catch (erro) {
+        AdminSystem.mostrarToast('Erro', 'Falha na comunicação', 'error');
+    } finally {
+        mostrarLoading(false);
+    }
+}
+
+async function resetarSenhaUsuario(email, nome) {
+    const novaSenha = prompt(`Nova senha para ${nome} (${email}):`, AdminSystem.gerarSenhaAleatoria());
+    
+    if (!novaSenha || novaSenha.trim() === '') {
+        AdminSystem.mostrarToast('Cancelado', 'Operação cancelada', 'info');
+        return;
+    }
+    
+    if (!confirm(`Resetar senha para ${email}?\nNova senha: ${novaSenha}`)) return;
+    
+    mostrarLoading(true);
+    
+    try {
+        const resultado = await AdminSystem.resetarSenha(email, novaSenha);
+        
+        if (resultado.sucesso) {
+            AdminSystem.mostrarToast('Sucesso', 'Senha resetada!', 'success');
+        } else {
+            AdminSystem.mostrarToast('Erro', resultado.erro || 'Erro ao resetar senha', 'error');
+        }
+    } catch (erro) {
+        AdminSystem.mostrarToast('Erro', 'Falha na comunicação', 'error');
+    } finally {
+        mostrarLoading(false);
+    }
+}
+
+// ============================================
+// FUNÇÕES UTILITÁRIAS
+// ============================================
+
+function mostrarLoading(mostrar) {
+    const loading = document.getElementById('loading');
+    const mainContainer = document.getElementById('main-container');
+    
+    if (loading) {
+        loading.style.display = mostrar ? 'flex' : 'none';
+    }
+    
+    if (mainContainer) {
+        mainContainer.style.opacity = mostrar ? '0.5' : '1';
+        mainContainer.style.pointerEvents = mostrar ? 'none' : 'auto';
+    }
+}
+
+function atualizarDados() {
+    carregarDados();
+    AdminSystem.mostrarToast('Atualizado', 'Dados atualizados!', 'success');
+}
+
+// ============================================
+// EXPORTAR FUNÇÕES PARA USO GLOBAL
+// ============================================
+
+window.fecharModalAutorizar = fecharModalAutorizar;
+window.autorizarUsuario = autorizarUsuario;
+window.recusarSolicitacao = recusarSolicitacao;
+window.fecharModalEditar = fecharModalEditar;
+window.gerarSenha = gerarSenha;
+window.salvarEdicaoUsuario = salvarEdicaoUsuario;
+window.resetarSenhaUsuario = resetarSenhaUsuario;
+window.atualizarDados = atualizarDados;
+
+console.log('✅ Script do painel admin carregado!');
+</script>
 </body>
 </html>
