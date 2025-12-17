@@ -399,9 +399,9 @@ function enviarParaGoogleAppsScript(dados) {
         
         // Criar elemento script para JSONP
         const script = document.createElement('script');
-        
-        
+                
         // Montar URL JSONP
+        const scriptUrl = 'https://script.google.com/macros/s/AKfycbxzCyjRX8wsqcTDC_2EN4KWvwPXCN8SHzKzPQ8R3g9IGU7t2dmgllrcHzkYK_dW2wjQMQ/exec';
         let url = scriptUrl;
         url += '?callback=' + encodeURIComponent(callbackName);
         url += '&dados=' + encodeURIComponent(JSON.stringify(dados));
