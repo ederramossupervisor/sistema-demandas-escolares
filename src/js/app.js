@@ -1225,7 +1225,53 @@ function validarFormulario() {
         if (elementos.prazo) elementos.prazo.focus();
         return false;
     }
+    // Verificar se a data é futura
+const hoje = new Date();
+const prazoSelecionado = new Date(elementos.prazo.value);
+
+if (prazoSelecionado < hoje) {
+    mostrarToast('Validação', 'O prazo deve ser uma data futura.', 'warning');
+    if (elementos.prazo) elementos.prazo.focus();
+    return false;
+}
+
+// ============================================
+// NOVO: VALIDAÇÃO DE DEPARTAMENTOS (APENAS PARA SUPERVISOR)
+// ============================================
+const usuarioSalvoValidacao = localStorage.getItem('usuario_demandas');
+let usuarioValidacao = null;
+
+try {
+    usuarioValidacao = usuarioSalvoValidacao ? JSON.parse(usuarioSalvoValidacao) : {};
+} catch (e) {
+    usuarioValidacao = {};
+}
+
+if (usuarioValidacao.tipo_usuario === 'supervisor') {
+    const departamentoCheckboxes = document.querySelectorAll('.departamento-checkbox:not(#departamento-todas)');
+    const departamentosSelecionados = Array.from(departamentoCheckboxes).filter(cb => cb.checked);
     
+    if (departamentosSelecionados.length === 0) {
+        mostrarToast('Validação', 'Selecione pelo menos um departamento.', 'warning');
+        
+        // Destacar a seção de departamentos
+        const departamentoContainer = document.getElementById('departamento-container');
+        if (departamentoContainer) {
+            departamentoContainer.style.border = '2px solid #e74c3c';
+            departamentoContainer.style.borderRadius = '8px';
+            departamentoContainer.style.padding = '10px';
+            
+            setTimeout(() => {
+                departamentoContainer.style.border = '';
+                departamentoContainer.style.padding = '';
+            }, 3000);
+        }
+        
+        return false;
+    }
+}
+
+return true;
     // Verificar se a data é futura
     const hoje = new Date();
     const prazoSelecionado = new Date(elementos.prazo.value);
