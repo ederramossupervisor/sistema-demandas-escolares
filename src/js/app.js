@@ -830,7 +830,6 @@ console.log('✅ Configuração de departamentos concluída');
     // ============================================
     
     // Mostrar/ocultar seleção de departamento conforme tipo de usuário
-    const usuarioSalvo = localStorage.getItem('usuario_demandas');
     let usuario = null;
     
     try {
