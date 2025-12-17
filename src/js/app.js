@@ -145,11 +145,13 @@ function inicializarElementos() {
         
         // Filtros
         filtroEscola: document.getElementById('filtro-escola'),
+        filtroDepartamento: document.getElementById('filtro-departamento'),
         filtroResponsavel: document.getElementById('filtro-responsavel'),
         filtroStatus: document.getElementById('filtro-status'),
         filtroPrazo: document.getElementById('filtro-prazo'),
         btnLimparFiltros: document.getElementById('btn-limpar-filtros'),
         btnAtualizar: document.getElementById('btn-atualizar'),
+        
         
         // Estatísticas
         totalDemandas: document.getElementById('total-demandas'),
@@ -236,6 +238,9 @@ function inicializarEventos() {
     // Filtros
     if (elementos.filtroEscola) {
         elementos.filtroEscola.addEventListener('change', aplicarFiltros);
+    }
+    if (elementos.filtroDepartamento) {
+    elementos.filtroDepartamento.addEventListener('change', aplicarFiltros);
     }
     
     if (elementos.filtroResponsavel) {
@@ -578,6 +583,12 @@ function filtrarDemandas(demandas) {
                 return false;
             }
         }
+        // Filtro por departamento (NOVO)
+        if (state.filtros.departamento && demanda.departamento) {
+            if (!demanda.departamento.includes(state.filtros.departamento)) {
+                return false;
+            }
+        }
         
         // Filtro por responsável
         if (state.filtros.responsavel && demanda.responsavel !== state.filtros.responsavel) {
@@ -618,6 +629,7 @@ function filtrarDemandas(demandas) {
 function aplicarFiltros() {
     state.filtros = {
         escola: elementos.filtroEscola ? elementos.filtroEscola.value : '',
+        departamento: elementos.filtroDepartamento ? elementos.filtroDepartamento.value : '',
         responsavel: elementos.filtroResponsavel ? elementos.filtroResponsavel.value : '',
         status: elementos.filtroStatus ? elementos.filtroStatus.value : '',
         prazo: elementos.filtroPrazo ? elementos.filtroPrazo.value : ''
