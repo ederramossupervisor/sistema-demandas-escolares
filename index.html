@@ -47,6 +47,42 @@
     color: #e74c3c;
     border-color: #e74c3c;
 }
+        <!-- Dentro do user-details, após o botão de logout: -->
+<div class="user-details">
+    <span class="user-name" id="user-name">Carregando...</span>
+    <span class="user-email" id="user-email"></span>
+    
+    <!-- Botão para painel admin (visível apenas para supervisor) -->
+    <button class="btn-admin" id="btn-admin" title="Painel do Supervisor" style="display: none;">
+        <i class="fas fa-user-shield"></i>
+    </button>
+    
+    <button class="btn-logout" id="btn-logout" title="Sair">
+        <i class="fas fa-sign-out-alt"></i>
+    </button>
+</div>
+
+<!-- Adicione este estilo: -->
+<style>
+.btn-admin {
+    background: none;
+    border: 1px solid #27ae60;
+    color: #27ae60;
+    cursor: pointer;
+    padding: 5px 12px;
+    border-radius: 4px;
+    transition: all 0.3s;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-admin:hover {
+    background: rgba(39, 174, 96, 0.1);
+    color: #27ae60;
+    border-color: #27ae60;
+}
 </style>
 </head>
 <body>
@@ -684,7 +720,20 @@ function ajustarInterfacePorTipoUsuario(tipo) {
     }
     
     console.log('✅ Interface ajustada para tipo:', tipo);
-}        
+}
+        // Dentro da função ajustarInterfacePorTipoUsuario, adicione:
+const btnAdmin = document.getElementById('btn-admin');
+if (btnAdmin) {
+    if (tipo === 'supervisor') {
+        btnAdmin.style.display = 'flex';
+        btnAdmin.onclick = function() {
+            window.location.href = 'admin.html';
+        };
+        console.log('👑 Supervisor: botão admin visível');
+    } else {
+        btnAdmin.style.display = 'none';
+    }
+}
         // A. Detectar se é PWA instalado
         if (window.matchMedia('(display-mode: standalone)').matches) {
             console.log('📱 Executando como PWA instalado');
