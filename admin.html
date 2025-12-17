@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2c3e50">
+    <title>Painel do Supervisor | Sistema de Demandas</title>
+    
+    <!-- Ícone PWA -->
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="public/icons/192x192.png">
+    
+    <!-- Manifesto PWA -->
+    <link rel="manifest" href="public/manifest.json">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="src/css/style.css">
+    
+    <!-- Ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Fonte -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Estilos específicos do painel admin */
+        .admin-container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .admin-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .admin-section h2 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+        }
+        
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        .admin-table th,
+        .admin-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .admin-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .admin-table tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-pendente {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-autorizado {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .tipo-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .tipo-supervisor {
+            background-color: #d6eaf8;
+            color: #21618c;
+        }
+        
+        .tipo-gestor {
+            background-color: #d5f4e6;
+            color: #196f3d;
+        }
+        
+        .tipo-comum {
+            background-color: #fdebd0;
+            color: #9c640c;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 13px;
+            margin: 2px;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #7f8c8d;
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #bdc3c7;
+        }
+        
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .admin-header h1 {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #2c3e50;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .search-filter {
+            margin-bottom: 20px;
+        }
+        
+        .search-box {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 300px;
+            max-width: 100%;
+        }
+        
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .loading-admin {
+            text-align: center;
+            padding: 40px;
+            color: #3498db;
+        }
+        
+        @media (max-width: 768px) {
+            .admin-container {
+                padding: 10px;
+            }
+            
+            .admin-section {
+                padding: 15px;
+            }
+            
+            .admin-table th,
+            .admin-table td {
+                padding: 8px;
+                font-size: 14px;
+            }
+            
+            .admin-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .nav-buttons {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .search-box {
+                width: 100%;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- SPLASH SCREEN -->
+    <div id="splash-screen" class="splash-screen">
+        <div class="splash-content">
+            <div class="splash-logo">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <h1 class="splash-title">Painel do Supervisor</h1>
+            <p class="splash-subtitle">Gerenciamento de Usuários</p>
+            <div class="splash-loader"></div>
+            <p class="splash-status">Carregando...</p>
+        </div>
+    </div>
+
+    <!-- LOADING -->
+    <div class="loading-overlay" id="loading">
+        <div class="loading-spinner"></div>
+        <p>Carregando...</p>
+    </div>
+
+    <!-- CONTAINER PRINCIPAL -->
+    <div class="container admin-container" id="main-container">
+        <!-- CABEÇALHO ADMIN -->
+        <div class="admin-header">
+            <h1>
+                <i class="fas fa-user-shield"></i>
+                Painel do Supervisor - Gerenciamento de Usuários
+            </h1>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="window.location.href='index.html'">
+                    <i class="fas fa-home"></i> Voltar ao Sistema
+                </button>
+                <button class="btn btn-primary" onclick="atualizarDados()">
+                    <i class="fas fa-sync-alt"></i> Atualizar
+                </button>
+            </div>
+        </div>
+
+        <!-- SEÇÃO 1: SOLICITAÇÕES PENDENTES -->
+        <div class="admin-section">
+            <h2><i class="fas fa-clock"></i> Solicitações de Acesso Pendentes</h2>
+            
+            <div class="search-filter">
+                <input type="text" class="search-box" id="search-solicitacoes" 
+                       placeholder="Buscar por nome ou email..." 
+                       onkeyup="filtrarSolicitacoes()">
+            </div>
+            
+            <div class="table-responsive">
+                <table class="admin-table" id="tabela-solicitacoes">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Nome</th>
+                            <th>Email</th>
+                            <th>Telefone</th>
+                            <th>Mensagem</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="solicitacoes-body">
+                        <tr>
+                            <td colspan="6" class="loading-admin">
+                                <i class="fas fa-spinner fa-spin"></i> Carregando solicitações...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="solicitacoes-empty" class="empty-state" style="display: none;">
+                <i class="fas fa-inbox"></i>
+                <h3>Nenhuma solicitação pendente</h3>
+                <p>Todas as solicitações foram processadas.</p>
+            </div>
+        </div>
+
+        <!-- SEÇÃO 2: USUÁRIOS CADASTRADOS -->
+        <div class="admin-section">
+            <h2><i class="fas fa-users"></i> Usuários Cadastrados</h2>
+            
+            <div class="search-filter">
+                <input type="text" class="search-box" id="search-usuarios" 
+                       placeholder="Buscar por nome, email ou departamento..." 
+                       onkeyup="filtrarUsuarios()">
+                
+                <div class="filter-group">
+                    <select id="filter-tipo" class="search-box" style="width: auto;" onchange="filtrarUsuarios()">
+                        <option value="">Todos os tipos</option>
+                        <option value="supervisor">Supervisor</option>
+                        <option value="gestor">Diretor(a)</option>
+                        <option value="comum">Usuário Comum</option>
+                    </select>
+                    
+                    <select id="filter-departamento" class="search-box" style="width: auto;" onchange="filtrarUsuarios()">
+                        <option value="">Todos departamentos</option>
+                        <option value="Gestão">Gestão</option>
+                        <option value="Secretaria">Secretaria</option>
+                        <option value="Pedagógico">Pedagógico</option>
+                        <option value="Supervisão">Supervisão</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="admin-table" id="tabela-usuarios">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Email</th>
+                            <th>Tipo</th>
+                            <th>Departamento</th>
+                            <th>Escola</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usuarios-body">
+                        <tr>
+                            <td colspan="7" class="loading-admin">
+                                <i class="fas fa-spinner fa-spin"></i> Carregando usuários...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="usuarios-empty" class="empty-state" style="display: none;">
+                <i class="fas fa-users-slash"></i>
+                <h3>Nenhum usuário cadastrado</h3>
+                <p>Comece aprovando solicitações de acesso.</p>
+            </div>
+        </div>
+
+        <!-- SEÇÃO 3: ESTATÍSTICAS -->
+        <div class="admin-section">
+            <h2><i class="fas fa-chart-bar"></i> Estatísticas</h2>
+            <div class="stats-grid" id="estatisticas">
+                <div class="loading-admin">
+                    <i class="fas fa-spinner fa-spin"></i> Carregando estatísticas...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE AUTORIZAÇÃO -->
+    <div class="modal-overlay" id="modal-autorizar">
+        <div class="modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-check"></i> Autorizar Usuário</h2>
+                <button class="btn-close" onclick="fecharModalAutorizar()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div id="dados-solicitante">
+                    <p><strong>Nome:</strong> <span id="modal-nome"></span></p>
+                    <p><strong>Email:</strong> <span id="modal-email"></span></p>
+                    <p><strong>Telefone:</strong> <span id="modal-telefone"></span></p>
+                    <p><strong>Mensagem:</strong> <span id="modal-mensagem"></span></p>
+                </div>
+                
+                <form id="form-autorizar">
+                    <input type="hidden" id="modal-email-hidden">
+                    
+                    <div class="form-group">
+                        <label for="modal-tipo"><i class="fas fa-user-tag"></i> Tipo de Usuário *</label>
+                        <select id="modal-tipo" class="search-box" required style="width: 100%;">
+                            <option value="">Selecione o tipo...</option>
+                            <option value="supervisor">Supervisor</option>
+                            <option value="gestor">Diretor(a)</option>
+                            <option value="comum">Usuário Comum</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="modal-departamento"><i class="fas fa-building"></i> Departamento *</label>
+                        <select id="modal-departamento" class="search-box" required style="width: 100%;">
+                            <option value="">Selecione o departamento...</option>
+                            <option value="Gestão">Gestão</option>
+                            <option value="Secretaria">Secretaria</option>
+                            <option value="Pedagógico">Pedagógico</option>
+                            <option value="Supervisão">Supervisão</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="modal-escola"><i class="fas fa-school"></i> Escola *</label>
+                        <select id="modal-escola" class="search-box" required style="width: 100%;">
+                            <option value="">Selecione a escola...</option>
+                            <option value="EEEFM Pedra Azul">EEEFM Pedra Azul</option>
+                            <option value="EEEFM Fioravante Caliman">EEEFM Fioravante Caliman</option>
+                            <option value="EEEFM Alto Rio Possmoser">EEEFM Alto Rio Possmoser</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="modal-senha"><i class="fas fa-lock"></i> Senha Inicial *</label>
+                        <input type="text" id="modal-senha" class="search-box" required 
+                               value="123456" style="width: 100%;">
+                        <small class="form-help">O usuário receberá esta senha por e-mail</small>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="fecharModalAutorizar()">
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="autorizarUsuario()">
+                    <i class="fas fa-check"></i> Autorizar e Enviar Credenciais
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE EDIÇÃO DE USUÁRIO -->
+    <div class="modal-overlay" id="modal-editar">
+        <div class="modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> Editar Usuário</h2>
+                <button class="btn-close" onclick="fecharModalEditar()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="form-editar">
+                    <input type="hidden" id="edit-email-hidden">
+                    
+                    <div class="form-group">
+                        <label for="edit-nome"><i class="fas fa-user"></i> Nome</label>
+                        <input type="text" id="edit-nome" class="search-box" readonly style="width: 100%;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-email"><i class="fas fa-envelope"></i> Email</label>
+                        <input type="email" id="edit-email" class="search-box" readonly style="width: 100%;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-tipo"><i class="fas fa-user-tag"></i> Tipo de Usuário *</label>
+                        <select id="edit-tipo" class="search-box" required style="width: 100%;">
+                            <option value="supervisor">Supervisor</option>
+                            <option value="gestor">Diretor(a)</option>
+                            <option value="comum">Usuário Comum</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-departamento"><i class="fas fa-building"></i> Departamento *</label>
+                        <select id="edit-departamento" class="search-box" required style="width: 100%;">
+                            <option value="Gestão">Gestão</option>
+                            <option value="Secretaria">Secretaria</option>
+                            <option value="Pedagógico">Pedagógico</option>
+                            <option value="Supervisão">Supervisão</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-escola"><i class="fas fa-school"></i> Escola *</label>
+                        <select id="edit-escola" class="search-box" required style="width: 100%;">
+                            <option value="EEEFM Pedra Azul">EEEFM Pedra Azul</option>
+                            <option value="EEEFM Fioravante Caliman">EEEFM Fioravante Caliman</option>
+                            <option value="EEEFM Alto Rio Possmoser">EEEFM Alto Rio Possmoser</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-senha"><i class="fas fa-lock"></i> Resetar Senha</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="edit-senha" class="search-box" 
+                                   placeholder="Nova senha (opcional)" style="flex: 1;">
+                            <button type="button" class="btn btn-secondary" onclick="gerarSenha()">
+                                <i class="fas fa-key"></i> Gerar
+                            </button>
+                        </div>
+                        <small class="form-help">Deixe em branco para manter a senha atual</small>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="fecharModalEditar()">
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="salvarEdicaoUsuario()">
+                    <i class="fas fa-save"></i> Salvar Alterações
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MENSAGENS DO SISTEMA -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- SCRIPTS -->
+    <script src="src/js/googleAppsScript.js"></script>
+    <script src="src/js/googleSheets.js"></script>
+    
+    <!-- SCRIPT PRINCIPAL DO PAINEL ADMIN -->
+    <script>
+        // ============================================
+        // SISTEMA DE PAINEL DO SUPERVISOR
+        // ============================================
+
+        // Estado da aplicação
+        const adminState = {
+            solicitacoes: [],
+            usuarios: [],
+            filtros: {
+                solicitacoes: '',
+                usuarios: '',
+                tipo: '',
+                departamento: ''
+            }
+        };
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('👑 Painel do Supervisor iniciando...');
+            
+            // Verificar se é supervisor
+            const usuarioSalvo = localStorage.getItem('usuario_demandas');
+            if (!usuarioSalvo) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            let usuario = null;
+            try {
+                usuario = JSON.parse(usuarioSalvo);
+                if (usuario.tipo_usuario !== 'supervisor') {
+                    mostrarToast('Acesso Negado', 'Apenas supervisores podem acessar este painel.', 'error');
+                    setTimeout(() => window.location.href = 'index.html', 2000);
+                    return;
+                }
+            } catch (e) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            // Esconder splash screen após 1.5s
+            setTimeout(() => {
+                const splash = document.getElementById('splash-screen');
+                if (splash) {
+                    splash.classList.add('hidden');
+                    setTimeout(() => {
+                        if (splash.parentNode) {
+                            splash.remove();
+                        }
+                    }, 500);
+                }
+            }, 1500);
+            
+            // Carregar dados
+            await carregarDados();
+        });
+
+        // ============================================
+        // FUNÇÕES DE CARREGAMENTO DE DADOS
+        // ============================================
+
+        async function carregarDados() {
+            mostrarLoading(true);
+            
+            try {
+                // Carregar solicitações pendentes
+                await carregarSolicitacoes();
+                
+                // Carregar usuários cadastrados
+                await carregarUsuarios();
+                
+                // Atualizar estatísticas
+                atualizarEstatisticas();
+                
+            } catch (erro) {
+                console.error('❌ Erro ao carregar dados:', erro);
+                mostrarToast('Erro', 'Não foi possível carregar os dados.', 'error');
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+
+        async function carregarSolicitacoes() {
+            try {
+                const dados = {
+                    acao: 'listarSolicitacoesPendentes'
+                };
+                
+                const resultado = await enviarParaGoogleAppsScript(dados);
+                
+                if (resultado.sucesso) {
+                    adminState.solicitacoes = resultado.solicitacoes || [];
+                    renderizarSolicitacoes();
+                } else {
+                    throw new Error(resultado.erro || 'Erro desconhecido');
+                }
+                
+            } catch (erro) {
+                console.error('❌ Erro ao carregar solicitações:', erro);
+                adminState.solicitacoes = [];
+                renderizarSolicitacoes();
+            }
+        }
+
+        async function carregarUsuarios() {
+            try {
+                const dados = {
+                    acao: 'listarUsuarios'
+                };
+                
+                const resultado = await enviarParaGoogleAppsScript(dados);
+                
+                if (resultado.sucesso) {
+                    adminState.usuarios = resultado.usuarios || [];
+                    renderizarUsuarios();
+                } else {
+                    throw new Error(resultado.erro || 'Erro desconhecido');
+                }
+                
+            } catch (erro) {
+                console.error('❌ Erro ao carregar usuários:', erro);
+                adminState.usuarios = [];
+                renderizarUsuarios();
+            }
+        }
+
+        // ============================================
+        // FUNÇÕES DE RENDERIZAÇÃO
+        // ============================================
+
+        function renderizarSolicitacoes() {
+            const tbody = document.getElementById('solicitacoes-body');
+            const emptyState = document.getElementById('solicitacoes-empty');
+            
+            if (!tbody) return;
+            
+            // Aplicar filtro
+            let solicitacoes = adminState.solicitacoes;
+            if (adminState.filtros.solicitacoes) {
+                const termo = adminState.filtros.solicitacoes.toLowerCase();
+                solicitacoes = solicitacoes.filter(s => 
+                    (s.nome && s.nome.toLowerCase().includes(termo)) ||
+                    (s.email && s.email.toLowerCase().includes(termo)) ||
+                    (s.mensagem && s.mensagem.toLowerCase().includes(termo))
+                );
+            }
+            
+            if (solicitacoes.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            let html = '';
+            solicitacoes.forEach((solicitacao, index) => {
+                const data = new Date(solicitacao.data_solicitacao || solicitacao.timestamp || new Date());
+                const dataFormatada = data.toLocaleDateString('pt-BR');
+                
+                html += `
+                    <tr>
+                        <td>${dataFormatada}</td>
+                        <td><strong>${solicitacao.nome || 'N/A'}</strong></td>
+                        <td>${solicitacao.email || 'N/A'}</td>
+                        <td>${solicitacao.telefone || 'N/A'}</td>
+                        <td>${solicitacao.mensagem || 'Sem mensagem'}</td>
+                        <td>
+                            <div class="btn-group">
+                                <button class="btn btn-success btn-small" onclick="abrirModalAutorizar('${solicitacao.email}', '${solicitacao.nome || ''}', '${solicitacao.telefone || ''}', '${solicitacao.mensagem || ''}')">
+                                    <i class="fas fa-check"></i> Autorizar
+                                </button>
+                                <button class="btn btn-danger btn-small" onclick="recusarSolicitacao('${solicitacao.email}')">
+                                    <i class="fas fa-times"></i> Recusar
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        function renderizarUsuarios() {
+            const tbody = document.getElementById('usuarios-body');
+            const emptyState = document.getElementById('usuarios-empty');
+            
+            if (!tbody) return;
+            
+            // Aplicar filtros
+            let usuarios = adminState.usuarios;
+            
+            if (adminState.filtros.usuarios) {
+                const termo = adminState.filtros.usuarios.toLowerCase();
+                usuarios = usuarios.filter(u => 
+                    (u.nome && u.nome.toLowerCase().includes(termo)) ||
+                    (u.email && u.email.toLowerCase().includes(termo)) ||
+                    (u.departamento && u.departamento.toLowerCase().includes(termo))
+                );
+            }
+            
+            if (adminState.filtros.tipo) {
+                usuarios = usuarios.filter(u => u.tipo_usuario === adminState.filtros.tipo);
+            }
+            
+            if (adminState.filtros.departamento) {
+                usuarios = usuarios.filter(u => u.departamento === adminState.filtros.departamento);
+            }
+            
+            if (usuarios.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            let html = '';
+            usuarios.forEach((usuario, index) => {
+                let tipoClass = 'tipo-comum';
+                let tipoTexto = 'Usuário Comum';
+                
+                if (usuario.tipo_usuario === 'supervisor') {
+                    tipoClass = 'tipo-supervisor';
+                    tipoTexto = 'Supervisor';
+                } else if (usuario.tipo_usuario === 'gestor') {
+                    tipoClass = 'tipo-gestor';
+                    tipoTexto = 'Diretor(a)';
+                }
+                
+                const status = usuario.autorizado === 'sim' ? 'Autorizado' : 'Pendente';
+                const statusClass = usuario.autorizado === 'sim' ? 'status-autorizado' : 'status-pendente';
+                
+                html += `
+                    <tr>
+                        <td><strong>${usuario.nome || 'N/A'}</strong></td>
+                        <td>${usuario.email || 'N/A'}</td>
+                        <td><span class="tipo-badge ${tipoClass}">${tipoTexto}</span></td>
+                        <td>${usuario.departamento || 'N/A'}</td>
+                        <td>${usuario.escola_sre || 'N/A'}</td>
+                        <td><span class="status-badge ${statusClass}">${status}</span></td>
+                        <td>
+                            <div class="btn-group">
+                                <button class="btn btn-primary btn-small" onclick="abrirModalEditar('${usuario.email}', '${usuario.nome || ''}', '${usuario.tipo_usuario || 'comum'}', '${usuario.departamento || ''}', '${usuario.escola_sre || ''}')">
+                                    <i class="fas fa-edit"></i> Editar
+                                </button>
+                                <button class="btn btn-warning btn-small" onclick="resetarSenha('${usuario.email}', '${usuario.nome || ''}')">
+                                    <i class="fas fa-key"></i> Resetar Senha
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        function atualizarEstatisticas() {
+            const container = document.getElementById('estatisticas');
+            if (!container) return;
+            
+            const totalSolicitacoes = adminState.solicitacoes.length;
+            const totalUsuarios = adminState.usuarios.length;
+            
+            const tipos = {
+                supervisor: adminState.usuarios.filter(u => u.tipo_usuario === 'supervisor').length,
+                gestor: adminState.usuarios.filter(u => u.tipo_usuario === 'gestor').length,
+                comum: adminState.usuarios.filter(u => u.tipo_usuario === 'comum').length
+            };
+            
+            const departamentos = {};
+            adminState.usuarios.forEach(u => {
+                if (u.departamento) {
+                    departamentos[u.departamento] = (departamentos[u.departamento] || 0) + 1;
+                }
+            });
+            
+            let html = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                    <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; border-left: 4px solid #3498db;">
+                        <h3 style="margin: 0 0 10px 0; color: #2c3e50;">Solicitações Pendentes</h3>
+                        <p style="font-size: 2rem; font-weight: bold; color: #3498db; margin: 0;">${totalSolicitacoes}</p>
+                    </div>
+                    
+                    <div style="background: #e8f8f0; padding: 20px; border-radius: 8px; border-left: 4px solid #27ae60;">
+                        <h3 style="margin: 0 0 10px 0; color: #2c3e50;">Total de Usuários</h3>
+                        <p style="font-size: 2rem; font-weight: bold; color: #27ae60; margin: 0;">${totalUsuarios}</p>
+                    </div>
+                    
+                    <div style="background: #fef9e7; padding: 20px; border-radius: 8px; border-left: 4px solid #f39c12;">
+                        <h3 style="margin: 0 0 10px 0; color: #2c3e50;">Distribuição por Tipo</h3>
+                        <p style="margin: 5px 0; color: #21618c;"><i class="fas fa-user-tie"></i> Supervisores: ${tipos.supervisor}</p>
+                        <p style="margin: 5px 0; color: #196f3d;"><i class="fas fa-user-tie"></i> Diretores: ${tipos.gestor}</p>
+                        <p style="margin: 5px 0; color: #9c640c;"><i class="fas fa-user"></i> Usuários Comuns: ${tipos.comum}</p>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        // ============================================
+        // FUNÇÕES DE FILTRO
+        // ============================================
+
+        function filtrarSolicitacoes() {
+            const searchBox = document.getElementById('search-solicitacoes');
+            adminState.filtros.solicitacoes = searchBox ? searchBox.value : '';
+            renderizarSolicitacoes();
+        }
+
+        function filtrarUsuarios() {
+            const searchBox = document.getElementById('search-usuarios');
+            const filterTipo = document.getElementById('filter-tipo');
+            const filterDepartamento = document.getElementById('filter-departamento');
+            
+            adminState.filtros.usuarios = searchBox ? searchBox.value : '';
+            adminState.filtros.tipo = filterTipo ? filterTipo.value : '';
+            adminState.filtros.departamento = filterDepartamento ? filterDepartamento.value : '';
+            
+            renderizarUsuarios();
+        }
+
+        // ============================================
+        // FUNÇÕES DE AUTORIZAÇÃO
+        // ============================================
+
+        function abrirModalAutorizar(email, nome, telefone, mensagem) {
+            document.getElementById('modal-email-hidden').value = email;
+            document.getElementById('modal-nome').textContent = nome || 'N/A';
+            document.getElementById('modal-email').textContent = email || 'N/A';
+            document.getElementById('modal-telefone').textContent = telefone || 'N/A';
+            document.getElementById('modal-mensagem').textContent = mensagem || 'Sem mensagem';
+            
+            // Resetar formulário
+            document.getElementById('modal-tipo').value = 'comum';
+            document.getElementById('modal-departamento').value = 'Pedagógico';
+            document.getElementById('modal-escola').value = 'EEEFM Pedra Azul';
+            document.getElementById('modal-senha').value = '123456';
+            
+            document.getElementById('modal-autorizar').style.display = 'flex';
+        }
+
+        function fecharModalAutorizar() {
+            document.getElementById('modal-autorizar').style.display = 'none';
+        }
+
+        async function autorizarUsuario() {
+            const email = document.getElementById('modal-email-hidden').value;
+            const tipo = document.getElementById('modal-tipo').value;
+            const departamento = document.getElementById('modal-departamento').value;
+            const escola = document.getElementById('modal-escola').value;
+            const senha = document.getElementById('modal-senha').value;
+            const nome = document.getElementById('modal-nome').textContent;
+            
+            // Validação
+            if (!tipo || !departamento || !escola) {
+                mostrarToast('Validação', 'Preencha todos os campos obrigatórios.', 'warning');
+                return;
+            }
+            
+            mostrarLoading(true);
+            
+            try {
+                const dados = {
+                    acao: 'autorizarUsuario',
+                    email: email,
+                    nome: nome,
+                    telefone: document.getElementById('modal-telefone').textContent,
+                    tipo_usuario: tipo,
+                    departamento: departamento,
+                    escola_sre: escola,
+                    senha: senha
+                };
+                
+                const resultado = await enviarParaGoogleAppsScript(dados);
+                
+                if (resultado.sucesso) {
+                    mostrarToast('Sucesso', `Usuário ${email} autorizado com sucesso!`, 'success');
+                    
+                    // Fechar modal
+                    fecharModalAutorizar();
+                    
+                    // Atualizar dados
+                    await carregarDados();
+                    
+                } else {
+                    throw new Error(resultado.erro || 'Erro desconhecido');
+                }
+                
+            } catch (erro) {
+                console.error('❌ Erro ao autorizar usuário:', erro);
+                mostrarToast('Erro', `Falha ao autorizar usuário: ${erro.message}`, 'error');
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+
+        async function recusarSolicitacao(email) {
+            if (!confirm(`Deseja recusar a solicitação de ${email}?`)) {
+                return;
+            }
+            
+            mostrarLoading(true);
+            
+            try {
+                // Marcar como recusado na planilha
+                const dados = {
+                    acao: 'recusarSolicitacao', // Você precisa adicionar esta função no Apps Script
+                    email: email
+                };
+                
+                const resultado = await enviarParaGoogleAppsScript(dados);
+                
+                if (resultado.sucesso) {
+                    mostrarToast('Sucesso', `Solicitação de ${email} recusada.`, 'success');
+                    await carregarSolicitacoes();
+                    atualizarEstatisticas();
+                } else {
+                    // Se não tiver a função específica, apenas remover da lista local
+                    adminState.solicitacoes = adminState.solicitacoes.filter(s => s.email !== email);
+                    renderizarSolicitacoes();
+                    atualizarEstatisticas();
+                    mostrarToast('Aviso', 'Solicitação removida localmente.', 'info');
+                }
+                
+            } catch (erro) {
+                console.error('❌ Erro ao recusar solicitação:', erro);
+                mostrarToast('Erro', 'Não foi possível recusar a solicitação.', 'error');
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+
+        // ============================================
+        // FUNÇÕES DE EDIÇÃO DE USUÁRIOS
+        // ============================================
+
+        function abrirModalEditar(email, nome, tipo, departamento, escola) {
+            document.getElementById('edit-email-hidden').value = email;
+            document.getElementById('edit-nome').value = nome || '';
+            document.getElementById('edit-email').value = email || '';
+            document.getElementById('edit-tipo').value = tipo || 'comum';
+            document.getElementById('edit-departamento').value = departamento || 'Pedagógico';
+            document.getElementById('edit-escola').value = escola || 'EEEFM Pedra Azul';
+            document.getElementById('edit-senha').value = '';
+            
+            document.getElementById('modal-editar').style.display = 'flex';
+        }
+
+        function fecharModalEditar() {
+            document.getElementById('modal-editar').style.display = 'none';
+        }
+
+        function gerarSenha() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let senha = '';
+            for (let i = 0; i < 8; i++) {
+                senha += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('edit-senha').value = senha;
+        }
+
+        async function salvarEdicaoUsuario() {
+            const email = document.getElementById('edit-email-hidden').value;
+            const tipo = document.getElementById('edit-tipo').value;
+            const departamento = document.getElementById('edit-departamento').value;
+            const escola = document.getElementById('edit-escola').value;
+            const senha = document.getElementById('edit-senha').value;
+            
+            mostrarLoading(true);
+            
+            try {
+                const dados = {
+                    acao: 'alterarUsuario',
+                    email: email,
+                    tipo_usuario: tipo,
+                    departamento: departamento,
+                    escola_sre: escola
+                };
+                
+                // Se tiver senha nova, adicionar ao dados
+                if (senha && senha.trim() !== '') {
+                    dados.senha = senha;
+                }
+                
+                const resultado = await enviarParaGoogleAppsScript(dados);
+                
+                if (resultado.sucesso) {
+                    mostrarToast('Sucesso', `Usuário ${email} atualizado com sucesso!`, 'success');
+                    
+                    // Fechar modal
+                    fecharModalEditar();
+                    
+                    // Atualizar dados
+                    await carregarDados();
+                    
+                } else {
+                    throw new Error(resultado.erro || 'Erro desconhecido');
+                }
+                
+            } catch (erro) {
+                console.error('❌ Erro ao editar usuário:', erro);
+                mostrarToast('Erro', `Falha ao editar usuário: ${erro.message}`, 'error');
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+
+        async function resetarSenha(email, nome) {
+            const novaSenha = prompt(`Digite a nova senha para ${nome} (${email}):`, '123456');
+            
+            if (!novaSenha || novaSenha.trim() === '') {
+                mostrarToast('Cancelado', 'Operação cancelada.', 'info');
+                return;
+            }
+            
+            if (!confirm(`Confirmar reset de senha para:\n\n${nome}\n${email}\n\nNova senha: ${novaSenha}`)) {
+                return;
+            }
+            
+            mostrarLoading(true);
+            
+            try {
+                const dados = {
+                    acao: 'resetarSenha', // Você precisa adicionar esta função no Apps Script
+                    email: email,
+                    senha: novaSenha
+                };
+                
+                const resultado = await enviarParaGoogleAppsScript(dados);
+                
+                if (resultado.sucesso) {
+                    mostrarToast('Sucesso', `Senha de ${email} resetada com sucesso!`, 'success');
+                    
+                    // Enviar e-mail com a nova senha
+                    const dadosEmail = {
+                        acao: 'enviarEmailSenha',
+                        email: email,
+                        nome: nome,
+                        senha: novaSenha
+                    };
+                    
+                    try {
+                        await enviarParaGoogleAppsScript(dadosEmail);
+                    } catch (erroEmail) {
+                        console.warn('⚠️ Não foi possível enviar e-mail:', erroEmail);
+                    }
+                    
+                } else {
+                    throw new Error(resultado.erro || 'Erro desconhecido');
+                }
+                
+            } catch (erro) {
+                console.error('❌ Erro ao resetar senha:', erro);
+                mostrarToast('Erro', `Falha ao resetar senha: ${erro.message}`, 'error');
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+
+        // ============================================
+        // FUNÇÕES UTILITÁRIAS
+        // ============================================
+
+        function mostrarLoading(mostrar) {
+            const loading = document.getElementById('loading');
+            if (loading) {
+                loading.style.display = mostrar ? 'flex' : 'none';
+            }
+            
+            const mainContainer = document.getElementById('main-container');
+            if (mainContainer) {
+                mainContainer.style.opacity = mostrar ? '0.5' : '1';
+                mainContainer.style.pointerEvents = mostrar ? 'none' : 'auto';
+            }
+        }
+
+        function mostrarToast(titulo, mensagem, tipo = 'info') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            
+            const toast = document.createElement('div');
+            toast.className = `toast ${tipo}`;
+            
+            let icon = 'fas fa-info-circle';
+            if (tipo === 'success') icon = 'fas fa-check-circle';
+            if (tipo === 'error') icon = 'fas fa-exclamation-circle';
+            if (tipo === 'warning') icon = 'fas fa-exclamation-triangle';
+            
+            toast.innerHTML = `
+                <div class="toast-icon">
+                    <i class="${icon}"></i>
+                </div>
+                <div class="toast-content">
+                    <div class="toast-title">${titulo}</div>
+                    <div class="toast-message">${mensagem}</div>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, 5000);
+        }
+
+        // Função global para atualizar dados
+        window.atualizarDados = async function() {
+            await carregarDados();
+            mostrarToast('Atualizado', 'Dados atualizados com sucesso!', 'success');
+        };
+
+        // Exportar funções para uso global
+        window.mostrarToast = mostrarToast;
+        window.filtrarSolicitacoes = filtrarSolicitacoes;
+        window.filtrarUsuarios = filtrarUsuarios;
+        window.autorizarUsuario = autorizarUsuario;
+        window.recusarSolicitacao = recusarSolicitacao;
+        window.gerarSenha = gerarSenha;
+        window.salvarEdicaoUsuario = salvarEdicaoUsuario;
+        window.resetarSenha = resetarSenha;
+
+        console.log('✅ Painel do Supervisor carregado com sucesso!');
+    </script>
+</body>
+</html>
