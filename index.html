@@ -546,9 +546,9 @@ try {
             
             // Verificar permissões e ajustar interface
            if (usuario && usuario.tipo_usuario) {
-    window.ajustarInterfacePorTipoUsuario(usuario.tipo_usuario);
+        window.ajustarInterfacePorTipoUsuario(usuario.tipo_usuario);
+    }
 }
-
         // Configurar botão de logout
         const btnLogout = document.getElementById('btn-logout');
         if (btnLogout) {
@@ -697,9 +697,7 @@ function ajustarInterfacePorTipoUsuario(tipo) {
         }
     }
     
-    // ============================================
-    // REGRA 5: MOSTRAR TIPO DE USUÁRIO NO CABEÇALHO
-    // ============================================
+      // REGRA 5: MOSTRAR TIPO DE USUÁRIO NO CABEÇALHO
     if (userEmail) {
         let tipoTexto = '';
         
@@ -711,54 +709,24 @@ function ajustarInterfacePorTipoUsuario(tipo) {
         console.log('📋 Cabeçalho atualizado:', tipoTexto);
     }
     
-    console.log('✅ Interface ajustada para tipo:', tipo);
-}
-        // Dentro da função ajustarInterfacePorTipoUsuario, adicione:
-const btnAdmin = document.getElementById('btn-admin');
-if (btnAdmin) {
-    if (tipo === 'supervisor') {
-        btnAdmin.style.display = 'flex';
-        btnAdmin.onclick = function() {
-            window.location.href = 'admin.html';
-        };
-        console.log('👑 Supervisor: botão admin visível');
-    } else {
-        btnAdmin.style.display = 'none';
+    // REGRA 6: BOTÃO DO PAINEL ADMIN (APENAS SUPERVISOR)
+    const btnAdmin = document.getElementById('btn-admin');
+    if (btnAdmin) {
+        if (tipo === 'supervisor') {
+            btnAdmin.style.display = 'flex';
+            btnAdmin.onclick = function() {
+                window.location.href = 'admin.html';
+            };
+            console.log('👑 Supervisor: botão admin visível');
+        } else {
+            btnAdmin.style.display = 'none';
+        }
     }
-}
-        // A. Detectar se é PWA instalado
-        if (window.matchMedia('(display-mode: standalone)').matches) {
-            console.log('📱 Executando como PWA instalado');
-            document.body.classList.add('pwa-mode');
-        }
-        
-        // B. Configurar data do prazo no formulário
-        const hoje = new Date();
-        const amanha = new Date(hoje);
-        amanha.setDate(hoje.getDate() + 1);
-        
-        const prazoInput = document.getElementById('prazo');
-        if (prazoInput) {
-            // Data mínima: amanhã
-            prazoInput.min = amanha.toISOString().split('T')[0];
-            
-            // Data padrão: 7 dias à frente
-            const prazoPadrao = new Date(hoje);
-            prazoPadrao.setDate(hoje.getDate() + 7);
-            prazoInput.value = prazoPadrao.toISOString().split('T')[0];
-            
-            // Data máxima: 2 anos à frente
-            const maxDate = new Date(hoje);
-            maxDate.setFullYear(hoje.getFullYear() + 2);
-            prazoInput.max = maxDate.toISOString().split('T')[0];
-        }
-        
-        console.log('✅ Sistema configurado e pronto!');
-    });
-
-    // 4. Instalação do PWA (apenas uma vez)
-    let deferredPrompt;
     
+    console.log('✅ Interface ajustada para tipo:', tipo);
+}  // ← FIM DA FUNÇÃO
+
+document.body.classList.add('pwa-mode');    
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
