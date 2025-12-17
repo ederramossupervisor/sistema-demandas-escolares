@@ -437,7 +437,59 @@ try {
     window.location.href = 'login.html';
     return;
 }
-        console.log('🚀 Sistema de Demandas iniciando...');
+        // ============================================
+        // ATUALIZAR INTERFACE COM DADOS DO USUÁRIO
+        // ============================================
+
+        // Atualizar nome e email no cabeçalho
+        if (usuario) {
+            const userName = document.getElementById('user-name');
+            const userEmail = document.getElementById('user-email');
+            
+            if (userName) userName.textContent = usuario.nome || 'Usuário';
+            if (userEmail) userEmail.textContent = usuario.email || '';
+            
+            // Mostrar tipo de usuário no título
+            console.log('👤 Tipo de usuário detectado:', usuario.tipo_usuario);
+            
+            // Verificar permissões e ajustar interface
+            ajustarInterfacePorTipoUsuario(usuario.tipo_usuario);
+        }
+
+        // Configurar botão de logout
+        const btnLogout = document.getElementById('btn-logout');
+        if (btnLogout) {
+            btnLogout.addEventListener('click', function() {
+                if (confirm('Deseja sair do sistema?')) {
+                    localStorage.removeItem('usuario_demandas');
+                    window.location.href = 'login.html';
+                }
+            });
+        }
+
+        // ============================================
+        // FUNÇÃO PARA AJUSTAR INTERFACE POR TIPO DE USUÁRIO
+        // ============================================
+
+        function ajustarInterfacePorTipoUsuario(tipo) {
+            console.log('🎛️ Ajustando interface para:', tipo);
+            
+            const btnNovaDemanda = document.getElementById('btn-nova-demanda');
+            
+            // REGRA: Apenas SUPERVISOR pode criar demandas
+            if (tipo !== 'supervisor' && btnNovaDemanda) {
+                console.log('🚫 Removendo botão de nova demanda para:', tipo);
+                btnNovaDemanda.style.display = 'none';
+            }
+            
+            // Se for DIRETOR(A) ou USUÁRIO COMUM, ajustaremos filtros depois
+            // Por enquanto, apenas registramos no console
+            if (tipo === 'gestor') {
+                console.log('👔 Diretor(a) detectado - Veremos apenas sua escola');
+            } else if (tipo === 'comum') {
+                console.log('👤 Usuário comum - Veremos apenas seu departamento + escola');
+            }
+        }
         
         // A. Detectar se é PWA instalado
         if (window.matchMedia('(display-mode: standalone)').matches) {
