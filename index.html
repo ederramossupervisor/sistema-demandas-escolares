@@ -166,8 +166,366 @@
     <script src="src/js/googleAppsScript.js"></script>
     <script src="src/js/googleSheets.js"></script>
     <script src="src/js/app.js"></script>
-    <script src="src/js/login.js"></script>
+   <script>
+// ============================================
+// SISTEMA DE LOGIN COM GOOGLE APPS SCRIPT
+// VERSÃO PARA 3 TIPOS DE USUÁRIO
+// ============================================
 
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbytUwMNrpTqBPIP9UjfqMRa0KX0RCKWuCmEocpYnhI8TcH1wDGAKoE_q_ZaGBY8xdYnhw/exec';
+
+// Verificar se já está logado
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔐 Sistema de login carregado - 3 tipos de usuário');
+    
+    // 1. Verificar se tem usuário salvo
+    const usuarioSalvo = localStorage.getItem('usuario_demandas');
+    if (usuarioSalvo) {
+        console.log('👤 Usuário já logado anteriormente');
+        // Redirecionar para a tela principal
+        window.location.href = 'login.html';
+    }
+    
+    // 2. Configurar formulário de login
+    const formLogin = document.getElementById('form-login');
+    if (formLogin) {
+        formLogin.addEventListener('submit', function(e) {
+            e.preventDefault();
+            fazerLogin();
+        });
+    }
+    
+    // 3. Configurar botão de solicitar acesso
+    const btnSolicitar = document.getElementById('btn-solicitar-acesso');
+    if (btnSolicitar) {
+        btnSolicitar.addEventListener('click', function() {
+            document.getElementById('modal-solicitar-acesso').style.display = 'flex';
+        });
+    }
+    
+    // 4. Configurar botões de fechar modal
+    const btnFechar = document.getElementById('btn-fechar-solicitacao');
+    const btnCancelar = document.getElementById('btn-cancelar-solicitacao');
+    
+    if (btnFechar) {
+        btnFechar.addEventListener('click', function() {
+            document.getElementById('modal-solicitar-acesso').style.display = 'none';
+        });
+    }
+    
+    if (btnCancelar) {
+        btnCancelar.addEventListener('click', function() {
+            document.getElementById('modal-solicitar-acesso').style.display = 'none';
+        });
+    }
+    
+    // 5. Configurar formulário de solicitação
+    const formSolicitar = document.getElementById('form-solicitar-acesso');
+    if (formSolicitar) {
+        formSolicitar.addEventListener('submit', function(e) {
+            e.preventDefault();
+            solicitarAcesso();
+        });
+    }
+});
+
+// ============================================
+// FUNÇÃO PRINCIPAL DE LOGIN
+// ============================================
+
+async function fazerLogin() {
+    console.log('🔐 Iniciando login...');
+    
+    // Obter valores do formulário
+    const email = document.getElementById('login-email').value.trim();
+    const senha = document.getElementById('login-senha').value;
+    const lembrar = document.getElementById('lembrar-login').checked;
+    
+    // Validar campos
+    if (!email || !senha) {
+        mostrarMensagem('Preencha todos os campos', 'error');
+        return;
+    }
+    
+    // Mostrar loading
+    mostrarLoading(true);
+    
+    try {
+        // Preparar dados para envio
+        const dados = {
+            acao: 'validarLogin',
+            email: email,
+            senha: senha
+        };
+        
+        console.log('📤 Enviando dados de login:', dados);
+        
+        // Enviar para Google Apps Script
+        const resultado = await enviarParaGoogleAppsScript(dados);
+        
+        console.log('📥 Resposta do servidor:', resultado);
+        
+        if (resultado.sucesso) {
+            // Login bem-sucedido!
+            console.log('✅ Login autorizado para:', resultado.usuario.nome);
+            console.log('📊 Tipo de usuário:', resultado.usuario.tipo_usuario);
+            console.log('🏫 Escola:', resultado.usuario.escola_sre);
+            console.log('🏢 Departamento:', resultado.usuario.departamento);
+            
+            // Salvar usuário no navegador
+            salvarUsuario(resultado.usuario, lembrar);
+            
+            // Mostrar mensagem de sucesso
+            mostrarMensagem(`Bem-vindo, ${resultado.usuario.nome}!`, 'success');
+            
+            // Redirecionar para tela principal após 1 segundo
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 1000);
+            
+        } else {
+            // Login falhou
+            console.error('❌ Login falhou:', resultado.erro);
+            mostrarMensagem(resultado.erro || 'Login falhou. Verifique suas credenciais.', 'error');
+        }
+        
+    } catch (erro) {
+        console.error('❌ Erro no processo de login:', erro);
+        mostrarMensagem('Erro de conexão com o servidor. Tente novamente.', 'error');
+    } finally {
+        // Esconder loading
+        mostrarLoading(false);
+    }
+}
+
+// ============================================
+// FUNÇÃO PARA SOLICITAR ACESSO
+// ============================================
+
+async function solicitarAcesso() {
+    console.log('📋 Iniciando solicitação de acesso...');
+    
+    // Obter valores do formulário
+    const nome = document.getElementById('solicitar-nome').value.trim();
+    const email = document.getElementById('solicitar-email').value.trim();
+    const telefone = document.getElementById('solicitar-telefone').value.trim();
+    const mensagem = document.getElementById('solicitar-mensagem').value.trim();
+    
+    // Validar campos obrigatórios
+    if (!nome || !email || !telefone) {
+        mostrarMensagem('Preencha os campos obrigatórios (nome, email e telefone)', 'error');
+        return;
+    }
+    
+    // Validar email
+    if (!validarEmail(email)) {
+        mostrarMensagem('Digite um email válido', 'error');
+        return;
+    }
+    
+    // Mostrar loading
+    mostrarLoading(true);
+    
+    try {
+        // Preparar dados para envio
+        const dados = {
+            acao: 'solicitarAcesso',
+            nome: nome,
+            email: email,
+            telefone: telefone,
+            mensagem: mensagem || 'Solicitação de acesso ao sistema'
+        };
+        
+        console.log('📤 Enviando solicitação:', dados);
+        
+        // Enviar para Google Apps Script
+        const resultado = await enviarParaGoogleAppsScript(dados);
+        
+        if (resultado.sucesso) {
+            // Sucesso!
+            console.log('✅ Solicitação enviada com sucesso');
+            mostrarMensagem('Solicitação enviada com sucesso! Aguarde autorização do supervisor.', 'success');
+            
+            // Fechar modal
+            document.getElementById('modal-solicitar-acesso').style.display = 'none';
+            
+            // Limpar formulário
+            document.getElementById('form-solicitar-acesso').reset();
+            
+        } else {
+            // Erro
+            console.error('❌ Erro na solicitação:', resultado.erro);
+            mostrarMensagem(resultado.erro || 'Erro ao enviar solicitação. Tente novamente.', 'error');
+        }
+        
+    } catch (erro) {
+        console.error('❌ Erro no processo de solicitação:', erro);
+        mostrarMensagem('Erro de conexão. Tente novamente.', 'error');
+    } finally {
+        // Esconder loading
+        mostrarLoading(false);
+    }
+}
+
+// ============================================
+// FUNÇÃO PARA ENVIAR DADOS AO GOOGLE APPS SCRIPT (JSONP)
+// ============================================
+
+function enviarParaGoogleAppsScript(dados) {
+    return new Promise((resolve, reject) => {
+        // Criar nome único para a função de callback
+        const callbackName = 'callback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        
+        // Definir a função de callback
+        window[callbackName] = function(resposta) {
+            console.log('📥 Resposta JSONP recebida');
+            
+            // Limpar a função de callback da memória
+            delete window[callbackName];
+            
+            // Remover o script do DOM
+            if (script.parentNode) {
+                script.parentNode.removeChild(script);
+            }
+            
+            // Limpar timeout
+            clearTimeout(timeoutId);
+            
+            // Processar resposta
+            if (resposta && resposta.sucesso !== false) {
+                resolve(resposta.dados || resposta);
+            } else {
+                reject(new Error(resposta.erro || resposta.mensagem || 'Erro no servidor'));
+            }
+        };
+        
+        // Criar elemento script para JSONP
+        const script = document.createElement('script');
+        
+        // Montar URL JSONP
+        let url = SCRIPT_URL;
+        url += '?callback=' + encodeURIComponent(callbackName);
+        url += '&dados=' + encodeURIComponent(JSON.stringify(dados));
+        url += '&_=' + Date.now(); // Cache buster
+        
+        console.log('🔗 URL JSONP (resumida):', url.substring(0, 120) + '...');
+        
+        script.src = url;
+        
+        // Configurar timeout (20 segundos)
+        const timeoutId = setTimeout(() => {
+            if (window[callbackName]) {
+                delete window[callbackName];
+                if (script.parentNode) {
+                    script.parentNode.removeChild(script);
+                }
+                reject(new Error('Timeout: Servidor não respondeu em 20 segundos'));
+            }
+        }, 20000);
+        
+        // Configurar eventos de erro
+        script.onerror = () => {
+            clearTimeout(timeoutId);
+            if (window[callbackName]) delete window[callbackName];
+            if (script.parentNode) {
+                script.parentNode.removeChild(script);
+            }
+            reject(new Error('Falha na conexão com o servidor'));
+        };
+        
+        // Adicionar script ao DOM (isso dispara a requisição)
+        document.body.appendChild(script);
+    });
+}
+
+// ============================================
+// FUNÇÕES AUXILIARES
+// ============================================
+
+function salvarUsuario(usuario, lembrar) {
+    console.log('💾 Salvando dados do usuário...');
+    
+    // Converter objeto para string
+    const usuarioString = JSON.stringify(usuario);
+    
+    // Salvar no localStorage
+    localStorage.setItem('usuario_demandas', usuarioString);
+    
+    // Se "lembrar" estiver marcado, salvar também no sessionStorage para persistência
+    if (lembrar) {
+        sessionStorage.setItem('usuario_demandas', usuarioString);
+    }
+    
+    console.log('✅ Usuário salvo:', usuario.nome);
+}
+
+function mostrarLoading(mostrar) {
+    const loading = document.getElementById('loading');
+    if (loading) {
+        loading.style.display = mostrar ? 'flex' : 'none';
+    }
+}
+
+function mostrarMensagem(texto, tipo = 'info') {
+    console.log(`📢 Mensagem [${tipo}]:`, texto);
+    
+    // Usar o sistema de toast existente
+    const toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) return;
+    
+    // Criar elemento toast
+    const toast = document.createElement('div');
+    toast.className = `toast ${tipo}`;
+    
+    // Definir ícone conforme tipo
+    let icon = 'fas fa-info-circle';
+    if (tipo === 'success') icon = 'fas fa-check-circle';
+    if (tipo === 'error') icon = 'fas fa-exclamation-circle';
+    if (tipo === 'warning') icon = 'fas fa-exclamation-triangle';
+    
+    // Conteúdo do toast
+    toast.innerHTML = `
+        <div class="toast-icon">
+            <i class="${icon}"></i>
+        </div>
+        <div class="toast-content">
+            <div class="toast-message">${texto}</div>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    // Adicionar ao container
+    toastContainer.appendChild(toast);
+    
+    // Remover automaticamente após 5 segundos
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 5000);
+}
+
+function validarEmail(email) {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+}
+
+// ============================================
+// FUNÇÕES PARA USO GLOBAL (se necessário)
+// ============================================
+
+window.fazerLogin = fazerLogin;
+window.solicitarAcesso = solicitarAcesso;
+window.sairSistema = function() {
+    localStorage.removeItem('usuario_demandas');
+    sessionStorage.removeItem('usuario_demandas');
+    window.location.href = 'index.html';
+};
+
+console.log('✅ Sistema de login 3.0 carregado com sucesso!');
+</script>
     <!-- SERVICE WORKER REGISTRATION -->
     <script>
     // ============================================
