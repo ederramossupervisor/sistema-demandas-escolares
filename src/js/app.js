@@ -742,6 +742,89 @@ function mostrarModalNovaDemanda() {
     if (elementos.enviarEmail) {
         elementos.enviarEmail.checked = false;
     }
+        
+    // ============================================
+    // NOVO: CONFIGURAR SELEÇÃO DE DEPARTAMENTOS
+    // ============================================
+    
+    // Mostrar/ocultar seleção de departamento conforme tipo de usuário
+    const usuarioSalvo = localStorage.getItem('usuario_demandas');
+    let usuario = null;
+    
+    try {
+        usuario = usuarioSalvo ? JSON.parse(usuarioSalvo) : {};
+    } catch (e) {
+        usuario = {};
+        console.error('❌ Erro ao ler usuário do localStorage:', e);
+    }
+    
+    const departamentoContainer = document.getElementById('departamento-container');
+    const departamentoCheckboxes = document.querySelectorAll('.departamento-checkbox');
+    const departamentoTodas = document.getElementById('departamento-todas');
+    
+    console.log('🔍 Verificando permissões para departamento:', {
+        usuario: usuario ? usuario.tipo_usuario : 'não logado',
+        containerExiste: !!departamentoContainer,
+        temCheckboxes: departamentoCheckboxes.length
+    });
+    
+    if (departamentoContainer && departamentoCheckboxes.length > 0) {
+        // Apenas SUPERVISOR pode selecionar departamentos
+        if (usuario && usuario.tipo_usuario === 'supervisor') {
+            departamentoContainer.style.display = 'block';
+            console.log('👑 Supervisor: mostrando seleção de departamentos');
+            
+            // Resetar checkboxes de departamento
+            departamentoCheckboxes.forEach(cb => {
+                cb.checked = false;
+                cb.disabled = false;
+            });
+            
+            // Configurar checkbox "Selecionar todas"
+            if (departamentoTodas) {
+                // Remover event listeners antigos
+                const novaDepartamentoTodas = departamentoTodas.cloneNode(true);
+                departamentoTodas.parentNode.replaceChild(novaDepartamentoTodas, departamentoTodas);
+                
+                // Adicionar novo event listener
+                novaDepartamentoTodas.addEventListener('change', function() {
+                    const checked = this.checked;
+                    document.querySelectorAll('.departamento-checkbox:not(#departamento-todas)').forEach(cb => {
+                        cb.checked = checked;
+                        cb.disabled = checked;
+                    });
+                    console.log('📋 Departamento "todas" alterado para:', checked);
+                });
+            }
+            
+            // Configurar checkboxes individuais
+            document.querySelectorAll('.departamento-checkbox:not(#departamento-todas)').forEach(cb => {
+                // Clonar para remover event listeners antigos
+                const novoCb = cb.cloneNode(true);
+                cb.parentNode.replaceChild(novoCb, cb);
+                
+                novoCb.addEventListener('change', function() {
+                    // Atualizar checkbox "Selecionar todas"
+                    const checkboxes = document.querySelectorAll('.departamento-checkbox:not(#departamento-todas)');
+                    const todasMarcadas = Array.from(checkboxes).every(cb => cb.checked);
+                    
+                    if (departamentoTodas) {
+                        departamentoTodas.checked = todasMarcadas;
+                    }
+                    
+                    console.log('📋 Departamento alterado:', this.value, this.checked);
+                });
+            });
+            
+        } else {
+            departamentoContainer.style.display = 'none';
+            console.log('🚫 Não-supervisor: ocultando seleção de departamentos');
+        }
+    } else {
+        console.warn('⚠️ Elementos de departamento não encontrados no formulário');
+    }
+    
+    console.log('✅ Configuração de departamentos concluída');
 }
 
 /**
