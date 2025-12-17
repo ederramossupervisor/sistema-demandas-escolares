@@ -1068,12 +1068,12 @@ if (usuario.tipo_usuario === 'supervisor') {
     
     // Se não selecionou nenhum, usa o departamento do usuário
     if (departamentosSelecionados.length === 0) {
-        departamentosSelecionados.push(usuario.departamento || 'Supervisão');
+        departamentosSelecionados.push(usuarioValidacao.departamento || 'Supervisão');
         console.log('⚠️ Nenhum departamento selecionado. Usando padrão:', departamentosSelecionados[0]);
     }
 } else {
     // Para não-supervisores, usa apenas o departamento do usuário
-    departamentosSelecionados.push(usuario.departamento || 'Pedagógico');
+    departamentosSelecionados.push(usuarioValidacao.departamento || 'Pedagógico');
     console.log('👤 Não-supervisor. Usando departamento:', departamentosSelecionados[0]);
 }
 
