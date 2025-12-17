@@ -21,6 +21,23 @@
     
     <!-- Fonte -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+.btn-logout {
+    background: none;
+    border: none;
+    color: #7f8c8d;
+    cursor: pointer;
+    padding: 5px 10px;
+    margin-left: 10px;
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+
+.btn-logout:hover {
+    background: rgba(231, 76, 60, 0.1);
+    color: #e74c3c;
+}
+</style>
 </head>
 <body>
     <!-- SPLASH SCREEN (logo após o body) -->
@@ -59,8 +76,11 @@
                     <i class="fas fa-user-tie"></i>
                 </div>
                 <div class="user-details">
-                    <span class="user-name">Supervisor</span>
-                    <span class="user-email">ecramos@sedu.es.gov.br</span>
+                    <span class="user-name" id="user-name">Carregando...</span>
+                    <span class="user-email" id="user-email"></span>
+                    <button class="btn-logout" id="btn-logout" title="Sair">
+                        <i class="fas fa-sign-out-alt"></i>
+                     </button>
                 </div>
             </div>
         </header>
