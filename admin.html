@@ -782,9 +782,9 @@ async function recusarSolicitacao(email) {
 }
 
 function abrirModalEditar(email, nome, tipo, departamento, escola) {
-    document.getElementById('edit-email-hidden').value = email;
+    document.getElementById('edit-email-hidden').value = email; 
     document.getElementById('edit-nome').value = nome || '';
-    document.getElementById('edit-email').value = email || '';
+    document.getElementById('edit-email').value = email || '';   
     document.getElementById('edit-tipo').value = tipo || 'comum';
     document.getElementById('edit-departamento').value = departamento || 'Pedagógico';
     document.getElementById('edit-escola').value = escola || 'EEEFM Pedra Azul';
@@ -802,35 +802,57 @@ function gerarSenha() {
 }
 
 async function salvarEdicaoUsuario() {
-    const email = document.getElementById('edit-email-hidden').value;
+    const emailOriginal = document.getElementById('edit-email-hidden').value;
+    const nomeNovo = document.getElementById('edit-nome').value;
+    const emailNovo = document.getElementById('edit-email').value;
     const tipo = document.getElementById('edit-tipo').value;
     const departamento = document.getElementById('edit-departamento').value;
     const escola = document.getElementById('edit-escola').value;
     const senha = document.getElementById('edit-senha').value;
     
-    const confirmacao = confirm(`Salvar alterações para ${email}?\n\nTipo: ${tipo}\nDepartamento: ${departamento}\nEscola: ${escola}`);
+    // Validações básicas
+    if (!nomeNovo || nomeNovo.trim() === '') {
+        AdminSystem.mostrarToast('Validação', 'O nome não pode ficar em branco', 'warning');
+        return;
+    }
+    
+    if (!emailNovo || !emailNovo.includes('@')) {
+        AdminSystem.mostrarToast('Validação', 'Informe um email válido', 'warning');
+        return;
+    }
+    
+    const confirmacao = confirm(`Salvar alterações?\n\nNome: ${nomeNovo}\nEmail: ${emailNovo}\nTipo: ${tipo}\nDepartamento: ${departamento}\nEscola: ${escola}\n\nO email antigo era: ${emailOriginal}`);
     
     if (!confirmacao) return;
     
     mostrarLoading(true);
     
     try {
-        const resultado = await AdminSystem.alterarUsuario(email, tipo, departamento, escola, senha);
+        // Agora passamos TODOS os dados, incluindo nome e email novos
+        const resultado = await AdminSystem.alterarUsuario(
+            emailOriginal,   // Email ORIGINAL (para encontrar o usuário)
+            nomeNovo,        // Nome NOVO
+            emailNovo,       // Email NOVO
+            tipo,            // Tipo
+            departamento,    // Departamento
+            escola,          // Escola
+            senha            // Senha (opcional)
+        );
         
         if (resultado.sucesso) {
-            AdminSystem.mostrarToast('Sucesso', 'Usuário atualizado!', 'success');
+            AdminSystem.mostrarToast('Sucesso', 'Usuário atualizado com sucesso!', 'success');
             fecharModalEditar();
-            await carregarUsuarios();
+            await carregarUsuarios(); // Recarrega a tabela
         } else {
-            AdminSystem.mostrarToast('Erro', resultado.erro || 'Erro ao atualizar', 'error');
+            AdminSystem.mostrarToast('Erro', resultado.erro || 'Erro ao atualizar usuário', 'error');
         }
     } catch (erro) {
-        AdminSystem.mostrarToast('Erro', 'Falha na comunicação', 'error');
+        console.error('❌ Erro ao salvar edição:', erro);
+        AdminSystem.mostrarToast('Erro', 'Falha na comunicação com o servidor', 'error');
     } finally {
         mostrarLoading(false);
     }
 }
-
 async function resetarSenhaUsuario(email, nome) {
     const novaSenha = prompt(`Nova senha para ${nome} (${email}):`, AdminSystem.gerarSenhaAleatoria());
     
