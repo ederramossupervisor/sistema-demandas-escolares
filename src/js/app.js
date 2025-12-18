@@ -36,27 +36,28 @@ let elementos = {};
 document.addEventListener('DOMContentLoaded', function() {
     console.log("🚀 Sistema iniciando...");
     
-    // VERIFICAÇÃO: Só inicializar na página principal
-    // O pathname pode ser: 
-    // - "/sistema-demandas-escolares/index.html" (GitHub Pages)
-    // - "/index.html" (local)
-    // - "/" (página raiz)
-    // - "" (outras situações)
-    const pathname = window.location.pathname;
-    const estaNaPaginaPrincipal = 
-        pathname.includes('index.html') || 
-        pathname.endsWith('/') || 
-        pathname === '' ||
-        pathname === '/' ||
-        !pathname.includes('.html'); // se não tem .html, pode ser a página principal
+       // VERIFICAÇÃO SIMPLES E SEGURA
+    console.log("📍 Verificando em qual página estamos...");
     
-    console.log("📍 Pathname atual:", pathname);
-    console.log("📌 É página principal?", estaNaPaginaPrincipal);
+    // Verificar se estamos na página de login
+    const urlAtual = window.location.href;
     
-    if (!estaNaPaginaPrincipal) {
-        console.log("🔍 Não estamos na página principal, pulando inicialização...");
-        return; // Não inicializa o app.js na página de login
+    if (urlAtual.includes('login.html') || 
+        urlAtual.endsWith('/login') ||
+        urlAtual.includes('/login.html')) {
+        
+        console.log("🔐 Estamos na página de LOGIN - Não iniciar splash screen");
+        
+        // Na página de login, esconder splash screen IMEDIATAMENTE
+        if (document.getElementById('splash-screen')) {
+            document.getElementById('splash-screen').style.display = 'none';
+        }
+        
+        return; // Parar aqui - não rodar o resto do app.js
     }
+    
+    // Se chegou aqui, estamos na página principal (index.html)
+    console.log("🏠 Estamos na página PRINCIPAL - Iniciar splash screen");
     
     // 1. Inicializar elementos
     inicializarElementos();
