@@ -31,179 +31,15 @@ let state = {
 
 // ELEMENTOS DO DOM
 let elementos = {};
-// ============================================
-// 🔧 FUNÇÕES DE COMUNICAÇÃO COM O SERVIDOR
-// ============================================
 
-/**
- * Função principal para enviar dados ao Google Apps Script
- */
-async function enviarParaGoogleAppsScript(dados) {
-    console.log('📤 Enviando para GAS:', dados.acao);
-    
-    try {
-        // URL do seu Google Apps Script
-        const scriptUrl = 'https://script.google.com/macros/s/AKfycbyYQ0QkjFQStpM9ng65ey1grNmDOCnibcvMaXeUmGTm_o2XYZUCmbBDX4ZnZyzqD2Lyvw/exec';
-        
-        const resposta = await fetch(scriptUrl, {
-            method: 'POST',
-            mode: 'cors',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(dados)
-        });
-        
-        return await resposta.json();
-    } catch (erro) {
-        console.error('❌ Erro ao enviar para GAS:', erro);
-        throw erro;
-    }
-}
-
-/**
- * Lista demandas do servidor
- */
-async function listarDemandasDoServidor() {
-    try {
-        const resposta = await enviarParaGoogleAppsScript({
-            acao: 'listarDemandas'
-        });
-        
-        if (resposta.sucesso && resposta.dados) {
-            console.log(`✅ ${resposta.dados.length} demandas recebidas do servidor`);
-            return resposta.dados;
-        }
-        return [];
-    } catch (erro) {
-        console.error('❌ Erro ao listar demandas:', erro);
-        throw erro;
-    }
-}
-
-/**
- * Salva uma demanda no servidor
- */
-async function salvarDemandaNoServidor(dadosDemanda) {
-    try {
-        const resposta = await enviarParaGoogleAppsScript({
-            acao: 'salvarDemanda',
-            ...dadosDemanda
-        });
-        
-        return resposta;
-    } catch (erro) {
-        console.error('❌ Erro ao salvar demanda:', erro);
-        throw erro;
-    }
-}
-
-/**
- * Faz upload de arquivo
- */
-async function fazerUploadArquivo(arquivo) {
-    try {
-        const formData = new FormData();
-        formData.append('arquivo', arquivo);
-        formData.append('acao', 'uploadArquivo');
-        
-        const resposta = await fetch(
-            'https://script.google.com/macros/s/AKfycbyYQ0QkjFQStpM9ng65ey1grNmDOCnibcvMaXeUmGTm_o2XYZUCmbBDX4ZnZyzqD2Lyvw/exec',
-            {
-                method: 'POST',
-                body: formData
-            }
-        );
-        
-        return await resposta.json();
-    } catch (erro) {
-        console.error('❌ Erro no upload:', erro);
-        throw erro;
-    }
-}
-
-/**
- * Envia e-mail da demanda
- */
-async function enviarEmailDemanda(dadosEmail) {
-    try {
-        const resposta = await enviarParaGoogleAppsScript({
-            acao: 'enviarEmailDemanda',
-            ...dadosEmail
-        });
-        
-        return resposta;
-    } catch (erro) {
-        console.error('❌ Erro ao enviar e-mail:', erro);
-        throw erro;
-    }
-}
-
-/**
- * Exclui uma demanda do servidor
- */
-async function excluirDemandaNoServidor(idDemanda) {
-    try {
-        const resposta = await enviarParaGoogleAppsScript({
-            acao: 'excluirDemanda',
-            id: idDemanda
-        });
-        
-        return resposta;
-    } catch (erro) {
-        console.error('❌ Erro ao excluir demanda:', erro);
-        throw erro;
-    }
-}
 // INICIALIZAÇÃO
 document.addEventListener('DOMContentLoaded', function() {
     console.log("🚀 Sistema iniciando...");
     
-    // VERIFICAÇÃO RIGOROSA DA PÁGINA
-    console.log("📍 Verificando em qual página estamos...");
-    
-    // 1. Verificar pela URL PRIMEIRO (mais confiável)
-    const currentPath = window.location.pathname;
-    const currentPage = currentPath.split('/').pop();
-    console.log("📄 Página atual:", currentPage);
-    
-    // 2. Verificar elementos específicos
-    const hasLoginContainer = !!document.getElementById('login-container');
-    const hasLoginForm = !!document.querySelector('.login-form');
-    const isLoginUrl = currentPage === 'login.html' || 
-                      currentPage.includes('login') || 
-                      currentPath.includes('login');
-    
-    console.log("🔍 Resultados da verificação:", {
-        hasLoginContainer,
-        hasLoginForm,
-        isLoginUrl,
-        currentPath,
-        currentPage
-    });
-    
-    // 3. DECISÃO: Se for página de login, PARAR TUDO
-    if (hasLoginContainer || hasLoginForm || isLoginUrl) {
-        console.log("🔐 ESTAMOS NA PÁGINA DE LOGIN - PARANDO app.js");
-        
-        // IMPORTANTE: Esconder a splash screen se existir
-        const splash = document.getElementById('splash-screen');
-        if (splash) {
-            splash.style.display = 'none';
-            console.log("🎬 Splash screen escondida na página de login");
-        }
-        
-        // NÃO executar mais NADA do app.js
-        return;
-    }
-    
-    // 4. SE CHEGOU AQUI: É a página principal (index.html)
-    console.log("🏠 Estamos na página PRINCIPAL (index.html)");
-    
-    // 5. Inicializar elementos
+    // 1. Inicializar elementos
     inicializarElementos();
     
-    // 6. Se houver splash screen, iniciar sequência
+    // 2. Se houver splash screen, iniciar sequência
     if (elementos.splashScreen) {
         console.log("🎬 Iniciando splash screen...");
         iniciarSplashScreen();
@@ -212,28 +48,11 @@ document.addEventListener('DOMContentLoaded', function() {
         iniciarAplicacao();
     }
 });
+
 /**
- * INICIALIZAÇÃO COM SPLASH SCREEN (COM FALLBACK)
+ * INICIALIZAÇÃO COM SPLASH SCREEN
  */
 function iniciarSplashScreen() {
-    console.log("🎬 Iniciando splash screen...");
-    
-    // Verificar se o elemento existe
-    if (!elementos.splashScreen) {
-        console.log("❌ Splash screen não encontrada, iniciando aplicação diretamente");
-        iniciarAplicacao();
-        return;
-    }
-    
-    // Fallback global: se algo der errado, esconder após 8 segundos
-    const fallbackTimeout = setTimeout(() => {
-        if (state.splashScreenActive) {
-            console.log("⏰ Fallback: tempo limite atingido, forçando início da aplicação");
-            esconderSplashScreen();
-            iniciarAplicacao();
-        }
-    }, 8000);
-    
     // Configurar progresso da splash
     const statusEl = elementos.splashScreen.querySelector('.splash-status');
     const etapas = [
@@ -247,116 +66,71 @@ function iniciarSplashScreen() {
     // Executar etapas
     etapas.forEach((etapa, index) => {
         setTimeout(() => {
-            if (!state.splashScreenActive) return;
-            
-            if (statusEl) {
-                statusEl.textContent = etapa.texto;
-            }
+            if (!statusEl || !state.splashScreenActive) return;
+            statusEl.textContent = etapa.texto;
             console.log(`🔧 ${etapa.texto}`);
             
             // Última etapa: iniciar aplicação
             if (index === etapas.length - 1) {
-                console.log("✅ Todas as etapas concluídas");
-                clearTimeout(fallbackTimeout); // Cancelar fallback
-                
                 setTimeout(() => {
-                    if (state.splashScreenActive) {
-                        console.log("🚀 Iniciando aplicação...");
-                        iniciarAplicacao();
-                    }
-                }, 800);
+                    iniciarAplicacao();
+                }, 500);
             }
         }, etapa.tempo);
     });
+    
+    // Fallback: esconder após 5 segundos se algo falhar
+    setTimeout(() => {
+        if (state.splashScreenActive) {
+            console.log("⚠️ Fallback: escondendo splash screen");
+            esconderSplashScreen();
+            iniciarAplicacao();
+        }
+    }, 5000);
 }
+
 /**
  * INICIALIZAR APLICAÇÃO PRINCIPAL COM NOTIFICAÇÕES
  */
 function iniciarAplicacao() {
-    console.log("📱 Iniciando aplicação principal...");
-
-     // VERIFICAÇÃO DE SEGURANÇA
-    const isLoginPage = !!document.getElementById('login-container') || 
-                       !!document.querySelector('.login-form');
+    console.log("📱 Iniciando aplicação principal com notificações...");
     
-    if (isLoginPage) {
-        console.error("❌ ERRO CRÍTICO: iniciarAplicacao chamado na página de login!");
-        console.error("📍 Isso vai causar travamento!");
-        return;
-    }
-    
-    // 1. Esconder splash screen (com verificação)
+    // 1. Esconder splash screen
     esconderSplashScreen();
     
-    // Pequeno delay para garantir transição
+    // 2. Inicializar resto da aplicação
+    inicializarEventos();
+    carregarDemandas();
+    
+    // 3. Inicializar sistema de notificações (NOVO)
     setTimeout(() => {
-        // 2. Inicializar resto da aplicação
-        try {
-            console.log("🔗 Inicializando eventos...");
-            inicializarEventos();
-            
-            console.log("🔄 Carregando demandas...");
-            carregarDemandas();
-            
-            // 3. Inicializar sistema de notificações
-            setTimeout(() => {
-                console.log("🔔 Inicializando sistema de notificações...");
-                inicializarSistemaNotificacoes();
-            }, 2000);
-            
-            // 4. Verificar se é PWA
-            if (window.matchMedia('(display-mode: standalone)').matches) {
-                console.log("📲 Aplicativo PWA em execução");
-                document.body.classList.add('pwa-mode');
-            }
-            
-            console.log("✅ Aplicação iniciada com sucesso!");
-            
-        } catch (erro) {
-            console.error("❌ Erro ao iniciar aplicação:", erro);
-            mostrarToast('Erro', 'Falha ao iniciar aplicação', 'error');
-        }
-    }, 300);
+        inicializarSistemaNotificacoes();
+    }, 2000);
+    
+    // 4. Verificar se é PWA
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        console.log("📲 Aplicativo PWA em execução");
+        document.body.classList.add('pwa-mode');
+    }
 }
-
 /**
- * ESCONDER SPLASH SCREEN (CORRIGIDA)
+ * ESCONDER SPLASH SCREEN
  */
 function esconderSplashScreen() {
-    console.log("🎬 Tentando esconder splash screen...");
+    if (!elementos.splashScreen || !state.splashScreenActive) return;
     
-    // Verificar se o elemento existe
-    if (!elementos.splashScreen) {
-        console.log("⚠️ Splash screen não encontrada no DOM");
-        state.splashScreenActive = false;
-        return;
-    }
-    
-    if (!state.splashScreenActive) {
-        console.log("⚠️ Splash screen já foi escondida anteriormente");
-        return;
-    }
-    
-    console.log("✅ Escondendo splash screen...");
     state.splashScreenActive = false;
-    
-    // Adicionar classe de animação
     elementos.splashScreen.classList.add('hidden');
-    elementos.splashScreen.classList.add('fade-out');
     
-    console.log("✅ Classe 'hidden' adicionada à splash screen");
+    console.log("✅ Splash screen escondida");
     
     // Remover do DOM após animação
     setTimeout(() => {
         if (elementos.splashScreen && elementos.splashScreen.parentNode) {
-            console.log("🗑️ Removendo splash screen do DOM...");
             elementos.splashScreen.remove();
             elementos.splashScreen = null;
-            console.log("✅ Splash screen removida do DOM");
-        } else {
-            console.log("⚠️ Splash screen já foi removida ou não existe mais");
         }
-    }, 800); // Aumentar tempo para 800ms para garantir animação
+    }, 500);
 }
 
 /**
@@ -364,16 +138,6 @@ function esconderSplashScreen() {
  */
 function inicializarElementos() {
     console.log("🔍 Inicializando elementos do DOM...");
-
-    // VERIFICAÇÃO DE SEGURANÇA: Só executar se estivermos na página principal
-    const isLoginPage = !!document.getElementById('login-container') || 
-                       !!document.querySelector('.login-form');
-    
-    if (isLoginPage) {
-        console.error("❌ ERRO: inicializarElementos chamado na página de login!");
-        console.error("📍 Isso não deveria acontecer. Verifique a verificação de página.");
-        return;
-    } // ← ESTA É A CHAVE QUE ESTAVA FALTANDO!
     
     elementos = {
         // SPLASH SCREEN
@@ -398,14 +162,7 @@ function inicializarElementos() {
         totalDemandas: document.getElementById('total-demandas'),
         pendentes: document.getElementById('pendentes'),
         atrasadas: document.getElementById('atrasadas'),
-        // Elementos de estatísticas do bloco
-        totalDemandasInfo: document.getElementById('total-demandas-info'),
-        pendentesInfo: document.getElementById('pendentes-info'),
-        emAndamentoInfo: document.getElementById('em-andamento-info'),
-        concluidasInfo: document.getElementById('concluidas-info'),
-        atrasadasInfo: document.getElementById('atrasadas-info'),
         
-    
         // Modal nova demanda
         modalNovaDemanda: document.getElementById('modal-nova-demanda'),
         btnNovaDemanda: document.getElementById('btn-nova-demanda'),
@@ -458,6 +215,7 @@ function inicializarElementos() {
     
     console.log("✅ Elementos inicializados:", Object.keys(elementos).length);
 }
+
 /**
  * Configura todos os eventos da aplicação
  */
@@ -611,18 +369,11 @@ function esconderLoading() {
         elementos.mainContainer.style.pointerEvents = 'auto';
     }
 }
-
 /**
  * Atualiza o bloco "Demandas" com números reais
  */
 function atualizarBlocoEstatisticas(demandas) {
     console.log("📈 Atualizando estatísticas do bloco...");
-    
-    // VERIFICAÇÃO: Se não estamos na página principal, não faz nada
-    if (!elementos || !elementos.mainContainer) {
-        console.log("⚠️ Não estamos na página principal, pulando atualização de estatísticas");
-        return;
-    }
     
     // Contar por status
     const total = demandas.length;
@@ -640,47 +391,15 @@ function atualizarBlocoEstatisticas(demandas) {
         return prazo < hoje;
     }).length;
     
-    // Atualizar os números na tela - BUSCANDO ELEMENTOS DIRETAMENTE
-    // (mais seguro que depender do objeto elementos)
+    // Atualizar os números na tela
+    document.getElementById('total-demandas-info').textContent = total;
+    document.getElementById('pendentes-info').textContent = pendentes;
+    document.getElementById('em-andamento-info').textContent = emAndamento;
+    document.getElementById('concluidas-info').textContent = concluidas;
+    document.getElementById('atrasadas-info').textContent = atrasadas;
     
-    // Elemento "Total"
-    const totalEl = document.getElementById('total-demandas-info');
-    if (totalEl) {
-        totalEl.textContent = total;
-        console.log('✅ total-demandas-info atualizado:', total);
-    }
-    
-    // Elemento "Pendentes"
-    const pendentesEl = document.getElementById('pendentes-info');
-    if (pendentesEl) {
-        pendentesEl.textContent = pendentes;
-        console.log('✅ pendentes-info atualizado:', pendentes);
-    }
-    
-    // Elemento "Em Andamento"
-    const emAndamentoEl = document.getElementById('em-andamento-info');
-    if (emAndamentoEl) {
-        emAndamentoEl.textContent = emAndamento;
-        console.log('✅ em-andamento-info atualizado:', emAndamento);
-    }
-    
-    // Elemento "Concluídas"
-    const concluidasEl = document.getElementById('concluidas-info');
-    if (concluidasEl) {
-        concluidasEl.textContent = concluidas;
-        console.log('✅ concluidas-info atualizado:', concluidas);
-    }
-    
-    // Elemento "Atrasadas"
-    const atrasadasEl = document.getElementById('atrasadas-info');
-    if (atrasadasEl) {
-        atrasadasEl.textContent = atrasadas;
-        console.log('✅ atrasadas-info atualizado:', atrasadas);
-    }
-    
-    console.log("📊 Estatísticas calculadas:", { total, pendentes, emAndamento, concluidas, atrasadas });
+    console.log("📊 Estatísticas:", { total, pendentes, emAndamento, concluidas, atrasadas });
 }
-
 /**
  * Carrega as demandas do servidor
  */
@@ -899,92 +618,84 @@ function renderizarDemandas() {
  * Esta função vai substituir os exemplos fixos pelos dados reais
  */
 function renderizarDemandasNaLista() {
-    console.log("🎯 Renderizando na lista nova...");
+    console.log("🎯 Renderizando demandas na LISTA...");
     
+    // 1. Encontrar o container da lista
     const listaContainer = document.querySelector('.demandas-lista-container');
-    if (!listaContainer) return;
-    
-    // Limpar (manter só o cabeçalho)
-    const cabecalho = listaContainer.querySelector('.demanda-linha.cabecalho');
-    listaContainer.innerHTML = '';
-    if (cabecalho) listaContainer.appendChild(cabecalho);
-    
-    // Aplicar filtros
-    const demandasFiltradas = filtrarDemandas(state.demandas);
-    
-    // Se não há demandas filtradas
-    if (!demandasFiltradas || demandasFiltradas.length === 0) {
-        const vazioHTML = `
-            <div class="lista-vazia">
-                <i class="fas fa-filter fa-3x"></i>
-                <h3>Nenhuma demanda encontrada</h3>
-                <p>Tente ajustar os filtros ou criar uma nova demanda</p>
-            </div>
-        `;
-        listaContainer.insertAdjacentHTML('beforeend', vazioHTML);
-        
-        // Atualizar estatísticas com zero (já que nada foi filtrado)
-        atualizarBlocoEstatisticas([]);
+    if (!listaContainer) {
+        console.error("❌ Container da lista não encontrado!");
         return;
     }
     
-    // Ordenar: pendentes primeiro, depois por prazo
-    demandasFiltradas.sort((a, b) => {
-        // Status: Pendente → Em andamento → Concluída
-        const statusOrder = { 'Pendente': 1, 'Em andamento': 2, 'Concluída': 3 };
-        const statusA = statusOrder[a.status] || 4;
-        const statusB = statusOrder[b.status] || 4;
-        
-        if (statusA !== statusB) return statusA - statusB;
-        
-        // Por prazo (mais próximos primeiro)
-        if (!a.prazo) return 1;
-        if (!b.prazo) return -1;
-        return new Date(a.prazo) - new Date(b.prazo);
-    });
+    // 2. Limpar conteúdo (exceto o cabeçalho)
+    const cabecalho = listaContainer.querySelector('.demanda-linha.cabecalho');
+    listaContainer.innerHTML = '';
     
-    // Para cada demanda filtrada
-    demandasFiltradas.forEach(demanda => {
-        // Formatar dados
-        const dataPrazo = demanda.prazo ? 
-            new Date(demanda.prazo).toLocaleDateString('pt-BR') : 
-            'Não definido';
+    if (cabecalho) {
+        listaContainer.appendChild(cabecalho);
+    }
+    
+    // 3. Verificar se temos demandas
+    if (!state.demandas || state.demandas.length === 0) {
+        console.log("📭 Nenhuma demanda para mostrar");
         
-        // Calcular se está atrasada
-        const hoje = new Date();
-        const prazoDate = demanda.prazo ? new Date(demanda.prazo) : null;
-        let prazoIndicador = '';
-        
-        if (prazoDate && demanda.status !== 'Concluída') {
-            const diasRestantes = Math.ceil((prazoDate - hoje) / (1000 * 60 * 60 * 24));
-            
-            if (diasRestantes < 0) {
-                prazoIndicador = `<div class="prazo-indicator prazo-atrasado">Atrasada ${Math.abs(diasRestantes)}d</div>`;
-            } else if (diasRestantes === 0) {
-                prazoIndicador = `<div class="prazo-indicator prazo-hoje">Hoje!</div>`;
-            } else if (diasRestantes <= 3) {
-                prazoIndicador = `<div class="prazo-indicator prazo-alerta">${diasRestantes}d</div>`;
-            }
+        // Mostrar mensagem "vazia"
+        const vazioHTML = `
+            <div class="lista-vazia">
+                <i class="fas fa-clipboard-list fa-3x"></i>
+                <h3>Nenhuma demanda encontrada</h3>
+                <p>Não há demandas cadastradas no momento</p>
+            </div>
+        `;
+        listaContainer.insertAdjacentHTML('beforeend', vazioHTML);
+        return;
+    }
+    
+    console.log(`📊 Mostrando ${state.demandas.length} demandas na lista`);
+    
+    // 4. Para CADA demanda real, criar uma linha na lista
+    state.demandas.forEach((demanda, index) => {
+        // Formatar a data do prazo
+        let dataPrazo = "Não definido";
+        if (demanda.prazo) {
+            const data = new Date(demanda.prazo);
+            dataPrazo = data.toLocaleDateString('pt-BR');
         }
         
-        // Escolas (mostrar apenas primeira se tiver muitas)
-        let escolasTexto = demanda.escolas || '';
-        const escolasArray = escolasTexto.split(',').map(e => e.trim());
-        if (escolasArray.length > 1) {
-            escolasTexto = `${escolasArray[0]} +${escolasArray.length - 1}`;
+        // Formatar escolas (pegar só a primeira se tiver muitas)
+        let escolasTexto = demanda.escolas || "Não definida";
+        if (escolasTexto.includes(',')) {
+            escolasTexto = escolasTexto.split(',')[0].trim() + " + mais";
         }
         
-        // Status
-        const status = demanda.status || 'Pendente';
-        const statusClass = `status-${status.toLowerCase().replace(' ', '-')}`;
+        // Determinar cor do status
+        let statusClass = '';
+        let statusIcon = '';
         
-        // Criar linha
+        switch(demanda.status) {
+            case 'Pendente':
+                statusClass = 'status-pendente';
+                statusIcon = '⏰';
+                break;
+            case 'Em andamento':
+                statusClass = 'status-andamento';
+                statusIcon = '▶️';
+                break;
+            case 'Concluída':
+                statusClass = 'status-concluida';
+                statusIcon = '✅';
+                break;
+            default:
+                statusClass = 'status-pendente';
+                statusIcon = '📝';
+        }
+        
+        // Criar HTML da linha
         const linhaHTML = `
             <div class="demanda-linha" onclick="mostrarDetalhesDemanda(${demanda.id})" style="cursor: pointer;">
                 <div class="demanda-titulo">
                     <i class="fas fa-file-alt"></i>
                     ${demanda.titulo || 'Sem título'}
-                    ${prazoIndicador}
                 </div>
                 <div class="demanda-escola" title="${demanda.escolas || ''}">
                     ${escolasTexto}
@@ -999,16 +710,16 @@ function renderizarDemandasNaLista() {
                     ${dataPrazo}
                 </div>
                 <div class="demanda-status ${statusClass}">
-                    ${status}
+                    ${statusIcon} ${demanda.status || 'Pendente'}
                 </div>
             </div>
         `;
         
+        // Adicionar a linha ao container
         listaContainer.insertAdjacentHTML('beforeend', linhaHTML);
     });
     
-    // Atualizar estatísticas com as demandas filtradas
-    atualizarBlocoEstatisticas(demandasFiltradas);
+    console.log("✅ Lista renderizada com sucesso!");
 }
 /**
  * Filtra as demandas com base nos filtros ativos
@@ -1021,13 +732,25 @@ function filtrarDemandas(demandas) {
                 return false;
             }
         }
-        
-        // Filtro por departamento
-        if (state.filtros.departamento && state.filtros.departamento !== '') {
-            if (!demanda.departamento || !demanda.departamento.includes(state.filtros.departamento)) {
-                return false;
-            }
-        }
+        // Filtro por departamento (NOVO)
+if (state.filtros.departamento && state.filtros.departamento !== '') {
+    // Se a demanda não tem departamento definido, ignora (para demandas antigas)
+    if (!demanda.departamento || demanda.departamento === '') {
+        return false; // Não mostra demandas sem departamento
+    }
+    
+    // Verificar se o departamento da demanda corresponde ao filtro
+    const deptsDemanda = demanda.departamento.split(',').map(d => d.trim());
+    
+    // Se o filtro for vazio ou "Todos", mostrar tudo
+    if (state.filtros.departamento === '') {
+        // Continua (mostra todas)
+    } 
+    // Se for um departamento específico, verificar
+    else if (!deptsDemanda.includes(state.filtros.departamento)) {
+        return false; // Não corresponde, não mostra
+    }
+}
         
         // Filtro por responsável
         if (state.filtros.responsavel && demanda.responsavel !== state.filtros.responsavel) {
@@ -2774,94 +2497,4 @@ window.mostrarDetalhesDemanda = mostrarDetalhesDemanda;
 window.fecharModalDetalhes = fecharModalDetalhes;
 window.alterarStatusDemanda = alterarStatusDemanda;
 window.excluirDemanda = excluirDemanda;
-
-// ============================================
-// FUNÇÕES PARA BOTÕES DE AÇÃO RÁPIDA
-// ============================================
-
-function filtrarApenasMinhas() {
-    console.log("🔍 Filtrando minhas demandas...");
-    
-    const usuarioSalvo = localStorage.getItem('usuario_demandas');
-    if (!usuarioSalvo) {
-        mostrarToast('Erro', 'Usuário não identificado!', 'error');
-        return;
-    }
-    
-    try {
-        const usuario = JSON.parse(usuarioSalvo);
-        
-        // 1. Limpar filtros anteriores
-        if (elementos.filtroEscola) elementos.filtroEscola.value = '';
-        if (elementos.filtroDepartamento) elementos.filtroDepartamento.value = '';
-        if (elementos.filtroResponsavel) elementos.filtroResponsavel.value = '';
-        if (elementos.filtroStatus) elementos.filtroStatus.value = '';
-        if (elementos.filtroPrazo) elementos.filtroPrazo.value = '';
-        
-        // 2. Aplicar filtros baseados no usuário
-        if (usuario.escola_sre && elementos.filtroEscola) {
-            elementos.filtroEscola.value = usuario.escola_sre;
-            console.log(`🏫 Filtrando por escola: ${usuario.escola_sre}`);
-        }
-        
-        if (usuario.departamento && elementos.filtroDepartamento) {
-            elementos.filtroDepartamento.value = usuario.departamento;
-            console.log(`🏢 Filtrando por departamento: ${usuario.departamento}`);
-        }
-        
-        // 3. Aplicar filtros
-        aplicarFiltros();
-        
-        // 4. Mostrar mensagem personalizada
-        let mensagem = 'Mostrando suas demandas';
-        if (usuario.escola_sre && usuario.departamento) {
-            mensagem = `Filtro: ${usuario.escola_sre} - ${usuario.departamento}`;
-        }
-        
-        mostrarToast('Filtro Aplicado', mensagem, 'info');
-        
-    } catch (erro) {
-        console.error('Erro ao filtrar:', erro);
-        mostrarToast('Erro', 'Não foi possível aplicar o filtro', 'error');
-    }
-}
-
-function filtrarAtrasadas() {
-    console.log("⚠️ Filtrando demandas atrasadas...");
-    
-    // 1. Limpar filtros anteriores (exceto escola/departamento se já estiverem)
-    if (elementos.filtroResponsavel) elementos.filtroResponsavel.value = '';
-    if (elementos.filtroStatus) elementos.filtroStatus.value = '';
-    
-    // 2. Aplicar filtro de atrasadas
-    if (elementos.filtroPrazo) {
-        elementos.filtroPrazo.value = 'atrasadas';
-    }
-    
-    // 3. Aplicar filtros
-    aplicarFiltros();
-    
-    // 4. Contar quantas atrasadas temos
-    const demandasAtrasadas = state.demandas.filter(d => {
-        if (!d.prazo) return false;
-        if (d.status === 'Concluída') return false;
-        
-        const hoje = new Date();
-        const prazo = new Date(d.prazo);
-        return prazo < hoje;
-    });
-    
-    const mensagem = demandasAtrasadas.length > 0 ? 
-        `${demandasAtrasadas.length} demanda(s) atrasada(s) encontrada(s)` :
-        'Nenhuma demanda atrasada encontrada';
-    
-    mostrarToast('Demandas Atrasadas', mensagem, 
-        demandasAtrasadas.length > 0 ? 'warning' : 'info');
-}
-
-// ============================================
-// ADICIONAR AO WINDOW PARA ACESSO GLOBAL
-// ============================================
-window.filtrarApenasMinhas = filtrarApenasMinhas;
-window.filtrarAtrasadas = filtrarAtrasadas;
 console.log("✅ app.js carregado com sucesso!");
