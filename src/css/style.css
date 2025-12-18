@@ -2538,6 +2538,52 @@ body:has(.login-container)::before {
     
     .btn-testar-tudo {
         margin-left: 0 !important;
+       
         margin-top: 10px;
+    }
+}
+/* ============================================
+   CORREÇÃO PARA MODAL NO CELULAR - VERSÃO SIMPLES
+   ============================================ */
+
+/* Em telas pequenas (celulares) */
+@media (max-width: 768px) {
+    /* Modal ocupa quase toda a tela */
+    #modal-solicitar-acesso .modal {
+        width: 95% !important;
+        height: 90vh !important;
+        max-height: 90vh !important;
+        margin: 10px !important;
+    }
+    
+    /* Conteúdo do modal com scroll */
+    #modal-solicitar-acesso .modal-body {
+        max-height: 60vh !important;
+        overflow-y: auto !important;
+        padding: 15px !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+    
+    /* Ajusta os campos do formulário */
+    #form-solicitar-acesso .form-group {
+        margin-bottom: 15px !important;
+    }
+    
+    #form-solicitar-acesso input,
+    #form-solicitar-acesso select,
+    #form-solicitar-acesso textarea {
+        font-size: 16px !important; /* Evita zoom no iOS */
+        padding: 12px !important;
+    }
+    
+    /* Botões ficam um embaixo do outro */
+    #modal-solicitar-acesso .modal-footer {
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+    
+    #modal-solicitar-acesso .modal-footer .btn {
+        width: 100% !important;
+        margin: 0 !important;
     }
 }
