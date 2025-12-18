@@ -36,6 +36,28 @@ let elementos = {};
 document.addEventListener('DOMContentLoaded', function() {
     console.log("🚀 Sistema iniciando...");
     
+    // VERIFICAÇÃO: Só inicializar na página principal
+    // O pathname pode ser: 
+    // - "/sistema-demandas-escolares/index.html" (GitHub Pages)
+    // - "/index.html" (local)
+    // - "/" (página raiz)
+    // - "" (outras situações)
+    const pathname = window.location.pathname;
+    const estaNaPaginaPrincipal = 
+        pathname.includes('index.html') || 
+        pathname.endsWith('/') || 
+        pathname === '' ||
+        pathname === '/' ||
+        !pathname.includes('.html'); // se não tem .html, pode ser a página principal
+    
+    console.log("📍 Pathname atual:", pathname);
+    console.log("📌 É página principal?", estaNaPaginaPrincipal);
+    
+    if (!estaNaPaginaPrincipal) {
+        console.log("🔍 Não estamos na página principal, pulando inicialização...");
+        return; // Não inicializa o app.js na página de login
+    }
+    
     // 1. Inicializar elementos
     inicializarElementos();
     
@@ -162,7 +184,14 @@ function inicializarElementos() {
         totalDemandas: document.getElementById('total-demandas'),
         pendentes: document.getElementById('pendentes'),
         atrasadas: document.getElementById('atrasadas'),
+        // Elementos de estatísticas do bloco
+        totalDemandasInfo: document.getElementById('total-demandas-info'),
+        pendentesInfo: document.getElementById('pendentes-info'),
+        emAndamentoInfo: document.getElementById('em-andamento-info'),
+        concluidasInfo: document.getElementById('concluidas-info'),
+        atrasadasInfo: document.getElementById('atrasadas-info'),
         
+    
         // Modal nova demanda
         modalNovaDemanda: document.getElementById('modal-nova-demanda'),
         btnNovaDemanda: document.getElementById('btn-nova-demanda'),
@@ -369,11 +398,18 @@ function esconderLoading() {
         elementos.mainContainer.style.pointerEvents = 'auto';
     }
 }
+
 /**
  * Atualiza o bloco "Demandas" com números reais
  */
 function atualizarBlocoEstatisticas(demandas) {
     console.log("📈 Atualizando estatísticas do bloco...");
+    
+    // VERIFICAÇÃO: Se não estamos na página principal, não faz nada
+    if (!elementos || !elementos.mainContainer) {
+        console.log("⚠️ Não estamos na página principal, pulando atualização de estatísticas");
+        return;
+    }
     
     // Contar por status
     const total = demandas.length;
@@ -391,44 +427,47 @@ function atualizarBlocoEstatisticas(demandas) {
         return prazo < hoje;
     }).length;
     
-    // Atualizar os números na tela - USANDO elementos do objeto
-    if (elementos.totalDemandasInfo) {
-        elementos.totalDemandasInfo.textContent = total;
+    // Atualizar os números na tela - BUSCANDO ELEMENTOS DIRETAMENTE
+    // (mais seguro que depender do objeto elementos)
+    
+    // Elemento "Total"
+    const totalEl = document.getElementById('total-demandas-info');
+    if (totalEl) {
+        totalEl.textContent = total;
         console.log('✅ total-demandas-info atualizado:', total);
-    } else {
-        console.warn('⚠️ elementos.totalDemandasInfo não encontrado');
     }
     
-    if (elementos.pendentesInfo) {
-        elementos.pendentesInfo.textContent = pendentes;
+    // Elemento "Pendentes"
+    const pendentesEl = document.getElementById('pendentes-info');
+    if (pendentesEl) {
+        pendentesEl.textContent = pendentes;
         console.log('✅ pendentes-info atualizado:', pendentes);
-    } else {
-        console.warn('⚠️ elementos.pendentesInfo não encontrado');
     }
     
-    if (elementos.emAndamentoInfo) {
-        elementos.emAndamentoInfo.textContent = emAndamento;
+    // Elemento "Em Andamento"
+    const emAndamentoEl = document.getElementById('em-andamento-info');
+    if (emAndamentoEl) {
+        emAndamentoEl.textContent = emAndamento;
         console.log('✅ em-andamento-info atualizado:', emAndamento);
-    } else {
-        console.warn('⚠️ elementos.emAndamentoInfo não encontrado');
     }
     
-    if (elementos.concluidasInfo) {
-        elementos.concluidasInfo.textContent = concluidas;
+    // Elemento "Concluídas"
+    const concluidasEl = document.getElementById('concluidas-info');
+    if (concluidasEl) {
+        concluidasEl.textContent = concluidas;
         console.log('✅ concluidas-info atualizado:', concluidas);
-    } else {
-        console.warn('⚠️ elementos.concluidasInfo não encontrado');
     }
     
-    if (elementos.atrasadasInfo) {
-        elementos.atrasadasInfo.textContent = atrasadas;
+    // Elemento "Atrasadas"
+    const atrasadasEl = document.getElementById('atrasadas-info');
+    if (atrasadasEl) {
+        atrasadasEl.textContent = atrasadas;
         console.log('✅ atrasadas-info atualizado:', atrasadas);
-    } else {
-        console.warn('⚠️ elementos.atrasadasInfo não encontrado');
     }
     
-    console.log("📊 Estatísticas:", { total, pendentes, emAndamento, concluidas, atrasadas });
+    console.log("📊 Estatísticas calculadas:", { total, pendentes, emAndamento, concluidas, atrasadas });
 }
+
 /**
  * Carrega as demandas do servidor
  */
