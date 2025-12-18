@@ -180,21 +180,57 @@
                 </button>
             </div>
             
-            <div class="stats">
+                <div class="stats">
                 <div class="stat-item">
-                    <span class="stat-label">Total:</span>
-                    <span class="stat-value" id="total-demandas">0</span>
+                    <div class="stat-icon">
+                        <i class="fas fa-list-check"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total de Demandas</span>
+                        <span class="stat-value" id="total-demandas">0</span>
+                    </div>
                 </div>
-                <div class="stat-item">
-                    <span class="stat-label">Pendentes:</span>
-                    <span class="stat-value" id="pendentes">0</span>
+                
+                <div class="stat-item status-pendente">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Pendentes</span>
+                        <span class="stat-value" id="pendentes">0</span>
+                    </div>
                 </div>
-                <div class="stat-item">
-                    <span class="stat-label">Atrasadas:</span>
-                    <span class="stat-value" id="atrasadas">0</span>
+                
+                <div class="stat-item status-andamento">
+                    <div class="stat-icon">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Em Andamento</span>
+                        <span class="stat-value" id="em-andamento">0</span>
+                    </div>
+                </div>
+                
+                <div class="stat-item status-concluida">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Concluídas</span>
+                        <span class="stat-value" id="concluidas">0</span>
+                    </div>
+                </div>
+                
+                <div class="stat-item status-atrasada">
+                    <div class="stat-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Atrasadas</span>
+                        <span class="stat-value" id="atrasadas">0</span>
+                    </div>
                 </div>
             </div>
-        </div>
 
         <!-- ÁREA PRINCIPAL DE CONTEÚDO -->
         <main class="main-content">
