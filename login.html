@@ -139,6 +139,34 @@
                         <input type="tel" id="solicitar-telefone" name="telefone" required 
                                placeholder="(27) 99999-9999">
                     </div>
+                    <div class="form-group">
+                        <label for="solicitar-escola"><i class="fas fa-school"></i> Escola *</label>
+                        <select id="solicitar-escola" name="escola" required>
+                            <option value="">Selecione sua escola</option>
+                            <option value="Pedra Azul">Pedra Azul</option>
+                            <option value="Fioravante Caliman">Fioravante Caliman</option>
+                            <option value="Alto Rio Possmoser">Alto Rio Possmoser</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="solicitar-tipo"><i class="fas fa-user-tag"></i> Tipo de Acesso *</label>
+                        <select id="solicitar-tipo" name="tipo" required>
+                            <option value="">Selecione seu perfil</option>
+                            <option value="Diretor(a)">Diretor(a)</option>
+                            <option value="Usuario Comum">Usuário Comum</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="departamento-container" style="display: none;">
+                        <label for="solicitar-departamento"><i class="fas fa-building"></i> Departamento *</label>
+                        <select id="solicitar-departamento" name="departamento">
+                            <option value="">Selecione o departamento</option>
+                            <option value="Pedagogico">Pedagógico</option>
+                            <option value="Secretaria">Secretaria</option>
+                            <option value="Gestao">Gestão</option>
+                        </select>
+                    </div>
                     
                     <div class="form-group">
                         <label for="solicitar-mensagem"><i class="fas fa-comment"></i> Mensagem (opcional)</label>
@@ -523,6 +551,117 @@ function mostrarMensagem(texto, tipo = 'info') {
 function validarEmail(email) {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return regex.test(email);
+}
+// ============================================
+// LÓGICA PARA MOSTRAR/OCULTAR DEPARTAMENTO
+// ============================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoSelect = document.getElementById('solicitar-tipo');
+    const departamentoContainer = document.getElementById('departamento-container');
+    
+    if (tipoSelect && departamentoContainer) {
+        tipoSelect.addEventListener('change', function() {
+            // Mostrar departamento apenas para Usuário Comum
+            if (this.value === 'Usuario Comum') {
+                departamentoContainer.style.display = 'block';
+                document.getElementById('solicitar-departamento').required = true;
+            } else {
+                departamentoContainer.style.display = 'none';
+                document.getElementById('solicitar-departamento').required = false;
+                document.getElementById('solicitar-departamento').value = '';
+            }
+        });
+    }
+});
+
+// ============================================
+// FUNÇÃO PARA SOLICITAR ACESSO (ATUALIZADA)
+// ============================================
+
+async function solicitarAcesso() {
+    console.log('📋 Iniciando solicitação de acesso...');
+    
+    // Obter valores do formulário
+    const nome = document.getElementById('solicitar-nome').value.trim();
+    const email = document.getElementById('solicitar-email').value.trim();
+    const telefone = document.getElementById('solicitar-telefone').value.trim();
+    const escola = document.getElementById('solicitar-escola').value;
+    const tipo = document.getElementById('solicitar-tipo').value;
+    const departamento = document.getElementById('solicitar-departamento').value;
+    const mensagem = document.getElementById('solicitar-mensagem').value.trim();
+    
+    // Validar campos obrigatórios
+    if (!nome || !email || !telefone || !escola || !tipo) {
+        mostrarMensagem('Preencha todos os campos obrigatórios (*)', 'error');
+        return;
+    }
+    
+    // Validar se usuário comum selecionou departamento
+    if (tipo === 'Usuario Comum' && !departamento) {
+        mostrarMensagem('Usuário comum deve selecionar um departamento', 'error');
+        return;
+    }
+    
+    // Validar email
+    if (!validarEmail(email)) {
+        mostrarMensagem('Digite um email válido', 'error');
+        return;
+    }
+    
+    // Mostrar loading
+    mostrarLoading(true);
+    
+    try {
+        // Preparar dados para envio
+        const dados = {
+            acao: 'solicitarAcesso',
+            nome: nome,
+            email: email,
+            telefone: telefone,
+            escola: escola,
+            tipo: tipo,
+            departamento: departamento || '',
+            mensagem: mensagem || 'Solicitação de acesso ao sistema',
+            dataSolicitacao: new Date().toLocaleString('pt-BR'),
+            status: 'Pendente'
+        };
+        
+        console.log('📤 Enviando solicitação:', dados);
+        
+        // Enviar para Google Apps Script
+        const resultado = await enviarParaGoogleAppsScript(dados);
+        
+        console.log('📥 Resultado da solicitação:', resultado);
+        
+        if (resultado.success || resultado.sucesso) {
+            // Sucesso!
+            console.log('✅ Solicitação enviada com sucesso');
+            mostrarMensagem('✅ Solicitação enviada com sucesso! Aguarde autorização do supervisor.', 'success');
+            
+            // Fechar modal
+            document.getElementById('modal-solicitar-acesso').style.display = 'none';
+            
+            // Limpar formulário
+            document.getElementById('form-solicitar-acesso').reset();
+            
+            // Esconder departamento
+            document.getElementById('departamento-container').style.display = 'none';
+            
+        } else {
+            // Erro
+            const erroMsg = resultado.message || resultado.erro || 'Erro ao enviar solicitação';
+            console.error('❌ Erro na solicitação:', erroMsg);
+            mostrarMensagem('❌ ' + erroMsg, 'error');
+        }
+        
+    } catch (erro) {
+        console.error('❌ Erro no processo de solicitação:', erro);
+        mostrarMensagem('❌ Erro de conexão. Tente novamente. ' + erro.message, 'error');
+    } finally {
+        // Esconder loading
+        mostrarLoading(false);
+    }
 }
 
 // ============================================
