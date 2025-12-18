@@ -214,6 +214,144 @@
                 flex-direction: column;
             }
         }
+        /* 🔥 ADICIONE ESTE CSS - ANIMAÇÕES PARA REMOÇÃO DE LINHA */
+@keyframes fadeOutSlide {
+    0% { 
+        opacity: 1; 
+        transform: translateX(0); 
+        max-height: 100px;
+        overflow: hidden;
+    }
+    100% { 
+        opacity: 0; 
+        transform: translateX(-100%); 
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin: 0;
+        border: none;
+        overflow: hidden;
+    }
+}
+
+.removing-row {
+    animation: fadeOutSlide 0.5s ease forwards !important;
+    pointer-events: none;
+    position: relative;
+    z-index: 1;
+}
+
+.removing-row td {
+    transition: all 0.5s ease;
+    border-bottom-color: transparent !important;
+}
+
+/* Melhorar a aparência das tabelas */
+.admin-table tbody tr {
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.admin-table tbody tr:hover {
+    background-color: #f5f9ff !important;
+    transform: translateX(2px);
+}
+
+/* Estado vazio com melhor visual */
+#solicitacoes-empty, #usuarios-empty {
+    transition: all 0.5s ease;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 2px dashed #dee2e6;
+    border-radius: 12px;
+    padding: 50px 20px;
+}
+
+#solicitacoes-empty i, #usuarios-empty i {
+    color: #adb5bd;
+    font-size: 64px;
+    margin-bottom: 20px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Botões com feedback visual */
+.btn-small {
+    transition: all 0.2s ease !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-small:active {
+    transform: scale(0.95);
+}
+
+.btn-small::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%);
+    transform-origin: 50% 50%;
+}
+
+.btn-small:focus:not(:active)::after {
+    animation: ripple 1s ease-out;
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0, 0);
+        opacity: 0.5;
+    }
+    20% {
+        transform: scale(25, 25);
+        opacity: 0.3;
+    }
+    100% {
+        opacity: 0;
+        transform: scale(40, 40);
+    }
+}
+
+/* Efeito de loading nos botões */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+    pointer-events: none;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin-left: -8px;
+    margin-top: -8px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    border-right-color: transparent;
+    animation: button-spinner 0.6s linear infinite;
+}
+
+@keyframes button-spinner {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
     </style>
 </head>
 <body>
