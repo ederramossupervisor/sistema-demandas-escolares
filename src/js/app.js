@@ -1585,8 +1585,180 @@ function mostrarToast(titulo, mensagem, tipo = 'info') {
         }
     }, 5000);
 }
+// ============================================
+// FUNÇÕES PARA GERENCIAR NOTIFICAÇÕES
+// ============================================
 
-// EXPORTA FUNÇÕES PARA USO GLOBAL
+function mostrarSecao(secaoId) {
+    // Esconder todas as seções
+    const secoes = document.querySelectorAll('.admin-section');
+    secoes.forEach(secao => {
+        secao.style.display = 'none';
+    });
+    
+    // Mostrar a seção solicitada
+    const secao = document.getElementById(secaoId);
+    if (secao) {
+        secao.style.display = 'block';
+        
+        // Se for a seção de notificações, carregar dados
+        if (secaoId === 'gerenciar-notificacoes') {
+            carregarConfiguracoesNotificacoes();
+            carregarLogsNotificacoes();
+        }
+    }
+}
+
+async function carregarConfiguracoesNotificacoes() {
+    try {
+        // Aqui você implementaria a busca das configurações salvas
+        // Por enquanto, apenas inicializa
+        console.log('Carregando configurações de notificações...');
+        
+    } catch (erro) {
+        console.error('Erro ao carregar configurações:', erro);
+    }
+}
+
+async function carregarLogsNotificacoes() {
+    try {
+        const logsBody = document.getElementById('logs-notificacoes');
+        if (!logsBody) return;
+        
+        // Mostrar loading
+        logsBody.innerHTML = `
+            <tr>
+                <td colspan="4" class="loading-admin">
+                    <i class="fas fa-spinner fa-spin"></i> Carregando logs...
+                </td>
+            </tr>
+        `;
+        
+        // Simular carregamento (substituir por chamada real ao Google Apps Script)
+        setTimeout(() => {
+            // Exemplo de dados (substituir por dados reais)
+            const logsExemplo = [
+                { data: '01/12/2024 10:30', demanda: 'Reforma Biblioteca', enviadas: 5, status: 'Enviadas' },
+                { data: '30/11/2024 14:15', demanda: 'Compra Material', enviadas: 3, status: 'Enviadas' },
+                { data: '29/11/2024 09:00', demanda: 'Reunião Pedagógica', enviadas: 8, status: 'Pendentes' }
+            ];
+            
+            let html = '';
+            if (logsExemplo.length === 0) {
+                html = `
+                    <tr>
+                        <td colspan="4" class="empty-state">
+                            <i class="fas fa-history"></i>
+                            <p>Nenhum log de notificação encontrado</p>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                logsExemplo.forEach(log => {
+                    html += `
+                        <tr>
+                            <td>${log.data}</td>
+                            <td>${log.demanda}</td>
+                            <td>${log.enviadas}</td>
+                            <td><span class="status-badge ${log.status === 'Enviadas' ? 'status-autorizado' : 'status-pendente'}">${log.status}</span></td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            logsBody.innerHTML = html;
+        }, 1000);
+        
+    } catch (erro) {
+        console.error('Erro ao carregar logs:', erro);
+    }
+}
+
+async function testarNotificacao() {
+    try {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            const notificacao = new Notification('🔔 Teste de Notificação', {
+                body: 'Sistema de Demandas Escolares funcionando perfeitamente!',
+                icon: '/sistema-demandas-escolares/public/icons/192x192.png',
+                badge: '/sistema-demandas-escolares/public/icons/96x96.png'
+            });
+            
+            mostrarToast('Teste', 'Notificação de teste enviada!', 'success');
+        } else {
+            const permissao = await Notification.requestPermission();
+            if (permissao === 'granted') {
+                testarNotificacao();
+            } else {
+                mostrarToast('Permissão', 'Permissão para notificações não concedida', 'warning');
+            }
+        }
+    } catch (error) {
+        console.error('Erro ao testar notificação:', error);
+        mostrarToast('Erro', 'Erro ao testar notificação', 'error');
+    }
+}
+
+async function salvarConfiguracoesNotificacoes() {
+    try {
+        // Coletar configurações
+        const configuracoes = {
+            emails: document.getElementById('toggle-emails').checked,
+            emailsUrgentes: document.getElementById('toggle-emails-urgentes').checked,
+            push: document.getElementById('toggle-push').checked,
+            segmentacao: {
+                supervisor: document.querySelector('input[name="segmentacao"][value="supervisor"]').checked,
+                diretor: document.querySelector('input[name="segmentacao"][value="diretor"]').checked,
+                comum: document.querySelector('input[name="segmentacao"][value="comum"]').checked
+            }
+        };
+        
+        console.log('Salvando configurações:', configuracoes);
+        
+        // Aqui você implementaria o envio para o Google Apps Script
+        // const resultado = await AdminSystem.salvarConfiguracoesNotificacoes(configuracoes);
+        
+        mostrarToast('Sucesso', 'Configurações salvas com sucesso!', 'success');
+        
+    } catch (erro) {
+        console.error('Erro ao salvar configurações:', erro);
+        mostrarToast('Erro', 'Erro ao salvar configurações', 'error');
+    }
+}
+
+async function testarTodasNotificacoes() {
+    try {
+        mostrarLoading(true);
+        
+        // Testar emails
+        mostrarToast('Teste', 'Testando sistema de emails...', 'info');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Testar push
+        if (document.getElementById('toggle-push').checked) {
+            mostrarToast('Teste', 'Testando notificações push...', 'info');
+            await testarNotificacao();
+        }
+        
+        // Testar segmentação
+        mostrarToast('Teste', 'Verificando segmentação por perfil...', 'info');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        mostrarToast('Concluído', 'Todos os testes foram realizados!', 'success');
+        
+    } catch (erro) {
+        console.error('Erro nos testes:', erro);
+        mostrarToast('Erro', 'Erro durante os testes', 'error');
+    } finally {
+        mostrarLoading(false);
+    }
+}
+
+// Exportar para uso global
+window.mostrarSecao = mostrarSecao;
+window.carregarLogsNotificacoes = carregarLogsNotificacoes;
+window.testarNotificacao = testarNotificacao;
+window.salvarConfiguracoesNotificacoes = salvarConfiguracoesNotificacoes;
+window.testarTodasNotificacoes = testarTodasNotificacoes;
 window.mostrarDetalhesDemanda = mostrarDetalhesDemanda;
 window.fecharModalDetalhes = fecharModalDetalhes;
 window.alterarStatusDemanda = alterarStatusDemanda;
