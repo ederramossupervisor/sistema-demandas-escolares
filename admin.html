@@ -995,7 +995,6 @@ async function carregarUsuarios() {
                 tipoClass = 'tipo-gestor';
                 tipoTexto = 'Diretor(a)';
             }
-            
             html += `
                 <tr>
                     <td><strong>${usuario.nome || 'N/A'}</strong></td>
@@ -1004,6 +1003,7 @@ async function carregarUsuarios() {
                     <td>${usuario.departamento || 'N/A'}</td>
                     <td>${usuario.escola_sre || 'N/A'}</td>
                     <td>
+                        <div class="btn-group">
                             <button class="btn btn-primary btn-small" onclick="abrirModalEditar('${usuario.email}', '${usuario.nome || ''}', '${usuario.tipo_usuario || 'comum'}', '${usuario.departamento || ''}', '${usuario.escola_sre || ''}')">
                                 <i class="fas fa-edit"></i> Editar
                             </button>
@@ -1013,11 +1013,10 @@ async function carregarUsuarios() {
                             <button class="btn btn-danger btn-small" onclick="excluirUsuarioLinha('${usuario.email}', '${usuario.nome || 'N/A'}')">
                                 <i class="fas fa-trash"></i> Excluir
                             </button>
-                         </div>
+                        </div>
                     </td>
                 </tr>
             `;
-        });
         
         container.innerHTML = html;
         
