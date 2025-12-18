@@ -560,7 +560,421 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 1500);
 });
+// ============================================
+// SISTEMA DE NOTIFICAÇÕES INTELIGENTES - FASE 7
+// ============================================
 
+// ID da planilha de configurações de notificações (criar nova)
+const NOTIFICACOES_SHEET_ID = '1mE4VtKsZR_gL3ZQrWq7XqYd9JkLpOqRsT'; // Substituir pelo seu ID
+
+/**
+ * Configuração de notificações por tipo de usuário
+ */
+const NOTIFICATION_CONFIG = {
+    supervisor: {
+        email: true,
+        push: true,
+        departamentos: ['TODOS'],
+        escolas: ['TODAS']
+    },
+    diretor: {
+        email: true,
+        push: true,
+        departamentos: ['PEDAGÓGICO', 'ADMINISTRATIVO', 'FINANCEIRO'],
+        escolas: ['PRÓPRIA'] // Veremos dinamicamente
+    },
+    comum: {
+        email: true,
+        push: false,
+        departamentos: ['ESPECÍFICO'],
+        escolas: ['PRÓPRIA']
+    }
+};
+
+/**
+ * Envia notificações segmentadas quando nova demanda é criada
+ */
+async function enviarNotificacoesNovaDemanda(demanda) {
+    console.log('🔔 Enviando notificações inteligentes para nova demanda:', demanda.id);
+    
+    try {
+        // Buscar usuários que devem receber notificação
+        const usuarios = await buscarUsuariosPorPerfil(demanda);
+        
+        // Contadores
+        let emailsEnviados = 0;
+        let notificacoesPush = 0;
+        
+        // Enviar notificações para cada grupo
+        for (const usuario of usuarios) {
+            if (deveNotificarUsuario(usuario, demanda)) {
+                // Enviar email se configurado
+                if (usuario.notificacoesEmail) {
+                    const emailEnviado = await enviarEmailNotificacao(usuario, demanda);
+                    if (emailEnviado) emailsEnviados++;
+                }
+                
+                // Enviar notificação push se configurado e suportado
+                if (usuario.notificacoesPush && usuario.pushToken) {
+                    const pushEnviada = await enviarNotificacaoPush(usuario, demanda);
+                    if (pushEnviada) notificacoesPush++;
+                }
+            }
+        }
+        
+        // Registrar no log
+        await registrarLogNotificacao(demanda, usuarios.length, emailsEnviados, notificacoesPush);
+        
+        return {
+            sucesso: true,
+            mensagem: `Notificações enviadas: ${emailsEnviados} emails, ${notificacoesPush} push`,
+            totalUsuarios: usuarios.length,
+            emailsEnviados: emailsEnviados,
+            notificacoesPush: notificacoesPush
+        };
+        
+    } catch (error) {
+        console.error('❌ Erro ao enviar notificações:', error);
+        return {
+            sucesso: false,
+            erro: error.message
+        };
+    }
+}
+
+/**
+ * Busca usuários com base no perfil da demanda
+ */
+async function buscarUsuariosPorPerfil(demanda) {
+    console.log('🔍 Buscando usuários para notificação...');
+    
+    try {
+        // Buscar todos os usuários autorizados
+        const usuarios = await listarUsuariosAutorizados();
+        
+        // Filtrar usuários que devem receber notificação
+        const usuariosFiltrados = usuarios.filter(usuario => {
+            // Supervisor vê tudo
+            if (usuario.tipo === 'supervisor') {
+                return true;
+            }
+            
+            // Diretor: vê apenas sua escola
+            if (usuario.tipo === 'diretor') {
+                const escolasDemanda = demanda.escolas || [];
+                return escolasDemanda.includes(usuario.escola);
+            }
+            
+            // Usuário comum: vê apenas seu departamento+escola
+            if (usuario.tipo === 'comum') {
+                const departamentosUsuario = usuario.departamento ? 
+                    usuario.departamento.split(',') : [];
+                const escolasDemanda = demanda.escolas || [];
+                
+                const matchDept = departamentosUsuario.includes(demanda.departamento);
+                const matchEscola = escolasDemanda.includes(usuario.escola);
+                
+                return matchDept && matchEscola;
+            }
+            
+            return false;
+        });
+        
+        console.log(`✅ ${usuariosFiltrados.length} usuários serão notificados`);
+        return usuariosFiltrados;
+        
+    } catch (error) {
+        console.error('❌ Erro ao buscar usuários:', error);
+        return [];
+    }
+}
+
+/**
+ * Verifica se usuário deve receber notificação
+ */
+function deveNotificarUsuario(usuario, demanda) {
+    // Verificar se usuário tem notificações ativas
+    if (usuario.notificacoesAtivas === false) {
+        return false;
+    }
+    
+    // Verificar se demanda é urgente (notificar sempre)
+    const prazo = new Date(demanda.prazo);
+    const hoje = new Date();
+    const diasRestantes = Math.floor((prazo - hoje) / (1000 * 60 * 60 * 24));
+    
+    // Demandas urgentes (menos de 3 dias) notificam todos
+    if (diasRestantes <= 3) {
+        return true;
+    }
+    
+    // Para demandas normais, verificar preferências
+    return true;
+}
+
+/**
+ * Envia email de notificação personalizado
+ */
+async function enviarEmailNotificacao(usuario, demanda) {
+    try {
+        const assunto = `📋 Nova Demanda: ${demanda.titulo}`;
+        
+        let corpoEmail = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #2c3e50;">Nova Demanda Criada</h2>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                    <h3 style="color: #3498db;">${demanda.titulo}</h3>
+                    <p><strong>Departamento:</strong> ${demanda.departamento}</p>
+                    <p><strong>Escola(s):</strong> ${Array.isArray(demanda.escolas) ? demanda.escolas.join(', ') : demanda.escolas}</p>
+                    <p><strong>Prazo:</strong> ${formatarData(demanda.prazo)}</p>
+                    <p><strong>Status:</strong> <span style="color: #e67e22;">${demanda.status || 'PENDENTE'}</span></p>
+                    
+                    <hr style="margin: 20px 0;">
+                    
+                    <h4>Descrição:</h4>
+                    <p>${demanda.descricao || 'Sem descrição'}</p>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${window.location.origin}/sistema-demandas-escolares/?demanda=${demanda.id}" 
+                       style="background: #3498db; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       👁️ Ver Demanda
+                    </a>
+                </div>
+                
+                <p style="color: #7f8c8d; font-size: 12px; text-align: center;">
+                    Esta é uma notificação automática do Sistema de Demandas Escolares.<br>
+                    Para ajustar suas configurações de notificação, acesse seu perfil.
+                </p>
+            </div>
+        `;
+        
+        // Enviar email via Google Apps Script
+        const resultado = await enviarParaGoogleAppsScript({
+            acao: 'enviarEmail',
+            para: usuario.email,
+            assunto: assunto,
+            corpo: corpoEmail,
+            tipo: 'notificacao_nova_demanda'
+        });
+        
+        return resultado.sucesso === true;
+        
+    } catch (error) {
+        console.error('❌ Erro ao enviar email:', error);
+        return false;
+    }
+}
+
+/**
+ * Envia notificação push via PWA
+ */
+async function enviarNotificacaoPush(usuario, demanda) {
+    try {
+        // Verificar se o navegador suporta notificações
+        if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+            console.log('⚠️ Navegador não suporta notificações push');
+            return false;
+        }
+        
+        // Verificar permissão
+        const permissao = await Notification.requestPermission();
+        if (permissao !== 'granted') {
+            console.log('⚠️ Permissão para notificações não concedida');
+            return false;
+        }
+        
+        // Registrar service worker se necessário
+        const registro = await navigator.serviceWorker.register('/sistema-demandas-escolares/public/sw-notificacoes.js');
+        
+        // Enviar notificação
+        await registro.showNotification('Nova Demanda Escolar', {
+            body: `${demanda.titulo} - ${demanda.departamento}`,
+            icon: '/sistema-demandas-escolares/public/icons/192x192.png',
+            badge: '/sistema-demandas-escolares/public/icons/96x96.png',
+            vibrate: [200, 100, 200],
+            tag: 'nova-demanda-' + demanda.id,
+            data: {
+                url: window.location.origin + '/sistema-demandas-escolares/?demanda=' + demanda.id,
+                demandaId: demanda.id
+            },
+            actions: [
+                {
+                    action: 'ver',
+                    title: 'Ver Demanda'
+                },
+                {
+                    action: 'adiar',
+                    title: 'Lembrar depois'
+                }
+            ]
+        });
+        
+        console.log('✅ Notificação push enviada para:', usuario.nome);
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Erro ao enviar notificação push:', error);
+        return false;
+    }
+}
+
+/**
+ * Registra log de notificações enviadas
+ */
+async function registrarLogNotificacao(demanda, totalUsuarios, emails, pushes) {
+    try {
+        const log = {
+            data: new Date().toISOString(),
+            demandaId: demanda.id,
+            demandaTitulo: demanda.titulo,
+            departamento: demanda.departamento,
+            escolas: Array.isArray(demanda.escolas) ? demanda.escolas.join(', ') : demanda.escolas,
+            totalUsuarios: totalUsuarios,
+            emailsEnviados: emails,
+            pushesEnviados: pushes,
+            status: 'enviada'
+        };
+        
+        await enviarParaGoogleAppsScript({
+            acao: 'registrarLogNotificacao',
+            log: log
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao registrar log:', error);
+    }
+}
+
+/**
+ * Configura notificações do usuário
+ */
+async function configurarNotificacoesUsuario(usuarioId, configuracoes) {
+    try {
+        const resultado = await enviarParaGoogleAppsScript({
+            acao: 'configurarNotificacoes',
+            usuarioId: usuarioId,
+            configuracoes: configuracoes
+        });
+        
+        return resultado;
+        
+    } catch (error) {
+        console.error('❌ Erro ao configurar notificações:', error);
+        throw error;
+    }
+}
+
+/**
+ * Verifica se há notificações pendentes para o usuário
+ */
+async function verificarNotificacoesPendentes(usuario) {
+    try {
+        const resultado = await enviarParaGoogleAppsScript({
+            acao: 'verificarNotificacoes',
+            usuarioId: usuario.id,
+            tipo: usuario.tipo,
+            departamento: usuario.departamento,
+            escola: usuario.escola
+        });
+        
+        return resultado.dados || [];
+        
+    } catch (error) {
+        console.error('❌ Erro ao verificar notificações:', error);
+        return [];
+    }
+}
+
+/**
+ * Marca notificação como lida
+ */
+async function marcarNotificacaoComoLida(notificacaoId) {
+    try {
+        const resultado = await enviarParaGoogleAppsScript({
+            acao: 'marcarNotificacaoLida',
+            notificacaoId: notificacaoId
+        });
+        
+        return resultado;
+        
+    } catch (error) {
+        console.error('❌ Erro ao marcar notificação como lida:', error);
+        throw error;
+    }
+}
+
+// ============================================
+// FUNÇÕES AUXILIARES DE DATA
+// ============================================
+
+function formatarData(dataString) {
+    if (!dataString) return 'Não definido';
+    
+    const data = new Date(dataString);
+    return data.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+}
+
+// ============================================
+// INTEGRAÇÃO COM O SISTEMA EXISTENTE
+// ============================================
+
+// Função que deve ser chamada após salvar uma nova demanda
+async function notificarAposSalvarDemanda(demandaSalva) {
+    if (!demandaSalva || !demandaSalva.id) {
+        console.error('❌ Dados da demanda inválidos para notificação');
+        return;
+    }
+    
+    try {
+        // Adicionar delay para garantir que a demanda foi salva
+        setTimeout(async () => {
+            console.log('🔔 Disparando notificações para nova demanda...');
+            
+            const resultado = await enviarNotificacoesNovaDemanda(demandaSalva);
+            
+            if (resultado.sucesso) {
+                console.log(`✅ Notificações enviadas: ${resultado.emailsEnviados} emails, ${resultado.notificacoesPush} push`);
+                
+                // Mostrar feedback para o supervisor
+                if (typeof window.mostrarToast === 'function') {
+                    window.mostrarToast({
+                        mensagem: `Demanda criada! Notificações enviadas para ${resultado.totalUsuarios} usuários`,
+                        tipo: 'sucesso'
+                    });
+                }
+            } else {
+                console.error('❌ Falha ao enviar notificações:', resultado.erro);
+            }
+        }, 2000);
+        
+    } catch (error) {
+        console.error('❌ Erro no processo de notificação:', error);
+    }
+}
+
+// ============================================
+// SERVICE WORKER PARA NOTIFICAÇÕES PUSH
+// ============================================
+
+// Adicionar novo arquivo: public/sw-notificacoes.js
+
+// ============================================
+// EXPORTAÇÃO DAS FUNÇÕES DE NOTIFICAÇÃO
+// ============================================
+
+window.enviarNotificacoesNovaDemanda = enviarNotificacoesNovaDemanda;
+window.notificarAposSalvarDemanda = notificarAposSalvarDemanda;
+window.configurarNotificacoesUsuario = configurarNotificacoesUsuario;
+window.verificarNotificacoesPendentes = verificarNotificacoesPendentes;
+window.marcarNotificacaoComoLida = marcarNotificacaoComoLida;
+
+console.log('✅ Sistema de notificações inteligentes carregado!');
 // ============================================
 // EXPORTAÇÃO PARA USO GLOBAL
 // ============================================
