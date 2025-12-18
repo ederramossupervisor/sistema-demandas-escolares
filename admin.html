@@ -986,6 +986,8 @@ async function autorizarUsuario() {
         if (resultado.sucesso) {
             AdminSystem.mostrarToast('Sucesso', `Usuário ${email} autorizado!`, 'success');
             fecharModalAutorizar();
+            removerSolicitacaoVisual(email);
+}
             
             // 🔥 MÉTODO DIRETO E SIMPLES
             // 1. Encontrar todas as linhas
@@ -1109,6 +1111,9 @@ async function recusarSolicitacao(email) {
         
         if (resultado.sucesso) {
             AdminSystem.mostrarToast('Sucesso', 'Solicitação recusada', 'success');
+            // 🔥 CORREÇÃO: Remover visualmente da tabela
+           removerSolicitacaoVisual(email);
+}
             
             // 🔥 MESMA LÓGICA DE REMOÇÃO QUE NA AUTORIZAÇÃO
             const tbody = document.getElementById('solicitacoes-body');
@@ -1144,7 +1149,42 @@ async function recusarSolicitacao(email) {
         mostrarLoading(false);
     }
 }
-
+/**
+ * Remove uma solicitação da tabela visualmente
+ */
+function removerSolicitacaoVisual(email) {
+    console.log(`Removendo visualmente: ${email}`);
+    
+    const tbody = document.getElementById('solicitacoes-body');
+    if (!tbody) return;
+    
+    // Procurar a linha com este email
+    const linhas = tbody.getElementsByTagName('tr');
+    
+    for (let i = 0; i < linhas.length; i++) {
+        const celulas = linhas[i].getElementsByTagName('td');
+        if (celulas.length >= 3) {
+            const emailNaCelula = celulas[2].textContent.trim();
+            if (emailNaCelula === email) {
+                // Efeito visual antes de remover
+                linhas[i].style.opacity = '0.5';
+                linhas[i].style.transform = 'translateX(-20px)';
+                
+                // Remover após animação
+                setTimeout(() => {
+                    linhas[i].remove();
+                    
+                    // Verificar se ficou vazio
+                    if (tbody.children.length === 0) {
+                        document.getElementById('solicitacoes-empty').style.display = 'block';
+                    }
+                }, 300);
+                
+                break;
+            }
+        }
+    }
+}
 function abrirModalEditar(email, nome, tipo, departamento, escola) {
     document.getElementById('edit-email-hidden').value = email; 
     document.getElementById('edit-nome').value = nome || '';
