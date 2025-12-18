@@ -90,10 +90,10 @@ function iniciarSplashScreen() {
 }
 
 /**
- * INICIALIZAR APLICAÇÃO PRINCIPAL
+ * INICIALIZAR APLICAÇÃO PRINCIPAL COM NOTIFICAÇÕES
  */
 function iniciarAplicacao() {
-    console.log("📱 Iniciando aplicação principal...");
+    console.log("📱 Iniciando aplicação principal com notificações...");
     
     // 1. Esconder splash screen
     esconderSplashScreen();
@@ -102,13 +102,17 @@ function iniciarAplicacao() {
     inicializarEventos();
     carregarDemandas();
     
-    // 3. Verificar se é PWA
+    // 3. Inicializar sistema de notificações (NOVO)
+    setTimeout(() => {
+        inicializarSistemaNotificacoes();
+    }, 2000);
+    
+    // 4. Verificar se é PWA
     if (window.matchMedia('(display-mode: standalone)').matches) {
         console.log("📲 Aplicativo PWA em execução");
         document.body.classList.add('pwa-mode');
     }
 }
-
 /**
  * ESCONDER SPLASH SCREEN
  */
@@ -1024,8 +1028,11 @@ function formatarTamanhoArquivo(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
+// REMOVA a função salvarDemanda original (aproximadamente linha 480-610)
+// E substitua pelo novo código abaixo:
+
 /**
- * Salva uma nova demanda
+ * Salva uma nova demanda COM NOTIFICAÇÕES
  */
 async function salvarDemanda(e) {
     e.preventDefault();
@@ -1038,85 +1045,77 @@ async function salvarDemanda(e) {
     mostrarLoading();
     
     try {
-       // 1. Preparar dados básicos
-const escolasSelecionadas = [];
-if (elementos.escolasCheckboxes) {
-    elementos.escolasCheckboxes.forEach(cb => {
-        if (cb.checked) {
-            escolasSelecionadas.push(cb.value);
+        // 1. Preparar dados básicos
+        const escolasSelecionadas = [];
+        if (elementos.escolasCheckboxes) {
+            elementos.escolasCheckboxes.forEach(cb => {
+                if (cb.checked) {
+                    escolasSelecionadas.push(cb.value);
+                }
+            });
         }
-    });
-}
 
-// 1.1. Preparar departamentos selecionados
-const departamentosSelecionados = [];
-const usuarioSalvo = localStorage.getItem('usuario_demandas');
-let usuario = null;
+        // 1.1. Preparar departamentos selecionados
+        const departamentosSelecionados = [];
+        const usuarioSalvo = localStorage.getItem('usuario_demandas');
+        let usuario = null;
 
-try {
-    usuario = usuarioSalvo ? JSON.parse(usuarioSalvo) : {};
-} catch (e) {
-    usuario = {};
-    console.error('❌ Erro ao ler usuário do localStorage:', e);
-}
+        try {
+            usuario = usuarioSalvo ? JSON.parse(usuarioSalvo) : {};
+        } catch (e) {
+            usuario = {};
+            console.error('❌ Erro ao ler usuário do localStorage:', e);
+        }
 
-console.log('👤 Usuário atual:', {
-    tipo: usuario.tipo_usuario,
-    departamento: usuario.departamento
-});
-
-// Se for supervisor, pega os departamentos selecionados no formulário
-if (usuario.tipo_usuario === 'supervisor') {
-    console.log('👑 Supervisor: capturando departamentos do formulário');
-    
-    const departamentoCheckboxes = document.querySelectorAll('.departamento-checkbox:not(#departamento-todas)');
-    if (departamentoCheckboxes && departamentoCheckboxes.length > 0) {
-        departamentoCheckboxes.forEach(cb => {
-            if (cb.checked) {
-                departamentosSelecionados.push(cb.value);
-                console.log('✅ Departamento selecionado:', cb.value);
-            }
+        console.log('👤 Usuário atual:', {
+            tipo: usuario.tipo_usuario,
+            departamento: usuario.departamento
         });
-    }
-    
-    // Se não selecionou nenhum, usa o departamento do usuário
-    if (departamentosSelecionados.length === 0) {
-        departamentosSelecionados.push(usuarioValidacao.departamento || 'Supervisão');
-        console.log('⚠️ Nenhum departamento selecionado. Usando padrão:', departamentosSelecionados[0]);
-    }
-} else {
-    // Para não-supervisores, usa apenas o departamento do usuário
-    departamentosSelecionados.push(usuarioValidacao.departamento || 'Pedagógico');
-    console.log('👤 Não-supervisor. Usando departamento:', departamentosSelecionados[0]);
-}
 
-console.log('📋 Departamentos a serem salvos:', departamentosSelecionados);
+        // Se for supervisor, pega os departamentos selecionados no formulário
+        if (usuario.tipo_usuario === 'supervisor') {
+            console.log('👑 Supervisor: capturando departamentos do formulário');
+            
+            const departamentoCheckboxes = document.querySelectorAll('.departamento-checkbox:not(#departamento-todas)');
+            if (departamentoCheckboxes && departamentoCheckboxes.length > 0) {
+                departamentoCheckboxes.forEach(cb => {
+                    if (cb.checked) {
+                        departamentosSelecionados.push(cb.value);
+                        console.log('✅ Departamento selecionado:', cb.value);
+                    }
+                });
+            }
+            
+            // Se não selecionou nenhum, usa o departamento do usuário
+            if (departamentosSelecionados.length === 0) {
+                departamentosSelecionados.push(usuario.departamento || 'Supervisão');
+                console.log('⚠️ Nenhum departamento selecionado. Usando padrão:', departamentosSelecionados[0]);
+            }
+        } else {
+            // Para não-supervisores, usa apenas o departamento do usuário
+            departamentosSelecionados.push(usuario.departamento || 'Pedagógico');
+            console.log('👤 Não-supervisor. Usando departamento:', departamentosSelecionados[0]);
+        }
 
-const dadosDemanda = {
-    titulo: elementos.titulo ? elementos.titulo.value.trim() : '',
-    descricao: elementos.descricao ? elementos.descricao.value.trim() : '',
-    escolas: escolasSelecionadas,
-    departamento: departamentosSelecionados.join(', '), // NOVO: departamentos
-    responsavel: document.querySelector('input[name="responsavel"]:checked') ? 
-        document.querySelector('input[name="responsavel"]:checked').value : '',
-    prazo: elementos.prazo ? elementos.prazo.value : '',
-    enviarEmail: elementos.enviarEmail ? elementos.enviarEmail.checked : false,
-    corpoEmail: elementos.corpoEmail ? elementos.corpoEmail.value.trim() : ''
-};
+        console.log('📋 Departamentos a serem salvos:', departamentosSelecionados);
 
-console.log('📤 Dados da demanda preparados:', {
-    titulo: dadosDemanda.titulo.substring(0, 50) + '...',
-    escolas: dadosDemanda.escolas.length,
-    departamento: dadosDemanda.departamento,
-    responsavel: dadosDemanda.responsavel
-});
+        const dadosDemanda = {
+            titulo: elementos.titulo ? elementos.titulo.value.trim() : '',
+            descricao: elementos.descricao ? elementos.descricao.value.trim() : '',
+            escolas: escolasSelecionadas,
+            departamento: departamentosSelecionados.join(', '),
+            responsavel: document.querySelector('input[name="responsavel"]:checked') ? 
+                document.querySelector('input[name="responsavel"]:checked').value : '',
+            prazo: elementos.prazo ? elementos.prazo.value : '',
+            enviarEmail: elementos.enviarEmail ? elementos.enviarEmail.checked : false,
+            corpoEmail: elementos.corpoEmail ? elementos.corpoEmail.value.trim() : ''
+        };
 
-console.log('📤 Dados da demanda preparados:', {
-    titulo: dadosDemanda.titulo.substring(0, 50) + '...',
-    escolas: dadosDemanda.escolas.length,
-    departamento: dadosDemanda.departamento,
-    responsavel: dadosDemanda.responsavel
-});
+        console.log('📤 Dados da demanda:', {
+            titulo: dadosDemanda.titulo.substring(0, 50) + '...',
+            escolas: dadosDemanda.escolas.length,
+            departamento: dadosDemanda.departamento
+        });
         
         // 2. Fazer upload dos anexos se houver
         let linksAnexos = [];
@@ -1126,11 +1125,7 @@ console.log('📤 Dados da demanda preparados:', {
             
             for (const arquivo of state.arquivosSelecionados) {
                 try {
-                    console.log(`📤 Enviando arquivo: ${arquivo.name}`);
-                    
                     const resultadoUpload = await fazerUploadArquivo(arquivo);
-                    
-                    console.log('📥 Resultado do upload:', resultadoUpload);
                     
                     let urlFinal = null;
                     
@@ -1164,14 +1159,44 @@ console.log('📤 Dados da demanda preparados:', {
         mostrarToast('Salvando', 'Salvando demanda...', 'info');
         const resultadoSalvar = await salvarDemandaNoServidor(dadosDemanda);
         
-        // 4. Enviar e-mail se solicitado
+        if (!resultadoSalvar || !resultadoSalvar.id) {
+            throw new Error('Erro ao salvar demanda: ID não retornado');
+        }
+        
+        const idDemanda = resultadoSalvar.id;
+        console.log(`✅ Demanda salva com ID: ${idDemanda}`);
+        
+        // 4. DISPARAR NOTIFICAÇÕES INTELIGENTES
+        if (idDemanda) {
+            setTimeout(async () => {
+                try {
+                    console.log('🔔 Iniciando notificações inteligentes...');
+                    const resultadoNotificacoes = await dispararNotificacoesNovaDemanda(dadosDemanda, idDemanda);
+                    
+                    if (resultadoNotificacoes && !resultadoNotificacoes.erro) {
+                        console.log(`📢 Notificações enviadas para ${resultadoNotificacoes.usuariosNotificados?.length || 0} usuários`);
+                        
+                        // Mostrar feedback se foram enviadas notificações
+                        if (resultadoNotificacoes.usuariosNotificados && resultadoNotificacoes.usuariosNotificados.length > 0) {
+                            mostrarToast('Notificações', 
+                                `Enviadas para ${resultadoNotificacoes.usuariosNotificados.length} usuários`, 
+                                'success');
+                        }
+                    }
+                } catch (erroNotif) {
+                    console.error('⚠️ Erro nas notificações (não crítico):', erroNotif);
+                }
+            }, 1500);
+        }
+        
+        // 5. Enviar e-mail se solicitado
         if (dadosDemanda.enviarEmail && escolasSelecionadas.length > 0) {
             try {
                 mostrarToast('E-mail', 'Enviando e-mail...', 'info');
                 
                 const dadosEmail = {
                     ...dadosDemanda,
-                    idDemanda: resultadoSalvar.id
+                    idDemanda: idDemanda
                 };
                 
                 await enviarEmailDemanda(dadosEmail);
@@ -1182,10 +1207,10 @@ console.log('📤 Dados da demanda preparados:', {
             }
         }
         
-        // 5. Sucesso!
+        // 6. Sucesso!
         mostrarToast('Sucesso', 'Demanda salva com sucesso!', 'success');
         
-        // 6. Fechar modal e atualizar lista
+        // 7. Fechar modal e atualizar lista
         fecharModalNovaDemanda();
         setTimeout(() => carregarDemandas(), 1000);
         
@@ -1196,7 +1221,6 @@ console.log('📤 Dados da demanda preparados:', {
         esconderLoading();
     }
 }
-
 /**
  * Valida o formulário antes de enviar
  */
@@ -1619,7 +1643,477 @@ async function carregarConfiguracoesNotificacoes() {
         console.error('Erro ao carregar configurações:', erro);
     }
 }
+// ============================================
+// SISTEMA DE NOTIFICAÇÕES INTELIGENTES - INTEGRAÇÃO
+// ============================================
 
+/**
+ * Dispara notificações quando uma nova demanda é salva
+ */
+async function dispararNotificacoesNovaDemanda(dadosDemanda, idDemanda) {
+    console.log('🔔 Disparando notificações inteligentes...');
+    
+    try {
+        // 1. Verificar se há usuários online
+        const usuarios = await obterUsuariosParaNotificar(dadosDemanda);
+        
+        if (usuarios.length === 0) {
+            console.log('⚠️ Nenhum usuário para notificar');
+            return;
+        }
+        
+        console.log(`📢 Notificando ${usuarios.length} usuários...`);
+        
+        // 2. Para cada tipo de usuário, enviar notificação apropriada
+        const resultados = {
+            emails: 0,
+            pushes: 0,
+            usuariosNotificados: []
+        };
+        
+        for (const usuario of usuarios) {
+            const notificado = await enviarNotificacaoUsuario(usuario, dadosDemanda, idDemanda);
+            
+            if (notificado.email) resultados.emails++;
+            if (notificado.push) resultados.pushes++;
+            
+            resultados.usuariosNotificados.push({
+                nome: usuario.nome,
+                tipo: usuario.tipo_usuario,
+                emailEnviado: notificado.email,
+                pushEnviado: notificado.push
+            });
+        }
+        
+        // 3. Registrar no log
+        await registrarLogNotificacao(dadosDemanda, idDemanda, resultados);
+        
+        console.log('✅ Notificações enviadas:', resultados);
+        return resultados;
+        
+    } catch (erro) {
+        console.error('❌ Erro ao disparar notificações:', erro);
+        return { erro: erro.message };
+    }
+}
+
+/**
+ * Obtém usuários que devem receber notificação baseado no perfil
+ */
+async function obterUsuariosParaNotificar(dadosDemanda) {
+    try {
+        // Buscar usuários do sistema
+        const todosUsuarios = await listarUsuariosDoSistema();
+        
+        // Filtrar por permissões
+        const usuariosFiltrados = todosUsuarios.filter(usuario => {
+            // Verificar se usuário recebe notificações
+            if (!usuario.notificacoesAtivas) return false;
+            
+            // Supervisor recebe tudo
+            if (usuario.tipo_usuario === 'supervisor') {
+                return true;
+            }
+            
+            // Diretor recebe apenas da sua escola
+            if (usuario.tipo_usuario === 'diretor' || usuario.tipo_usuario === 'gestor') {
+                const escolasDemanda = dadosDemanda.escolas || [];
+                return escolasDemanda.includes(usuario.escola_sre || usuario.escola);
+            }
+            
+            // Usuário comum recebe apenas do seu departamento+escola
+            if (usuario.tipo_usuario === 'comum') {
+                const departamentosUsuario = usuario.departamento ? 
+                    usuario.departamento.split(',').map(d => d.trim()) : [];
+                
+                const escolasDemanda = dadosDemanda.escolas || [];
+                const departamentosDemanda = dadosDemanda.departamento ? 
+                    dadosDemanda.departamento.split(',').map(d => d.trim()) : [];
+                
+                // Verificar interseção entre departamentos
+                const temDepartamentoComum = departamentosUsuario.some(dept => 
+                    departamentosDemanda.includes(dept));
+                
+                const temEscolaComum = escolasDemanda.includes(usuario.escola_sre || usuario.escola);
+                
+                return temDepartamentoComum && temEscolaComum;
+            }
+            
+            return false;
+        });
+        
+        return usuariosFiltrados;
+        
+    } catch (erro) {
+        console.error('Erro ao buscar usuários:', erro);
+        return [];
+    }
+}
+
+/**
+ * Envia notificação para um usuário específico
+ */
+async function enviarNotificacaoUsuario(usuario, dadosDemanda, idDemanda) {
+    const resultados = { email: false, push: false };
+    
+    try {
+        // 1. Enviar email se configurado
+        if (usuario.notificacoesEmail !== false) {
+            const emailEnviado = await enviarEmailNotificacaoIndividual(usuario, dadosDemanda, idDemanda);
+            resultados.email = emailEnviado;
+        }
+        
+        // 2. Enviar notificação push se configurado e suportado
+        if (usuario.notificacoesPush !== false && 'Notification' in window) {
+            const pushEnviada = await enviarPushNotificacao(usuario, dadosDemanda, idDemanda);
+            resultados.push = pushEnviada;
+        }
+        
+        return resultados;
+        
+    } catch (erro) {
+        console.error(`Erro ao notificar usuário ${usuario.nome}:`, erro);
+        return resultados;
+    }
+}
+
+/**
+ * Envia email de notificação individual
+ */
+async function enviarEmailNotificacaoIndividual(usuario, dadosDemanda, idDemanda) {
+    try {
+        const assunto = `📋 Nova Demanda: ${dadosDemanda.titulo}`;
+        
+        const corpoEmail = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #2c3e50;">Nova Demanda Criada</h2>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                    <h3 style="color: #3498db;">${dadosDemanda.titulo}</h3>
+                    
+                    <p><strong>Descrição:</strong> ${dadosDemanda.descricao || 'Sem descrição'}</p>
+                    <p><strong>Departamento:</strong> ${dadosDemanda.departamento || 'Não definido'}</p>
+                    <p><strong>Escola(s):</strong> ${Array.isArray(dadosDemanda.escolas) ? dadosDemanda.escolas.join(', ') : dadosDemanda.escolas}</p>
+                    <p><strong>Responsável:</strong> ${dadosDemanda.responsavel || 'Não definido'}</p>
+                    <p><strong>Prazo:</strong> ${formatarData(dadosDemanda.prazo)}</p>
+                    <p><strong>Status:</strong> <span style="color: #e67e22;">PENDENTE</span></p>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${window.location.origin}/sistema-demandas-escolares/?demanda=${idDemanda}" 
+                       style="background: #3498db; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       👁️ Ver Demanda
+                    </a>
+                </div>
+                
+                <p style="color: #7f8c8d; font-size: 12px; text-align: center;">
+                    Esta é uma notificação automática do Sistema de Demandas Escolares.<br>
+                    Para ajustar suas configurações de notificação, acesse seu perfil no sistema.
+                </p>
+            </div>
+        `;
+        
+        // Enviar via Google Apps Script
+        const resultado = await enviarParaGoogleAppsScript({
+            acao: 'enviarEmailNotificacao',
+            para: usuario.email,
+            assunto: assunto,
+            corpo: corpoEmail,
+            dados: {
+                tipo: 'nova_demanda',
+                demandaId: idDemanda,
+                usuarioId: usuario.id
+            }
+        });
+        
+        return resultado.sucesso === true;
+        
+    } catch (erro) {
+        console.error('Erro ao enviar email:', erro);
+        return false;
+    }
+}
+
+/**
+ * Envia notificação push
+ */
+async function enviarPushNotificacao(usuario, dadosDemanda, idDemanda) {
+    try {
+        // Verificar permissão
+        if (Notification.permission !== 'granted') {
+            return false;
+        }
+        
+        // Criar notificação
+        const notificacao = new Notification('📋 Nova Demanda Escolar', {
+            body: `${dadosDemanda.titulo} - ${dadosDemanda.departamento || 'Sem departamento'}`,
+            icon: '/sistema-demandas-escolares/public/icons/192x192.png',
+            badge: '/sistema-demandas-escolares/public/icons/96x96.png',
+            tag: `demanda-${idDemanda}`,
+            data: {
+                url: `${window.location.origin}/sistema-demandas-escolares/?demanda=${idDemanda}`,
+                demandaId: idDemanda,
+                usuarioId: usuario.id
+            },
+            actions: [
+                {
+                    action: 'ver',
+                    title: '👁️ Ver Demanda'
+                }
+            ]
+        });
+        
+        // Adicionar evento de clique
+        notificacao.onclick = function() {
+            window.open(this.data.url, '_blank');
+            this.close();
+        };
+        
+        return true;
+        
+    } catch (erro) {
+        console.error('Erro ao enviar push:', erro);
+        return false;
+    }
+}
+
+/**
+ * Registra log da notificação
+ */
+async function registrarLogNotificacao(dadosDemanda, idDemanda, resultados) {
+    try {
+        const log = {
+            data: new Date().toISOString(),
+            demandaId: idDemanda,
+            demandaTitulo: dadosDemanda.titulo,
+            departamento: dadosDemanda.departamento,
+            escolas: Array.isArray(dadosDemanda.escolas) ? dadosDemanda.escolas.join(', ') : dadosDemanda.escolas,
+            totalUsuarios: resultados.usuariosNotificados.length,
+            emailsEnviados: resultados.emails,
+            pushesEnviados: resultados.pushes,
+            usuarios: resultados.usuariosNotificados.map(u => ({
+                nome: u.nome,
+                tipo: u.tipo_usuario
+            }))
+        };
+        
+        await enviarParaGoogleAppsScript({
+            acao: 'registrarLogNotificacao',
+            log: log
+        });
+        
+        console.log('📝 Log de notificação registrado');
+        
+    } catch (erro) {
+        console.error('Erro ao registrar log:', erro);
+    }
+}
+
+/**
+ * Lista usuários do sistema (simulação - implemente a função real)
+ */
+async function listarUsuariosDoSistema() {
+    try {
+        // Implementar busca real dos usuários
+        const resultado = await enviarParaGoogleAppsScript({
+            acao: 'listarUsuarios'
+        });
+        
+        return resultado.usuarios || [];
+        
+    } catch (erro) {
+        console.error('Erro ao listar usuários:', erro);
+        return [];
+    }
+}
+
+// ============================================
+// INTEGRAÇÃO COM O SALVAR DEMANDA EXISTENTE
+// ============================================
+
+
+// ============================================
+// FUNÇÕES AUXILIARES PARA PERFIL DE USUÁRIO
+// ============================================
+
+/**
+ * Carrega configurações de notificação do usuário atual
+ */
+async function carregarConfiguracoesUsuario() {
+    try {
+        const usuarioSalvo = localStorage.getItem('usuario_demandas');
+        if (!usuarioSalvo) return null;
+        
+        const usuario = JSON.parse(usuarioSalvo);
+        
+        // Buscar configurações do servidor
+        const resultado = await enviarParaGoogleAppsScript({
+            acao: 'obterConfiguracoesUsuario',
+            email: usuario.email
+        });
+        
+        if (resultado && resultado.configuracoes) {
+            return resultado.configuracoes;
+        }
+        
+        // Configurações padrão
+        return {
+            notificacoesEmail: true,
+            notificacoesPush: 'Notification' in window && Notification.permission === 'granted',
+            notificacoesUrgentes: true,
+            horarioSilencioso: null
+        };
+        
+    } catch (erro) {
+        console.error('Erro ao carregar configurações:', erro);
+        return null;
+    }
+}
+
+/**
+ * Salva configurações de notificação do usuário
+ */
+async function salvarConfiguracoesUsuario(configuracoes) {
+    try {
+        const usuarioSalvo = localStorage.getItem('usuario_demandas');
+        if (!usuarioSalvo) return false;
+        
+        const usuario = JSON.parse(usuarioSalvo);
+        
+        const resultado = await enviarParaGoogleAppsScript({
+            acao: 'salvarConfiguracoesUsuario',
+            email: usuario.email,
+            configuracoes: configuracoes
+        });
+        
+        return resultado.sucesso === true;
+        
+    } catch (erro) {
+        console.error('Erro ao salvar configurações:', erro);
+        return false;
+    }
+}
+
+// ============================================
+// FUNÇÕES DE LEMBRETES E PRAZOS
+// ============================================
+
+/**
+ * Verifica demandas próximas do vencimento
+ */
+async function verificarLembretesPrazos() {
+    try {
+        const hoje = new Date();
+        const demandas = await listarDemandasDoServidor();
+        
+        const demandasProximas = demandas.filter(demanda => {
+            if (!demanda.prazo || demanda.status === 'Concluída') return false;
+            
+            const prazo = new Date(demanda.prazo);
+            const diasRestantes = Math.ceil((prazo - hoje) / (1000 * 60 * 60 * 24));
+            
+            // Lembretes para 1, 2 e 3 dias antes do vencimento
+            return diasRestantes >= 0 && diasRestantes <= 3;
+        });
+        
+        if (demandasProximas.length > 0) {
+            console.log(`⏰ ${demandasProximas.length} demandas próximas do vencimento`);
+            
+            // Enviar notificações se for o usuário responsável
+            demandasProximas.forEach(async demanda => {
+                await enviarLembretePrazo(demanda);
+            });
+        }
+        
+    } catch (erro) {
+        console.error('Erro ao verificar lembretes:', erro);
+    }
+}
+
+/**
+ * Envia lembrete de prazo para uma demanda
+ */
+async function enviarLembretePrazo(demanda) {
+    try {
+        const hoje = new Date();
+        const prazo = new Date(demanda.prazo);
+        const diasRestantes = Math.ceil((prazo - hoje) / (1000 * 60 * 60 * 24));
+        
+        if (diasRestantes < 0 || diasRestantes > 3) return;
+        
+        // Determinar mensagem baseada nos dias restantes
+        let mensagem = '';
+        if (diasRestantes === 0) mensagem = 'VENCE HOJE!';
+        else if (diasRestantes === 1) mensagem = 'Vence amanhã!';
+        else mensagem = `Vence em ${diasRestantes} dias`;
+        
+        // Enviar notificação push
+        if ('Notification' in window && Notification.permission === 'granted') {
+            const notificacao = new Notification('⏰ Lembrete de Prazo', {
+                body: `${demanda.titulo} - ${mensagem}`,
+                icon: '/sistema-demandas-escolares/public/icons/192x192.png',
+                tag: `lembrete-${demanda.id}`
+            });
+            
+            notificacao.onclick = function() {
+                window.open(`${window.location.origin}/sistema-demandas-escolares/?demanda=${demanda.id}`, '_blank');
+                this.close();
+            };
+        }
+        
+    } catch (erro) {
+        console.error('Erro ao enviar lembrete:', erro);
+    }
+}
+
+// ============================================
+// INICIALIZAÇÃO DAS NOTIFICAÇÕES
+// ============================================
+
+/**
+ * Inicializa sistema de notificações
+ */
+async function inicializarSistemaNotificacoes() {
+    console.log('🔔 Inicializando sistema de notificações...');
+    
+    // 1. Solicitar permissão para notificações
+    if ('Notification' in window && Notification.permission === 'default') {
+        try {
+            const permissao = await Notification.requestPermission();
+            console.log(`Permissão para notificações: ${permissao}`);
+        } catch (erro) {
+            console.error('Erro ao solicitar permissão:', erro);
+        }
+    }
+    
+    // 2. Carregar configurações do usuário
+    const configuracoes = await carregarConfiguracoesUsuario();
+    if (configuracoes) {
+        console.log('Configurações de notificação carregadas:', configuracoes);
+    }
+    
+    // 3. Configurar verificação periódica de lembretes (a cada 1 hora)
+    setInterval(verificarLembretesPrazos, 60 * 60 * 1000);
+    
+    // 4. Verificar agora também
+    setTimeout(verificarLembretesPrazos, 5000);
+    
+    console.log('✅ Sistema de notificações inicializado');
+}
+
+// ============================================
+// EXPORTAR FUNÇÕES PARA USO GLOBAL
+// ============================================
+
+// Adicione estas exportações
+window.dispararNotificacoesNovaDemanda = dispararNotificacoesNovaDemanda;
+window.inicializarSistemaNotificacoes = inicializarSistemaNotificacoes;
+window.carregarConfiguracoesUsuario = carregarConfiguracoesUsuario;
+window.salvarConfiguracoesUsuario = salvarConfiguracoesUsuario;
+window.verificarLembretesPrazos = verificarLembretesPrazos;
+window.enviarLembretePrazo = enviarLembretePrazo;
+
+console.log("✅ Sistema de notificações inteligentes integrado ao app.js!");
 async function carregarLogsNotificacoes() {
     try {
         const logsBody = document.getElementById('logs-notificacoes');
