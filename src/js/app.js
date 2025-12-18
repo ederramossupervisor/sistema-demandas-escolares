@@ -72,9 +72,27 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /**
- * INICIALIZAÇÃO COM SPLASH SCREEN
+ * INICIALIZAÇÃO COM SPLASH SCREEN (COM FALLBACK)
  */
 function iniciarSplashScreen() {
+    console.log("🎬 Iniciando splash screen...");
+    
+    // Verificar se o elemento existe
+    if (!elementos.splashScreen) {
+        console.log("❌ Splash screen não encontrada, iniciando aplicação diretamente");
+        iniciarAplicacao();
+        return;
+    }
+    
+    // Fallback global: se algo der errado, esconder após 8 segundos
+    const fallbackTimeout = setTimeout(() => {
+        if (state.splashScreenActive) {
+            console.log("⏰ Fallback: tempo limite atingido, forçando início da aplicação");
+            esconderSplashScreen();
+            iniciarAplicacao();
+        }
+    }, 8000);
+    
     // Configurar progresso da splash
     const statusEl = elementos.splashScreen.querySelector('.splash-status');
     const etapas = [
@@ -88,71 +106,106 @@ function iniciarSplashScreen() {
     // Executar etapas
     etapas.forEach((etapa, index) => {
         setTimeout(() => {
-            if (!statusEl || !state.splashScreenActive) return;
-            statusEl.textContent = etapa.texto;
+            if (!state.splashScreenActive) return;
+            
+            if (statusEl) {
+                statusEl.textContent = etapa.texto;
+            }
             console.log(`🔧 ${etapa.texto}`);
             
             // Última etapa: iniciar aplicação
             if (index === etapas.length - 1) {
+                console.log("✅ Todas as etapas concluídas");
+                clearTimeout(fallbackTimeout); // Cancelar fallback
+                
                 setTimeout(() => {
-                    iniciarAplicacao();
-                }, 500);
+                    if (state.splashScreenActive) {
+                        console.log("🚀 Iniciando aplicação...");
+                        iniciarAplicacao();
+                    }
+                }, 800);
             }
         }, etapa.tempo);
     });
-    
-    // Fallback: esconder após 5 segundos se algo falhar
-    setTimeout(() => {
-        if (state.splashScreenActive) {
-            console.log("⚠️ Fallback: escondendo splash screen");
-            esconderSplashScreen();
-            iniciarAplicacao();
-        }
-    }, 5000);
 }
-
 /**
  * INICIALIZAR APLICAÇÃO PRINCIPAL COM NOTIFICAÇÕES
  */
 function iniciarAplicacao() {
-    console.log("📱 Iniciando aplicação principal com notificações...");
+    console.log("📱 Iniciando aplicação principal...");
     
-    // 1. Esconder splash screen
+    // 1. Esconder splash screen (com verificação)
     esconderSplashScreen();
     
-    // 2. Inicializar resto da aplicação
-    inicializarEventos();
-    carregarDemandas();
-    
-    // 3. Inicializar sistema de notificações (NOVO)
+    // Pequeno delay para garantir transição
     setTimeout(() => {
-        inicializarSistemaNotificacoes();
-    }, 2000);
-    
-    // 4. Verificar se é PWA
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-        console.log("📲 Aplicativo PWA em execução");
-        document.body.classList.add('pwa-mode');
-    }
+        // 2. Inicializar resto da aplicação
+        try {
+            console.log("🔗 Inicializando eventos...");
+            inicializarEventos();
+            
+            console.log("🔄 Carregando demandas...");
+            carregarDemandas();
+            
+            // 3. Inicializar sistema de notificações
+            setTimeout(() => {
+                console.log("🔔 Inicializando sistema de notificações...");
+                inicializarSistemaNotificacoes();
+            }, 2000);
+            
+            // 4. Verificar se é PWA
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                console.log("📲 Aplicativo PWA em execução");
+                document.body.classList.add('pwa-mode');
+            }
+            
+            console.log("✅ Aplicação iniciada com sucesso!");
+            
+        } catch (erro) {
+            console.error("❌ Erro ao iniciar aplicação:", erro);
+            mostrarToast('Erro', 'Falha ao iniciar aplicação', 'error');
+        }
+    }, 300);
 }
+
 /**
- * ESCONDER SPLASH SCREEN
+ * ESCONDER SPLASH SCREEN (CORRIGIDA)
  */
 function esconderSplashScreen() {
-    if (!elementos.splashScreen || !state.splashScreenActive) return;
+    console.log("🎬 Tentando esconder splash screen...");
     
+    // Verificar se o elemento existe
+    if (!elementos.splashScreen) {
+        console.log("⚠️ Splash screen não encontrada no DOM");
+        state.splashScreenActive = false;
+        return;
+    }
+    
+    if (!state.splashScreenActive) {
+        console.log("⚠️ Splash screen já foi escondida anteriormente");
+        return;
+    }
+    
+    console.log("✅ Escondendo splash screen...");
     state.splashScreenActive = false;
-    elementos.splashScreen.classList.add('hidden');
     
-    console.log("✅ Splash screen escondida");
+    // Adicionar classe de animação
+    elementos.splashScreen.classList.add('hidden');
+    elementos.splashScreen.classList.add('fade-out');
+    
+    console.log("✅ Classe 'hidden' adicionada à splash screen");
     
     // Remover do DOM após animação
     setTimeout(() => {
         if (elementos.splashScreen && elementos.splashScreen.parentNode) {
+            console.log("🗑️ Removendo splash screen do DOM...");
             elementos.splashScreen.remove();
             elementos.splashScreen = null;
+            console.log("✅ Splash screen removida do DOM");
+        } else {
+            console.log("⚠️ Splash screen já foi removida ou não existe mais");
         }
-    }, 500);
+    }, 800); // Aumentar tempo para 800ms para garantir animação
 }
 
 /**
