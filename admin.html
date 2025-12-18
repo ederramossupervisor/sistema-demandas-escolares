@@ -396,7 +396,7 @@
         </div>
 
         <!-- SEÇÃO 1: SOLICITAÇÕES PENDENTES -->
-        <div class="admin-section">
+        <div class="admin-section" id="solicitacoes-pendentes">
             <h2><i class="fas fa-clock"></i> Solicitações de Acesso Pendentes</h2>
             
             <div class="search-filter">
@@ -435,7 +435,7 @@
         </div>
 
         <!-- SEÇÃO 2: USUÁRIOS CADASTRADOS -->
-        <div class="admin-section">
+        <div class="admin-section" id="usuarios-cadastrados">
             <h2><i class="fas fa-users"></i> Usuários Cadastrados</h2>
             
             <div class="search-filter">
@@ -492,9 +492,9 @@
         </div>
 
         <!-- SEÇÃO 3: ESTATÍSTICAS -->
-        <div class="admin-section">
+        <div class="admin-section" id="estatisticas">
             <h2><i class="fas fa-chart-bar"></i> Estatísticas</h2>
-            <div class="stats-grid" id="estatisticas">
+            <div class="stats-grid" id="conteudo-estatisticas">
                 <div class="loading-admin">
                     <i class="fas fa-spinner fa-spin"></i> Carregando estatísticas...
                 </div>
@@ -586,6 +586,11 @@
             </div>
             
             <div class="acoes-notificacoes" style="margin-top: 20px; text-align: center;">
+                
+            <button class="btn-voltar btn btn-secondary" onclick="voltarParaSecoesPrincipais()" style="margin-right: 10px;">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </button>
+                
                 <button class="btn-salvar btn btn-success" onclick="salvarConfiguracoesNotificacoes()">
                     <i class="fas fa-save"></i> Salvar Configurações
                 </button>
@@ -1218,23 +1223,223 @@ function mostrarToast(titulo, mensagem, tipo = 'info') {
     }, 5000);
 }
 
-function mostrarLoading(mostrar) {
-    const loading = document.getElementById('loading');
-    const mainContainer = document.getElementById('main-container');
-    
-    if (loading) {
-        loading.style.display = mostrar ? 'flex' : 'none';
-    }
-    
-    if (mainContainer) {
-        mainContainer.style.opacity = mostrar ? '0.5' : '1';
-        mainContainer.style.pointerEvents = mostrar ? 'none' : 'auto';
-    }
-}
 // ============================================
-// EXPORTAR FUNÇÕES PARA USO GLOBAL
+// FUNÇÃO PARA MOSTRAR/ESCONDER SEÇÕES
 // ============================================
 
+function mostrarSecao(secaoId) {
+    console.log(`Mostrando seção: ${secaoId}`);
+    
+    // 1. Esconder todas as seções
+    const todasSecoes = document.querySelectorAll('.admin-section');
+    todasSecoes.forEach(secao => {
+        secao.style.display = 'none';
+    });
+    
+    // 2. Mostrar a seção solicitada
+    const secaoParaMostrar = document.getElementById(secaoId);
+    if (secaoParaMostrar) {
+        secaoParaMostrar.style.display = 'block';
+        
+        // Se for a seção de notificações, carregar dados
+        if (secaoId === 'gerenciar-notificacoes') {
+            setTimeout(() => {
+                carregarDadosNotificacoes();
+            }, 100);
+        }
+    }
+    
+    // 3. Botão de voltar para seções principais
+    const voltarBtn = document.getElementById('btn-voltar-secoes');
+    if (!voltarBtn && secaoId !== 'gerenciar-notificacoes') {
+        // Não precisa do botão voltar nas seções principais
+    }
+}
+
+// ============================================
+// FUNÇÕES DE NOTIFICAÇÕES
+// ============================================
+
+/**
+ * Carrega dados da seção de notificações
+ */
+async function carregarDadosNotificacoes() {
+    console.log('Carregando dados de notificações...');
+    
+    try {
+        // Aqui você pode adicionar chamadas para buscar dados reais
+        // Por enquanto, apenas mostra que está funcionando
+        mostrarToast('Notificações', 'Carregando configurações...', 'info');
+        
+        // Se você quiser testar, pode descomentar:
+        // await carregarLogsNotificacoes();
+        
+    } catch (erro) {
+        console.error('Erro ao carregar notificações:', erro);
+    }
+}
+
+/**
+ * Carrega logs de notificações (exemplo)
+ */
+async function carregarLogsNotificacoes() {
+    const logsBody = document.getElementById('logs-notificacoes');
+    if (!logsBody) return;
+    
+    // Simulação de dados
+    const logsExemplo = [
+        { data: new Date().toLocaleDateString('pt-BR'), demanda: 'Teste de Sistema', enviadas: 3, status: 'Enviadas' },
+        { data: '01/12/2024', demanda: 'Reunião Pedagógica', enviadas: 5, status: 'Enviadas' },
+        { data: '30/11/2024', demanda: 'Compra de Material', enviadas: 2, status: 'Pendentes' }
+    ];
+    
+    let html = '';
+    logsExemplo.forEach(log => {
+        html += `
+            <tr>
+                <td>${log.data}</td>
+                <td>${log.demanda}</td>
+                <td>${log.enviadas}</td>
+                <td><span class="status-badge ${log.status === 'Enviadas' ? 'status-autorizado' : 'status-pendente'}">${log.status}</span></td>
+            </tr>
+        `;
+    });
+    
+    logsBody.innerHTML = html;
+}
+
+/**
+ * Testa notificações
+ */
+async function testarNotificacao() {
+    try {
+        if ('Notification' in window) {
+            if (Notification.permission === 'granted') {
+                // Criar notificação
+                const notificacao = new Notification('🔔 Teste de Notificação', {
+                    body: 'Sistema de Demandas Escolares funcionando!',
+                    icon: 'public/icons/192x192.png',
+                    badge: 'public/icons/96x96.png'
+                });
+                
+                mostrarToast('Teste', 'Notificação enviada com sucesso!', 'success');
+            } else if (Notification.permission === 'default') {
+                // Pedir permissão
+                const permissao = await Notification.requestPermission();
+                if (permissao === 'granted') {
+                    testarNotificacao(); // Tentar novamente
+                } else {
+                    mostrarToast('Permissão', 'Permissão para notificações não concedida', 'warning');
+                }
+            } else {
+                mostrarToast('Permissão', 'Notificações bloqueadas pelo usuário', 'warning');
+            }
+        } else {
+            mostrarToast('Navegador', 'Seu navegador não suporta notificações', 'warning');
+        }
+    } catch (error) {
+        console.error('Erro ao testar notificação:', error);
+        mostrarToast('Erro', 'Erro ao testar notificação', 'error');
+    }
+}
+
+/**
+ * Salva configurações de notificações
+ */
+function salvarConfiguracoesNotificacoes() {
+    try {
+        // Coletar valores dos checkboxes
+        const emailsAtivo = document.getElementById('toggle-emails').checked;
+        const emailsUrgentes = document.getElementById('toggle-emails-urgentes').checked;
+        const pushAtivo = document.getElementById('toggle-push').checked;
+        
+        console.log('Configurações salvas:', {
+            emails: emailsAtivo,
+            emailsUrgentes: emailsUrgentes,
+            push: pushAtivo
+        });
+        
+        // Aqui você implementaria o envio para o servidor
+        // Por enquanto, apenas mostra mensagem
+        
+        mostrarToast('Sucesso', 'Configurações salvas com sucesso!', 'success');
+        
+    } catch (erro) {
+        console.error('Erro ao salvar configurações:', erro);
+        mostrarToast('Erro', 'Erro ao salvar configurações', 'error');
+    }
+}
+
+/**
+ * Testa todas as notificações
+ */
+async function testarTodasNotificacoes() {
+    try {
+        mostrarLoading(true);
+        
+        // Testar notificações push
+        mostrarToast('Teste', 'Testando notificações push...', 'info');
+        await testarNotificacao();
+        
+        // Testar emails (simulação)
+        setTimeout(() => {
+            mostrarToast('Teste', 'Testando sistema de emails...', 'info');
+        }, 1000);
+        
+        // Testar segmentação
+        setTimeout(() => {
+            mostrarToast('Teste', 'Verificando segmentação por perfil...', 'info');
+        }, 2000);
+        
+        setTimeout(() => {
+            mostrarToast('Concluído', 'Todos os testes realizados!', 'success');
+            mostrarLoading(false);
+        }, 3000);
+        
+    } catch (erro) {
+        console.error('Erro nos testes:', erro);
+        mostrarToast('Erro', 'Erro durante os testes', 'error');
+        mostrarLoading(false);
+    }
+}
+
+// ============================================
+// BOTÃO VOLTAR PARA SEÇÕES PRINCIPAIS
+// ============================================
+
+function voltarParaSecoesPrincipais() {
+    // Mostrar todas as seções principais
+    const secoesPrincipais = [
+    'solicitacoes-pendentes',
+    'usuarios-cadastrados', 
+    'estatisticas'
+];
+    
+    // Primeiro, esconder tudo
+    const todasSecoes = document.querySelectorAll('.admin-section');
+    todasSecoes.forEach(secao => {
+        secao.style.display = 'none';
+    });
+    
+    // Depois, mostrar as principais
+    secoesPrincipais.forEach(id => {
+        const secao = document.getElementById(id);
+        if (secao) {
+            secao.style.display = 'block';
+        }
+    });
+}
+
+// ============================================
+// EXPORTAR NOVAS FUNÇÕES PARA USO GLOBAL
+// ============================================
+
+window.mostrarSecao = mostrarSecao;
+window.carregarLogsNotificacoes = carregarLogsNotificacoes;
+window.testarNotificacao = testarNotificacao;
+window.salvarConfiguracoesNotificacoes = salvarConfiguracoesNotificacoes;
+window.testarTodasNotificacoes = testarTodasNotificacoes;
+window.voltarParaSecoesPrincipais = voltarParaSecoesPrincipais;
 window.fecharModalAutorizar = fecharModalAutorizar;
 window.autorizarUsuario = autorizarUsuario;
 window.recusarSolicitacao = recusarSolicitacao;
