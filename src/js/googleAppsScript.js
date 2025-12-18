@@ -1,5 +1,5 @@
 // googleAppsScript.js - VERSÃO FINAL OTIMIZADA
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZ8B9f53KdvHiWDB5cYX5YqH5d0XMsQzNBHsbEKzhrk2Xc--lWnbO6cSXG53uUUJkzww/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx-21QjZUAsjim2ffOleI6oBD95w_tpqRzPZO8UQ52TQGp-RmCzNVpoox7KFeGLPZrpCg/exec';
 
 // ============================================
 // CONFIGURAÇÕES INTELIGENTES
