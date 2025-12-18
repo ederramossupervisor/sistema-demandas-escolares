@@ -2634,3 +2634,118 @@ body:has(.login-container)::before {
     color: #3498db;
     margin-right: 6px;
 }
+/* ============================================
+   ESTILOS MELHORADOS PARA ESTATÍSTICAS
+   ============================================ */
+
+.stats {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.stat-item {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    min-width: 140px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: white;
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #6c757d;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+/* CORES POR STATUS */
+.stat-item.status-pendente .stat-icon {
+    background: linear-gradient(135deg, #ffc107, #ff9800);
+}
+
+.stat-item.status-andamento .stat-icon {
+    background: linear-gradient(135deg, #17a2b8, #0dcaf0);
+}
+
+.stat-item.status-concluida .stat-icon {
+    background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.stat-item.status-atrasada .stat-icon {
+    background: linear-gradient(135deg, #dc3545, #fd7e14);
+}
+
+/* Estilo para o total (sem status específico) */
+.stat-item:first-child .stat-icon {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+/* Responsivo */
+@media (max-width: 1200px) {
+    .stat-item {
+        min-width: 130px;
+        padding: 12px;
+    }
+    
+    .stat-value {
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 992px) {
+    .stats {
+        justify-content: flex-start;
+    }
+    
+    .stat-item {
+        min-width: 120px;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats {
+        justify-content: center;
+    }
+    
+    .stat-item {
+        min-width: 150px;
+        flex: 1;
+        max-width: 180px;
+    }
+}
