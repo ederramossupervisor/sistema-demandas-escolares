@@ -371,12 +371,14 @@ async function solicitarAcesso() {
 
 function enviarParaGoogleAppsScript(dados) {
     return new Promise((resolve, reject) => {
+        console.log('📤 Enviando dados para Google Apps Script:', dados);
+        
         // Criar nome único para a função de callback
         const callbackName = 'callback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         
         // Definir a função de callback
         window[callbackName] = function(resposta) {
-            console.log('📥 Resposta JSONP recebida');
+            console.log('📥 Resposta JSONP recebida:', resposta);
             
             // Limpar a função de callback da memória
             delete window[callbackName];
@@ -389,54 +391,66 @@ function enviarParaGoogleAppsScript(dados) {
             // Limpar timeout
             clearTimeout(timeoutId);
             
-            // Processar resposta
-            if (resposta && resposta.sucesso !== false) {
-                resolve(resposta.dados || resposta);
+            // Processar resposta - CORREÇÃO IMPORTANTE AQUI
+            if (resposta && (resposta.sucesso !== undefined || resposta.success !== false)) {
+                // Se a resposta já tem a estrutura esperada, retornar direto
+                resolve(resposta);
+            } else if (resposta && resposta.dados) {
+                // Se tem dados dentro, retornar os dados
+                resolve(resposta.dados);
+            } else if (resposta && resposta.error) {
+                // Se tem erro, rejeitar
+                reject(new Error(resposta.error));
             } else {
-                reject(new Error(resposta.erro || resposta.mensagem || 'Erro no servidor'));
+                // Resposta inesperada
+                reject(new Error('Resposta inesperada do servidor'));
             }
         };
         
         // Criar elemento script para JSONP
         const script = document.createElement('script');
-                
-        // Montar URL JSONP
+        
+        // URL DO SEU GOOGLE APPS SCRIPT
+        // ⚠️ VERIFIQUE SE ESTA URL ESTÁ CORRETA!
         const scriptUrl = 'https://script.google.com/macros/s/AKfycbxZ8B9f53KdvHiWDB5cYX5YqH5d0XMsQzNBHsbEKzhrk2Xc--lWnbO6cSXG53uUUJkzww/exec';
+        
+        // IMPORTANTE: Incluir a ação no corpo da URL
         let url = scriptUrl;
         url += '?callback=' + encodeURIComponent(callbackName);
+        url += '&acao=' + encodeURIComponent(dados.acao || '');
         url += '&dados=' + encodeURIComponent(JSON.stringify(dados));
-        url += '&_=' + Date.now(); // Cache buster
+        url += '&_=' + Date.now(); // Evitar cache
         
-        console.log('🔗 URL JSONP (resumida):', url.substring(0, 120) + '...');
+        console.log('🔗 URL JSONP (resumida):', url.substring(0, 150) + '...');
         
         script.src = url;
         
-        // Configurar timeout (20 segundos)
+        // Configurar timeout (30 segundos)
         const timeoutId = setTimeout(() => {
             if (window[callbackName]) {
                 delete window[callbackName];
                 if (script.parentNode) {
                     script.parentNode.removeChild(script);
                 }
-                reject(new Error('Timeout: Servidor não respondeu em 20 segundos'));
+                reject(new Error('Timeout: Servidor não respondeu em 30 segundos'));
             }
-        }, 20000);
+        }, 30000);
         
         // Configurar eventos de erro
-        script.onerror = () => {
+        script.onerror = (error) => {
+            console.error('❌ Erro no script:', error);
             clearTimeout(timeoutId);
             if (window[callbackName]) delete window[callbackName];
             if (script.parentNode) {
                 script.parentNode.removeChild(script);
             }
-            reject(new Error('Falha na conexão com o servidor'));
+            reject(new Error('Falha na conexão com o servidor. Verifique sua internet.'));
         };
         
         // Adicionar script ao DOM (isso dispara a requisição)
         document.body.appendChild(script);
     });
 }
-
 // ============================================
 // FUNÇÕES AUXILIARES
 // ============================================
