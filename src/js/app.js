@@ -2493,10 +2493,6 @@ window.mostrarDetalhesDemanda = mostrarDetalhesDemanda;
 window.fecharModalDetalhes = fecharModalDetalhes;
 window.alterarStatusDemanda = alterarStatusDemanda;
 window.excluirDemanda = excluirDemanda;
-setInterval(() => {
-    console.log('🔄 Auto-atualizando lista de demandas...');
-    carregarDemandas();
-}, 30000);
 
 // ============================================
 // FUNÇÕES PARA BOTÕES DE AÇÃO RÁPIDA
