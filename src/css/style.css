@@ -3327,3 +3327,44 @@ body:has(.login-container)::before {
 .splash-screen.hidden {
     display: none !important;
 }
+
+/* ============================================
+   BOTÕES DO PAINEL ADMIN - CORES DIFERENTES, MESMO HOVER
+   ============================================ */
+
+.btn-notificacoes {
+    background-color: #9b59b6 !important;  /* Roxo */
+    color: white !important;
+    border: 1px solid #8e44ad !important;
+}
+
+.btn-notificacoes:hover {
+    background-color: #8e44ad !important;
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+.btn-atualizar {
+    background-color: #2ecc71 !important;  /* Verde */
+    color: white !important;
+    border: 1px solid #27ae60 !important;
+}
+
+.btn-atualizar:hover {
+    background-color: #27ae60 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+/* Para garantir que fique igual ao btn-secondary no hover */
+.btn-notificacoes:hover,
+.btn-atualizar:hover {
+    background-color: inherit !important; /* Mantém a cor no hover */
+    border-color: inherit !important; /* Mantém a borda */
+}
+
+/* Efeito de clique igual ao btn-secondary */
+.btn-notificacoes:active,
+.btn-atualizar:active {
+    transform: translateY(0) !important;
+}
