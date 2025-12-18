@@ -902,7 +902,50 @@ function atualizarDados() {
     carregarDados();
     AdminSystem.mostrarToast('Atualizado', 'Dados atualizados!', 'success');
 }
+// ============================================
+// FUNÇÕES UTILITÁRIAS AUXILIARES
+// ============================================
 
+function mostrarToast(titulo, mensagem, tipo = 'info') {
+    const toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) return;
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${tipo}`;
+    toast.innerHTML = `
+        <strong>${titulo}</strong>
+        <p>${mensagem}</p>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 10);
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 5000);
+}
+
+function mostrarLoading(mostrar) {
+    const loading = document.getElementById('loading');
+    const mainContainer = document.getElementById('main-container');
+    
+    if (loading) {
+        loading.style.display = mostrar ? 'flex' : 'none';
+    }
+    
+    if (mainContainer) {
+        mainContainer.style.opacity = mostrar ? '0.5' : '1';
+        mainContainer.style.pointerEvents = mostrar ? 'none' : 'auto';
+    }
+}
 // ============================================
 // EXPORTAR FUNÇÕES PARA USO GLOBAL
 // ============================================
