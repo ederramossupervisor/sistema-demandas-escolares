@@ -546,7 +546,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Teste rápido opcional
                 if (window.location.hostname === 'localhost' || window.location.hostname.includes('github')) {
-                    setTimeout(testarUploadRapido, 3000);
+                   console.log('✅ Ambiente de desenvolvimento detectado');
                 }
             } else {
                 console.warn('⚠️ Sistema em modo limitado - servidor offline');
