@@ -369,41 +369,78 @@ function esconderLoading() {
         elementos.mainContainer.style.pointerEvents = 'auto';
     }
 }
-
+/**
+ * Atualiza o bloco "Demandas" com números reais
+ */
+function atualizarBlocoEstatisticas(demandas) {
+    console.log("📈 Atualizando estatísticas do bloco...");
+    
+    // Contar por status
+    const total = demandas.length;
+    const pendentes = demandas.filter(d => d.status === 'Pendente').length;
+    const emAndamento = demandas.filter(d => d.status === 'Em andamento').length;
+    const concluidas = demandas.filter(d => d.status === 'Concluída').length;
+    
+    // Calcular atrasadas (pendentes ou em andamento com prazo vencido)
+    const hoje = new Date();
+    const atrasadas = demandas.filter(d => {
+        if (d.status === 'Concluída') return false;
+        if (!d.prazo) return false;
+        
+        const prazo = new Date(d.prazo);
+        return prazo < hoje;
+    }).length;
+    
+    // Atualizar os números na tela
+    document.getElementById('total-demandas-info').textContent = total;
+    document.getElementById('pendentes-info').textContent = pendentes;
+    document.getElementById('em-andamento-info').textContent = emAndamento;
+    document.getElementById('concluidas-info').textContent = concluidas;
+    document.getElementById('atrasadas-info').textContent = atrasadas;
+    
+    console.log("📊 Estatísticas:", { total, pendentes, emAndamento, concluidas, atrasadas });
+}
 /**
  * Carrega as demandas do servidor
  */
 async function carregarDemandas() {
-    console.log("🔄 Carregando demandas...");
+    console.log("🔄 Carregando demandas do servidor...");
     mostrarLoading();
     
     try {
-        // Tentar carregar do servidor
+        // 1. Buscar demandas REAIS do Google Sheets
         const demandas = await listarDemandasDoServidor();
         
-        console.log(`✅ ${demandas.length} demandas recebidas`);
+        console.log(`✅ Recebidas ${demandas.length} demandas reais do servidor`);
         
+        // 2. Salvar no estado da aplicação
         state.demandas = demandas;
-        renderizarDemandas();
+        
+        // 3. ATUALIZAÇÃO IMPORTANTE: Renderizar na LISTA NOVA
+        renderizarDemandasNaLista();  // ← CHAMAR A FUNÇÃO NOVA!
+        
+        // 4. Atualizar estatísticas
         atualizarEstatisticas();
         
-        // Se vazio, mostrar mensagem amigável
+        // 5. Atualizar o bloco "Demandas" com números reais
+        atualizarBlocoEstatisticas(demandas);
+        
+        // 6. Se não houver demandas, mostrar mensagem
         if (demandas.length === 0) {
-            mostrarToast('Info', 'Nenhuma demanda cadastrada ainda. Clique no botão "+" para criar a primeira.', 'info');
+            mostrarToast('Info', 'Nenhuma demanda cadastrada ainda.', 'info');
         }
         
     } catch (erro) {
-        console.error('❌ Erro ao carregar demandas do servidor:', erro);
+        console.error('❌ Erro ao carregar demandas:', erro);
         
-        // MODO DE CONTINGÊNCIA
+        // Modo de contingência (usar exemplos se servidor falhar)
         state.demandas = obterDadosDemonstracao();
-        
-        renderizarDemandas();
+        renderizarDemandasNaLista();  // ← Mesmo no modo contingência
         atualizarEstatisticas();
         
-        mostrarToast('Modo Demonstração', 
-            'Usando dados de exemplo. Você pode criar novas demandas normalmente.', 
-            'info');
+        mostrarToast('Atenção', 
+            'Usando dados locais. Verifique sua conexão.', 
+            'warning');
     } finally {
         esconderLoading();
     }
@@ -576,7 +613,114 @@ function renderizarDemandas() {
     
     container.innerHTML = html;
 }
-
+/**
+ * FUNÇÃO NOVA: Renderiza demandas na LISTA (não nos cards)
+ * Esta função vai substituir os exemplos fixos pelos dados reais
+ */
+function renderizarDemandasNaLista() {
+    console.log("🎯 Renderizando demandas na LISTA...");
+    
+    // 1. Encontrar o container da lista
+    const listaContainer = document.querySelector('.demandas-lista-container');
+    if (!listaContainer) {
+        console.error("❌ Container da lista não encontrado!");
+        return;
+    }
+    
+    // 2. Limpar conteúdo (exceto o cabeçalho)
+    const cabecalho = listaContainer.querySelector('.demanda-linha.cabecalho');
+    listaContainer.innerHTML = '';
+    
+    if (cabecalho) {
+        listaContainer.appendChild(cabecalho);
+    }
+    
+    // 3. Verificar se temos demandas
+    if (!state.demandas || state.demandas.length === 0) {
+        console.log("📭 Nenhuma demanda para mostrar");
+        
+        // Mostrar mensagem "vazia"
+        const vazioHTML = `
+            <div class="lista-vazia">
+                <i class="fas fa-clipboard-list fa-3x"></i>
+                <h3>Nenhuma demanda encontrada</h3>
+                <p>Não há demandas cadastradas no momento</p>
+            </div>
+        `;
+        listaContainer.insertAdjacentHTML('beforeend', vazioHTML);
+        return;
+    }
+    
+    console.log(`📊 Mostrando ${state.demandas.length} demandas na lista`);
+    
+    // 4. Para CADA demanda real, criar uma linha na lista
+    state.demandas.forEach((demanda, index) => {
+        // Formatar a data do prazo
+        let dataPrazo = "Não definido";
+        if (demanda.prazo) {
+            const data = new Date(demanda.prazo);
+            dataPrazo = data.toLocaleDateString('pt-BR');
+        }
+        
+        // Formatar escolas (pegar só a primeira se tiver muitas)
+        let escolasTexto = demanda.escolas || "Não definida";
+        if (escolasTexto.includes(',')) {
+            escolasTexto = escolasTexto.split(',')[0].trim() + " + mais";
+        }
+        
+        // Determinar cor do status
+        let statusClass = '';
+        let statusIcon = '';
+        
+        switch(demanda.status) {
+            case 'Pendente':
+                statusClass = 'status-pendente';
+                statusIcon = '⏰';
+                break;
+            case 'Em andamento':
+                statusClass = 'status-andamento';
+                statusIcon = '▶️';
+                break;
+            case 'Concluída':
+                statusClass = 'status-concluida';
+                statusIcon = '✅';
+                break;
+            default:
+                statusClass = 'status-pendente';
+                statusIcon = '📝';
+        }
+        
+        // Criar HTML da linha
+        const linhaHTML = `
+            <div class="demanda-linha" onclick="mostrarDetalhesDemanda(${demanda.id})" style="cursor: pointer;">
+                <div class="demanda-titulo">
+                    <i class="fas fa-file-alt"></i>
+                    ${demanda.titulo || 'Sem título'}
+                </div>
+                <div class="demanda-escola" title="${demanda.escolas || ''}">
+                    ${escolasTexto}
+                </div>
+                <div class="demanda-departamento">
+                    ${demanda.departamento || 'Não definido'}
+                </div>
+                <div class="demanda-responsavel">
+                    ${demanda.responsavel || 'Não definido'}
+                </div>
+                <div class="demanda-prazo">
+                    ${dataPrazo}
+                </div>
+                <div class="demanda-status ${statusClass}">
+                    ${statusIcon} ${demanda.status || 'Pendente'}
+                </div>
+            </div>
+        `;
+        
+        // Adicionar a linha ao container
+        listaContainer.insertAdjacentHTML('beforeend', linhaHTML);
+    });
+    
+    console.log("✅ Lista renderizada com sucesso!");
+}
 /**
  * Filtra as demandas com base nos filtros ativos
  */
