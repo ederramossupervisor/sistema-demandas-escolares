@@ -373,7 +373,7 @@ function inicializarElementos() {
         console.error("❌ ERRO: inicializarElementos chamado na página de login!");
         console.error("📍 Isso não deveria acontecer. Verifique a verificação de página.");
         return;
-    
+    }
     elementos = {
         // SPLASH SCREEN
         splashScreen: document.getElementById('splash-screen'),
