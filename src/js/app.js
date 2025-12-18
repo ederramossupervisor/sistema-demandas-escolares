@@ -375,6 +375,21 @@ function esconderLoading() {
 function atualizarBlocoEstatisticas(demandas) {
     console.log("📈 Atualizando estatísticas do bloco...");
     
+    // Verificar se temos elementos para atualizar
+    const elementosIds = [
+        'total-demandas-info',
+        'pendentes-info',
+        'em-andamento-info',
+        'concluidas-info',
+        'atrasadas-info'
+    ];
+    
+    // Debug: verificar quais elementos existem
+    elementosIds.forEach(id => {
+        const elemento = document.getElementById(id);
+        console.log(`🔍 ${id}: ${elemento ? '✅ Existe' : '❌ Não existe'}`);
+    });
+    
     // Contar por status
     const total = demandas.length;
     const pendentes = demandas.filter(d => d.status === 'Pendente').length;
@@ -391,26 +406,22 @@ function atualizarBlocoEstatisticas(demandas) {
         return prazo < hoje;
     }).length;
     
-    // Atualizar os números na tela - COM VERIFICAÇÃO DE NULIDADE
-    const elementosParaAtualizar = [
-        { id: 'total-demandas-info', valor: total },
-        { id: 'pendentes-info', valor: pendentes },
-        { id: 'em-andamento-info', valor: emAndamento },
-        { id: 'concluidas-info', valor: concluidas },
-        { id: 'atrasadas-info', valor: atrasadas }
-    ];
+    // Atualizar os números na tela COM VERIFICAÇÃO
+    const totalEl = document.getElementById('total-demandas-info');
+    const pendentesEl = document.getElementById('pendentes-info');
+    const emAndamentoEl = document.getElementById('em-andamento-info');
+    const concluidasEl = document.getElementById('concluidas-info');
+    const atrasadasEl = document.getElementById('atrasadas-info');
     
-    elementosParaAtualizar.forEach(item => {
-        const elemento = document.getElementById(item.id);
-        if (elemento) {
-            elemento.textContent = item.valor;
-        } else {
-            console.warn(`⚠️ Elemento não encontrado: #${item.id}`);
-        }
-    });
+    if (totalEl) totalEl.textContent = total;
+    if (pendentesEl) pendentesEl.textContent = pendentes;
+    if (emAndamentoEl) emAndamentoEl.textContent = emAndamento;
+    if (concluidasEl) concluidasEl.textContent = concluidas;
+    if (atrasadasEl) atrasadasEl.textContent = atrasadas;
     
-    console.log("📊 Estatísticas:", { total, pendentes, emAndamento, concluidas, atrasadas });
+    console.log("📊 Estatísticas atualizadas:", { total, pendentes, emAndamento, concluidas, atrasadas });
 }
+
 /**
  * Carrega as demandas do servidor
  */
