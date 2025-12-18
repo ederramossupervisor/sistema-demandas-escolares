@@ -811,7 +811,84 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     console.log('✅ Painel do Supervisor pronto!');
 });
+// ============================================
+// FUNÇÃO PARA EXCLUIR USUÁRIO
+// ============================================
 
+async function excluirUsuarioLinha(email, nome) {
+  // 1. Confirmar com o supervisor
+  const confirmacao = confirm(`⚠️ ATENÇÃO: Excluir usuário permanentemente?\n\n` +
+                             `Nome: ${nome}\n` +
+                             `Email: ${email}\n\n` +
+                             `Esta ação não pode ser desfeita!`);
+  
+  if (!confirmacao) {
+    return;
+  }
+  
+  // 2. Mostrar loading
+  mostrarLoading(true);
+  
+  try {
+    // 3. Chamar função para excluir
+    const resultado = await AdminSystem.excluirUsuario(email);
+    
+    // 4. Verificar resultado
+    if (resultado.sucesso) {
+      // Sucesso: mostrar mensagem e remover linha
+      mostrarToast('Sucesso', `Usuário ${nome} excluído!`, 'success');
+      
+      // Remover linha visualmente
+      removerUsuarioVisual(email);
+      
+    } else {
+      // Erro: mostrar mensagem
+      mostrarToast('Erro', resultado.erro || 'Erro ao excluir usuário', 'error');
+    }
+    
+  } catch (erro) {
+    console.error('❌ Erro na exclusão:', erro);
+    mostrarToast('Erro', 'Falha na comunicação com o servidor', 'error');
+  } finally {
+    mostrarLoading(false);
+  }
+}
+
+/**
+ * Remove um usuário da tabela visualmente
+ */
+function removerUsuarioVisual(email) {
+  console.log(`Removendo visualmente usuário: ${email}`);
+  
+  const tbody = document.getElementById('usuarios-body');
+  if (!tbody) return;
+  
+  // Procurar a linha com este email
+  const linhas = tbody.getElementsByTagName('tr');
+  
+  for (let i = 0; i < linhas.length; i++) {
+    const celulas = linhas[i].getElementsByTagName('td');
+    if (celulas.length >= 2) {
+      const emailNaCelula = celulas[1].textContent.trim();
+      if (emailNaCelula === email) {
+        // Efeito visual antes de remover
+        linhas[i].classList.add('removing-row');
+        
+        // Remover após animação
+        setTimeout(() => {
+          linhas[i].remove();
+          
+          // Verificar se ficou vazio
+          if (tbody.children.length === 0) {
+            document.getElementById('usuarios-empty').style.display = 'block';
+          }
+        }, 500);
+        
+        break;
+      }
+    }
+  }
+}
 // ============================================
 // FUNÇÕES DE CARREGAMENTO
 // ============================================
@@ -927,12 +1004,16 @@ async function carregarUsuarios() {
                     <td>${usuario.departamento || 'N/A'}</td>
                     <td>${usuario.escola_sre || 'N/A'}</td>
                     <td>
-                        <button class="btn btn-primary btn-small" onclick="abrirModalEditar('${usuario.email}', '${usuario.nome || ''}', '${usuario.tipo_usuario || 'comum'}', '${usuario.departamento || ''}', '${usuario.escola_sre || ''}')">
-                            <i class="fas fa-edit"></i> Editar
-                        </button>
-                        <button class="btn btn-warning btn-small" onclick="resetarSenhaUsuario('${usuario.email}', '${usuario.nome || ''}')">
-                            <i class="fas fa-key"></i> Resetar Senha
-                        </button>
+                            <button class="btn btn-primary btn-small" onclick="abrirModalEditar('${usuario.email}', '${usuario.nome || ''}', '${usuario.tipo_usuario || 'comum'}', '${usuario.departamento || ''}', '${usuario.escola_sre || ''}')">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <button class="btn btn-warning btn-small" onclick="resetarSenhaUsuario('${usuario.email}', '${usuario.nome || ''}')">
+                                <i class="fas fa-key"></i> Resetar Senha
+                            </button>
+                            <button class="btn btn-danger btn-small" onclick="excluirUsuarioLinha('${usuario.email}', '${usuario.nome || 'N/A'}')">
+                                <i class="fas fa-trash"></i> Excluir
+                            </button>
+                         </div>
                     </td>
                 </tr>
             `;
