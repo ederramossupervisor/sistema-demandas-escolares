@@ -2497,4 +2497,94 @@ setInterval(() => {
     console.log('🔄 Auto-atualizando lista de demandas...');
     carregarDemandas();
 }, 30000);
+
+// ============================================
+// FUNÇÕES PARA BOTÕES DE AÇÃO RÁPIDA
+// ============================================
+
+function filtrarApenasMinhas() {
+    console.log("🔍 Filtrando minhas demandas...");
+    
+    const usuarioSalvo = localStorage.getItem('usuario_demandas');
+    if (!usuarioSalvo) {
+        mostrarToast('Erro', 'Usuário não identificado!', 'error');
+        return;
+    }
+    
+    try {
+        const usuario = JSON.parse(usuarioSalvo);
+        
+        // 1. Limpar filtros anteriores
+        if (elementos.filtroEscola) elementos.filtroEscola.value = '';
+        if (elementos.filtroDepartamento) elementos.filtroDepartamento.value = '';
+        if (elementos.filtroResponsavel) elementos.filtroResponsavel.value = '';
+        if (elementos.filtroStatus) elementos.filtroStatus.value = '';
+        if (elementos.filtroPrazo) elementos.filtroPrazo.value = '';
+        
+        // 2. Aplicar filtros baseados no usuário
+        if (usuario.escola_sre && elementos.filtroEscola) {
+            elementos.filtroEscola.value = usuario.escola_sre;
+            console.log(`🏫 Filtrando por escola: ${usuario.escola_sre}`);
+        }
+        
+        if (usuario.departamento && elementos.filtroDepartamento) {
+            elementos.filtroDepartamento.value = usuario.departamento;
+            console.log(`🏢 Filtrando por departamento: ${usuario.departamento}`);
+        }
+        
+        // 3. Aplicar filtros
+        aplicarFiltros();
+        
+        // 4. Mostrar mensagem personalizada
+        let mensagem = 'Mostrando suas demandas';
+        if (usuario.escola_sre && usuario.departamento) {
+            mensagem = `Filtro: ${usuario.escola_sre} - ${usuario.departamento}`;
+        }
+        
+        mostrarToast('Filtro Aplicado', mensagem, 'info');
+        
+    } catch (erro) {
+        console.error('Erro ao filtrar:', erro);
+        mostrarToast('Erro', 'Não foi possível aplicar o filtro', 'error');
+    }
+}
+
+function filtrarAtrasadas() {
+    console.log("⚠️ Filtrando demandas atrasadas...");
+    
+    // 1. Limpar filtros anteriores (exceto escola/departamento se já estiverem)
+    if (elementos.filtroResponsavel) elementos.filtroResponsavel.value = '';
+    if (elementos.filtroStatus) elementos.filtroStatus.value = '';
+    
+    // 2. Aplicar filtro de atrasadas
+    if (elementos.filtroPrazo) {
+        elementos.filtroPrazo.value = 'atrasadas';
+    }
+    
+    // 3. Aplicar filtros
+    aplicarFiltros();
+    
+    // 4. Contar quantas atrasadas temos
+    const demandasAtrasadas = state.demandas.filter(d => {
+        if (!d.prazo) return false;
+        if (d.status === 'Concluída') return false;
+        
+        const hoje = new Date();
+        const prazo = new Date(d.prazo);
+        return prazo < hoje;
+    });
+    
+    const mensagem = demandasAtrasadas.length > 0 ? 
+        `${demandasAtrasadas.length} demanda(s) atrasada(s) encontrada(s)` :
+        'Nenhuma demanda atrasada encontrada';
+    
+    mostrarToast('Demandas Atrasadas', mensagem, 
+        demandasAtrasadas.length > 0 ? 'warning' : 'info');
+}
+
+// ============================================
+// ADICIONAR AO WINDOW PARA ACESSO GLOBAL
+// ============================================
+window.filtrarApenasMinhas = filtrarApenasMinhas;
+window.filtrarAtrasadas = filtrarAtrasadas;
 console.log("✅ app.js carregado com sucesso!");
