@@ -31,29 +31,148 @@ let state = {
 
 // ELEMENTOS DO DOM
 let elementos = {};
+// ============================================
+// 🔧 FUNÇÕES DE COMUNICAÇÃO COM O SERVIDOR
+// ============================================
 
+/**
+ * Função principal para enviar dados ao Google Apps Script
+ */
+async function enviarParaGoogleAppsScript(dados) {
+    console.log('📤 Enviando para GAS:', dados.acao);
+    
+    try {
+        // URL do seu Google Apps Script
+        const scriptUrl = 'https://script.google.com/macros/s/AKfycbyYQ0QkjFQStpM9ng65ey1grNmDOCnibcvMaXeUmGTm_o2XYZUCmbBDX4ZnZyzqD2Lyvw/exec';
+        
+        const resposta = await fetch(scriptUrl, {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(dados)
+        });
+        
+        return await resposta.json();
+    } catch (erro) {
+        console.error('❌ Erro ao enviar para GAS:', erro);
+        throw erro;
+    }
+}
+
+/**
+ * Lista demandas do servidor
+ */
+async function listarDemandasDoServidor() {
+    try {
+        const resposta = await enviarParaGoogleAppsScript({
+            acao: 'listarDemandas'
+        });
+        
+        if (resposta.sucesso && resposta.dados) {
+            console.log(`✅ ${resposta.dados.length} demandas recebidas do servidor`);
+            return resposta.dados;
+        }
+        return [];
+    } catch (erro) {
+        console.error('❌ Erro ao listar demandas:', erro);
+        throw erro;
+    }
+}
+
+/**
+ * Salva uma demanda no servidor
+ */
+async function salvarDemandaNoServidor(dadosDemanda) {
+    try {
+        const resposta = await enviarParaGoogleAppsScript({
+            acao: 'salvarDemanda',
+            ...dadosDemanda
+        });
+        
+        return resposta;
+    } catch (erro) {
+        console.error('❌ Erro ao salvar demanda:', erro);
+        throw erro;
+    }
+}
+
+/**
+ * Faz upload de arquivo
+ */
+async function fazerUploadArquivo(arquivo) {
+    try {
+        const formData = new FormData();
+        formData.append('arquivo', arquivo);
+        formData.append('acao', 'uploadArquivo');
+        
+        const resposta = await fetch(
+            'https://script.google.com/macros/s/AKfycbyYQ0QkjFQStpM9ng65ey1grNmDOCnibcvMaXeUmGTm_o2XYZUCmbBDX4ZnZyzqD2Lyvw/exec',
+            {
+                method: 'POST',
+                body: formData
+            }
+        );
+        
+        return await resposta.json();
+    } catch (erro) {
+        console.error('❌ Erro no upload:', erro);
+        throw erro;
+    }
+}
+
+/**
+ * Envia e-mail da demanda
+ */
+async function enviarEmailDemanda(dadosEmail) {
+    try {
+        const resposta = await enviarParaGoogleAppsScript({
+            acao: 'enviarEmailDemanda',
+            ...dadosEmail
+        });
+        
+        return resposta;
+    } catch (erro) {
+        console.error('❌ Erro ao enviar e-mail:', erro);
+        throw erro;
+    }
+}
+
+/**
+ * Exclui uma demanda do servidor
+ */
+async function excluirDemandaNoServidor(idDemanda) {
+    try {
+        const resposta = await enviarParaGoogleAppsScript({
+            acao: 'excluirDemanda',
+            id: idDemanda
+        });
+        
+        return resposta;
+    } catch (erro) {
+        console.error('❌ Erro ao excluir demanda:', erro);
+        throw erro;
+    }
+}
 // INICIALIZAÇÃO
 document.addEventListener('DOMContentLoaded', function() {
     console.log("🚀 Sistema iniciando...");
     
-       // VERIFICAÇÃO SIMPLES E SEGURA
+    // VERIFICAÇÃO SIMPLES E SEGURA
     console.log("📍 Verificando em qual página estamos...");
     
-    // Verificar se estamos na página de login
-    const urlAtual = window.location.href;
-    
-    if (urlAtual.includes('login.html') || 
-        urlAtual.endsWith('/login') ||
-        urlAtual.includes('/login.html')) {
+    // Verificar por elementos específicos da página
+    const isLoginPage = document.getElementById('login-container') || 
+                        document.querySelector('.login-form') ||
+                        window.location.pathname.includes('login');
+
+    if (isLoginPage) {
+        console.log("🔐 Estamos na página de LOGIN");
         
-        console.log("🔐 Estamos na página de LOGIN - Não iniciar splash screen");
-        
-        // Na página de login, esconder splash screen IMEDIATAMENTE
-        if (document.getElementById('splash-screen')) {
-            document.getElementById('splash-screen').style.display = 'none';
-        }
-        
-        return; // Parar aqui - não rodar o resto do app.js
+        // Não fazer nada mais no app.js
+        // O login.html tem seu próprio JavaScript
+        return;
     }
     
     // Se chegou aqui, estamos na página principal (index.html)
