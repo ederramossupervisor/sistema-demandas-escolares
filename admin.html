@@ -986,8 +986,34 @@ async function autorizarUsuario() {
         if (resultado.sucesso) {
             AdminSystem.mostrarToast('Sucesso', `Usuário ${email} autorizado!`, 'success');
             fecharModalAutorizar();
-            removerSolicitacaoDaTabela(email);
-            await carregarDados();
+            
+            // 🔥 MÉTODO DIRETO E SIMPLES
+            // 1. Encontrar todas as linhas
+            const tbody = document.getElementById('solicitacoes-body');
+            const linhas = tbody.getElementsByTagName('tr');
+            
+            // 2. Procurar e remover a linha
+            for (let i = 0; i < linhas.length; i++) {
+                const celulas = linhas[i].getElementsByTagName('td');
+                if (celulas.length >= 3 && celulas[2].textContent.trim() === email) {
+                    // Efeito visual simples
+                    linhas[i].style.opacity = '0.5';
+                    linhas[i].style.transform = 'translateX(-10px)';
+                    
+                    // Remover após pequeno delay
+                    setTimeout(() => {
+                        linhas[i].remove();
+                        
+                        // Verificar se ficou vazio
+                        if (tbody.children.length === 0) {
+                            document.getElementById('solicitacoes-empty').style.display = 'block';
+                        }
+                    }, 300);
+                    
+                    break;
+                }
+            }
+            
         } else {
             AdminSystem.mostrarToast('Erro', resultado.erro || 'Erro ao autorizar', 'error');
         }
@@ -997,7 +1023,8 @@ async function autorizarUsuario() {
         mostrarLoading(false);
     }
 }
-/**
+    
+    /**
  * Remove uma solicitação da tabela visualmente (sem recarregar toda a tabela)
  */
 function removerSolicitacaoDaTabela(email) {
