@@ -829,15 +829,16 @@ async function salvarEdicaoUsuario() {
     
     try {
         // Agora passamos TODOS os dados, incluindo nome e email novos
-        const resultado = await AdminSystem.alterarUsuario(
-            emailOriginal,   // Email ORIGINAL (para encontrar o usuário)
-            nomeNovo,        // Nome NOVO
-            emailNovo,       // Email NOVO
-            tipo,            // Tipo
-            departamento,    // Departamento
-            escola,          // Escola
-            senha            // Senha (opcional)
-        );
+        const resultado = await enviarParaGoogleAppsScript({
+            acao: 'alterarUsuario',
+            email_original: emailOriginal,   // Email ORIGINAL para buscar
+            email_novo: emailNovo,           // Email NOVO (se mudou)
+            nome: nomeNovo,                  // Nome NOVO
+            tipo_usuario: tipo,              // Tipo
+            departamento: departamento,      // Departamento
+            escola_sre: escola,              // Escola
+            senha: senha                     // Senha (opcional)
+        });
         
         if (resultado.sucesso) {
             AdminSystem.mostrarToast('Sucesso', 'Usuário atualizado com sucesso!', 'success');
