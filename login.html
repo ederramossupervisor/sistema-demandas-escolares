@@ -331,7 +331,7 @@ async function fazerLogin() {
     }
 }
 // ============================================
-// FUNÇÃO PARA ENVIAR DADOS AO GOOGLE APPS SCRIPT (JSONP)
+// FUNÇÃO PARA ENVIAR DADOS AO GOOGLE APPS SCRIPT (JSONP - CORRIGIDA)
 // ============================================
 
 function enviarParaGoogleAppsScript(dados) {
@@ -356,18 +356,13 @@ function enviarParaGoogleAppsScript(dados) {
             // Limpar timeout
             clearTimeout(timeoutId);
             
-            // Processar resposta - CORREÇÃO IMPORTANTE AQUI
-            if (resposta && (resposta.sucesso !== undefined || resposta.success !== false)) {
-                // Se a resposta já tem a estrutura esperada, retornar direto
+            // 🔥 CORREÇÃO CRÍTICA: O Google Apps Script sempre retorna {sucesso: boolean, dados: ...}
+            if (resposta && typeof resposta.sucesso !== 'undefined') {
+                // Resposta padrão do Google Apps Script
                 resolve(resposta);
-            } else if (resposta && resposta.dados) {
-                // Se tem dados dentro, retornar os dados
-                resolve(resposta.dados);
-            } else if (resposta && resposta.error) {
-                // Se tem erro, rejeitar
-                reject(new Error(resposta.error));
             } else {
                 // Resposta inesperada
+                console.error('❌ Resposta inesperada do servidor:', resposta);
                 reject(new Error('Resposta inesperada do servidor'));
             }
         };
@@ -375,11 +370,10 @@ function enviarParaGoogleAppsScript(dados) {
         // Criar elemento script para JSONP
         const script = document.createElement('script');
         
-        // URL DO SEU GOOGLE APPS SCRIPT
-        // ⚠️ VERIFIQUE SE ESTA URL ESTÁ CORRETA!
+        // URL do Google Apps Script
         const scriptUrl = 'https://script.google.com/macros/s/AKfycbxZ8B9f53KdvHiWDB5cYX5YqH5d0XMsQzNBHsbEKzhrk2Xc--lWnbO6cSXG53uUUJkzww/exec';
         
-        // IMPORTANTE: Incluir a ação no corpo da URL
+        // Montar URL com parâmetros
         let url = scriptUrl;
         url += '?callback=' + encodeURIComponent(callbackName);
         url += '&acao=' + encodeURIComponent(dados.acao || '');
@@ -415,8 +409,7 @@ function enviarParaGoogleAppsScript(dados) {
         // Adicionar script ao DOM (isso dispara a requisição)
         document.body.appendChild(script);
     });
-}
-// ============================================
+}// ============================================
 // FUNÇÕES AUXILIARES
 // ============================================
 
@@ -513,7 +506,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================
-// FUNÇÃO PARA SOLICITAR ACESSO (ATUALIZADA)
+// FUNÇÃO PARA SOLICITAR ACESSO (SIMPLIFICADA)
 // ============================================
 
 async function solicitarAcesso() {
@@ -559,9 +552,7 @@ async function solicitarAcesso() {
             escola: escola,
             tipo: tipo,
             departamento: departamento || '',
-            mensagem: mensagem || 'Solicitação de acesso ao sistema',
-            dataSolicitacao: new Date().toLocaleString('pt-BR'),
-            status: 'Pendente'
+            mensagem: mensagem || 'Solicitação de acesso ao sistema'
         };
         
         console.log('📤 Enviando solicitação:', dados);
@@ -569,9 +560,12 @@ async function solicitarAcesso() {
         // Enviar para Google Apps Script
         const resultado = await enviarParaGoogleAppsScript(dados);
         
-        console.log('📥 Resultado da solicitação:', resultado);
+        console.log('📥 Resposta completa:', resultado);
         
-        if (resultado.success || resultado.sucesso) {
+        // 🔥 CORREÇÃO: Verificar estrutura da resposta
+        // A resposta vem em: resultado.dados
+        
+        if (resultado.dados && resultado.dados.sucesso === true) {
             // Sucesso!
             console.log('✅ Solicitação enviada com sucesso');
             mostrarMensagem('✅ Solicitação enviada com sucesso! Aguarde autorização do supervisor.', 'success');
@@ -586,21 +580,21 @@ async function solicitarAcesso() {
             document.getElementById('departamento-container').style.display = 'none';
             
         } else {
-            // Erro
-            const erroMsg = resultado.message || resultado.erro || 'Erro ao enviar solicitação';
+            // Erro - analisar diferentes formatos
+            const erroMsg = resultado.dados?.erro || resultado.dados?.message || 
+                           resultado.erro || resultado.message || 'Erro ao enviar solicitação';
             console.error('❌ Erro na solicitação:', erroMsg);
             mostrarMensagem('❌ ' + erroMsg, 'error');
         }
         
     } catch (erro) {
         console.error('❌ Erro no processo de solicitação:', erro);
-        mostrarMensagem('❌ Erro de conexão. Tente novamente. ' + erro.message, 'error');
+        mostrarMensagem('❌ Erro de conexão. Tente novamente: ' + erro.message, 'error');
     } finally {
         // Esconder loading
         mostrarLoading(false);
     }
 }
-
 // ============================================
 // FUNÇÕES PARA USO GLOBAL (se necessário)
 // ============================================
