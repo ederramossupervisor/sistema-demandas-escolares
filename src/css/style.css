@@ -2395,3 +2395,149 @@ body:has(.login-container)::before {
     background: var(--secondary-color);
     border-radius: 3px;
 }
+/* ============================================
+   ESTILOS PARA SEÇÃO DE NOTIFICAÇÕES
+   ============================================ */
+
+.configuracoes-notificacoes {
+    background: white;
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.config-card {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-left: 4px solid #3498db;
+}
+
+.config-card h4 {
+    color: #2c3e50;
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Toggle switches */
+.toggle-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.toggle input {
+    display: none;
+}
+
+.toggle-slider {
+    width: 50px;
+    height: 26px;
+    background: #ccc;
+    border-radius: 34px;
+    position: relative;
+    transition: .4s;
+}
+
+.toggle-slider:before {
+    content: "";
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 4px;
+    bottom: 4px;
+    background: white;
+    border-radius: 50%;
+    transition: .4s;
+}
+
+.toggle input:checked + .toggle-slider {
+    background: #4CAF50;
+}
+
+.toggle input:checked + .toggle-slider:before {
+    transform: translateX(24px);
+}
+
+.toggle-label {
+    font-size: 14px;
+    color: #333;
+}
+
+/* Segmentação */
+.segmentacao {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.segmentacao-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.segmentacao-item:hover {
+    background: #e8f4fc;
+}
+
+.segmentacao input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.segmentacao-label {
+    font-size: 14px;
+}
+
+/* Logs */
+.logs-container {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin-bottom: 15px;
+}
+
+/* Botões personalizados */
+.btn-testar, .btn-carregar, .btn-salvar, .btn-testar-tudo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .config-card {
+        padding: 15px;
+    }
+    
+    .acoes-notificacoes {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .btn-testar-tudo {
+        margin-left: 0 !important;
+        margin-top: 10px;
+    }
+}
