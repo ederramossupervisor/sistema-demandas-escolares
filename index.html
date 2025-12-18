@@ -723,78 +723,112 @@ function ajustarInterfacePorTipoUsuario(tipo) {
         }
     }
     
-    console.log('✅ Interface ajustada para tipo:', tipo);
-}  // ← FIM DA FUNÇÃO
+        console.log('✅ Interface ajustada para tipo:', tipo);
+}  // ← FIM DA FUNÇÃO ajustarInterfacePorTipoUsuario
 
-document.body.classList.add('pwa-mode');    
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
+// AGORA VEM O RESTO DO CÓDIGO FORA DA FUNÇÃO
+// A. Detectar se é PWA instalado
+if (window.matchMedia('(display-mode: standalone)').matches) {
+    console.log('📱 Executando como PWA instalado');
+    document.body.classList.add('pwa-mode');
+}
+
+// B. Configurar data do prazo no formulário
+const hoje = new Date();
+const amanha = new Date(hoje);
+amanha.setDate(hoje.getDate() + 1);
+
+const prazoInput = document.getElementById('prazo');
+if (prazoInput) {
+    // Data mínima: amanhã
+    prazoInput.min = amanha.toISOString().split('T')[0];
+    
+    // Data padrão: 7 dias à frente
+    const prazoPadrao = new Date(hoje);
+    prazoPadrao.setDate(hoje.getDate() + 7);
+    prazoInput.value = prazoPadrao.toISOString().split('T')[0];
+    
+    // Data máxima: 2 anos à frente
+    const maxDate = new Date(hoje);
+    maxDate.setFullYear(hoje.getFullYear() + 2);
+    prazoInput.max = maxDate.toISOString().split('T')[0];
+}
+
+console.log('✅ Sistema configurado e pronto!');
+
+// 4. Instalação do PWA (apenas uma vez)
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    console.log('📲 PWA pronto para instalação');
+    
+    // Mostrar botão de instalação após 3 segundos (apenas se não for PWA)
+    setTimeout(() => {
+        if (deferredPrompt && !window.matchMedia('(display-mode: standalone)').matches) {
+            mostrarBotaoInstalacao();
+        }
+    }, 3000);
+});
+
+function mostrarBotaoInstalacao() {
+    // Evitar múltiplos botões
+    if (document.querySelector('.btn-instalar-pwa')) return;
+    
+    const botao = document.createElement('button');
+    botao.className = 'btn-instalar-pwa';
+    botao.innerHTML = '<i class="fas fa-download"></i> Instalar App';
+    botao.style.cssText = `
+        position: fixed;
+        bottom: 100px;
+        right: 20px;
+        background: #3498db;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 25px;
+        font-size: 14px;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    `;
+    
+    botao.onclick = () => {
+        botao.style.display = 'none';
+        deferredPrompt.prompt();
         
-        console.log('📲 PWA pronto para instalação');
-        
-        // Mostrar botão de instalação após 3 segundos (apenas se não for PWA)
-        setTimeout(() => {
-            if (deferredPrompt && !window.matchMedia('(display-mode: standalone)').matches) {
-                mostrarBotaoInstalacao();
+        deferredPrompt.userChoice.then(choiceResult => {
+            if (choiceResult.outcome === 'accepted') {
+                console.log('✅ PWA instalado com sucesso!');
             }
-        }, 3000);
-    });
+            deferredPrompt = null;
+        });
+    };
+    
+    document.body.appendChild(botao);
+    
+    // Remover após 30 segundos
+    setTimeout(() => {
+        if (botao.parentNode) {
+            botao.remove();
+        }
+    }, 30000);
+}
 
-    function mostrarBotaoInstalacao() {
-        // Evitar múltiplos botões
-        if (document.querySelector('.btn-instalar-pwa')) return;
-        
-        const botao = document.createElement('button');
-        botao.className = 'btn-instalar-pwa';
-        botao.innerHTML = '<i class="fas fa-download"></i> Instalar App';
-        botao.style.cssText = `
-            position: fixed;
-            bottom: 100px;
-            right: 20px;
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 25px;
-            font-size: 14px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        `;
-        
-        botao.onclick = () => {
-            botao.style.display = 'none';
-            deferredPrompt.prompt();
-            
-            deferredPrompt.userChoice.then(choiceResult => {
-                if (choiceResult.outcome === 'accepted') {
-                    console.log('✅ PWA instalado com sucesso!');
-                }
-                deferredPrompt = null;
-            });
-        };
-        
-        document.body.appendChild(botao);
-        
-        // Remover após 30 segundos
-        setTimeout(() => {
-            if (botao.parentNode) {
-                botao.remove();
-            }
-        }, 30000);
-    }
+window.addEventListener('appinstalled', () => {
+    console.log('🎉 PWA instalado com sucesso!');
+});
 
-    window.addEventListener('appinstalled', () => {
-        console.log('🎉 PWA instalado com sucesso!');
-    });
+}); // ← FECHA O document.addEventListener('DOMContentLoaded')
 
-    // ============================================
-    // FIM DA CONFIGURAÇÃO
-    // ============================================
-    </script>
+// ============================================
+// FIM DA CONFIGURAÇÃO
+// ============================================
+</script>
 </body>
 </html>
