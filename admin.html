@@ -705,8 +705,9 @@ async function carregarSolicitacoes() {
         if (!container) return;
         
         if (!resultado.sucesso || !resultado.solicitacoes || resultado.solicitacoes.length === 0) {
-            if (emptyState) emptyState.style.display = 'block';
             container.innerHTML = '';
+            if (emptyState) emptyState.style.display = 'block';
+            
             return;
         }
         
@@ -717,7 +718,7 @@ async function carregarSolicitacoes() {
             const data = AdminSystem.formatarData(solicitacao.data_solicitacao || solicitacao.timestamp);
             
             html += `
-                <tr>
+                <tr id="solicitacao-${solicitacao.email.replace(/[@.]/g, '-')}">
                     <td>${data}</td>
                     <td><strong>${solicitacao.nome || 'N/A'}</strong></td>
                     <td>${solicitacao.email || 'N/A'}</td>
@@ -847,6 +848,7 @@ async function autorizarUsuario() {
         if (resultado.sucesso) {
             AdminSystem.mostrarToast('Sucesso', `Usuário ${email} autorizado!`, 'success');
             fecharModalAutorizar();
+            removerSolicitacaoDaTabela(email);
             await carregarDados();
         } else {
             AdminSystem.mostrarToast('Erro', resultado.erro || 'Erro ao autorizar', 'error');
@@ -857,7 +859,81 @@ async function autorizarUsuario() {
         mostrarLoading(false);
     }
 }
+/**
+ * Remove uma solicitação da tabela visualmente (sem recarregar toda a tabela)
+ */
+function removerSolicitacaoDaTabela(email) {
+    console.log(`Removendo solicitação do email: ${email}`);
+    
+    const tabela = document.getElementById('tabela-solicitacoes');
+    if (!tabela) return;
+    
+    // Tentar encontrar pelo ID primeiro
+    const rowId = `solicitacao-${email.replace(/[@.]/g, '-')}`;
+    let linhaParaRemover = document.getElementById(rowId);
+    
+    // Se não encontrar pelo ID, buscar pelo email no conteúdo
+    if (!linhaParaRemover) {
+        const linhas = tabela.getElementsByTagName('tr');
+        
+        for (let i = 1; i < linhas.length; i++) {
+            const celulas = linhas[i].getElementsByTagName('td');
+            if (celulas.length >= 3) {
+                const emailNaCelula = celulas[2].textContent.trim();
+                if (emailNaCelula === email) {
+                    linhaParaRemover = linhas[i];
+                    break;
+                }
+            }
+        }
+    }
+    
+    // Remover a linha se encontrada
+    if (linhaParaRemover) {
+        // Adicionar animação antes de remover
+        linhaParaRemover.classList.add('removing-row');
+        
+        // Esperar animação terminar antes de remover
+        setTimeout(() => {
+            linhaParaRemover.remove();
+            console.log(`✅ Linha removida para email: ${email}`);
+            
+            // Verificar se ficou sem solicitações
+            verificarSeTabelaEstaVazia();
+        }, 300); // Tempo da animação
+    } else {
+        console.warn(`⚠️ Email ${email} não encontrado na tabela`);
+    }
+}
 
+/**
+ * Verifica se a tabela ficou vazia e mostra mensagem
+ */
+function verificarSeTabelaEstaVazia() {
+    const tbody = document.getElementById('solicitacoes-body');
+    const emptyState = document.getElementById('solicitacoes-empty');
+    
+    if (!tbody || !emptyState) return;
+    
+    // Contar quantas linhas restam (excluindo o cabeçalho)
+    const linhasRestantes = tbody.getElementsByTagName('tr').length;
+    
+    if (linhasRestantes === 0) {
+        // Mostrar estado vazio
+        emptyState.style.display = 'block';
+        
+        // Opcional: Adicionar uma linha de mensagem
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 40px; color: #7f8c8d;">
+                    <i class="fas fa-check-circle" style="font-size: 48px; margin-bottom: 15px; color: #2ecc71;"></i>
+                    <h3>Todas as solicitações processadas</h3>
+                    <p>Nenhuma solicitação pendente no momento.</p>
+                </td>
+            </tr>
+        `;
+    }
+}
 async function recusarSolicitacao(email) {
     if (!confirm(`Recusar solicitação de ${email}?`)) return;
     
@@ -868,6 +944,7 @@ async function recusarSolicitacao(email) {
         
         if (resultado.sucesso) {
             AdminSystem.mostrarToast('Sucesso', 'Solicitação recusada', 'success');
+            removerSolicitacaoDaTabela(email);
             await carregarSolicitacoes();
         } else {
             AdminSystem.mostrarToast('Erro', resultado.erro || 'Erro ao recusar', 'error');
@@ -951,7 +1028,8 @@ async function salvarEdicaoUsuario() {
     } finally {
         mostrarLoading(false);
     }
-}async function resetarSenhaUsuario(email, nome) {
+}
+    async function resetarSenhaUsuario(email, nome) {
     const novaSenha = prompt(`Nova senha para ${nome} (${email}):`, AdminSystem.gerarSenhaAleatoria());
     
     if (!novaSenha || novaSenha.trim() === '') {
