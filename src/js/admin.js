@@ -5,6 +5,42 @@
 
 const AdminSystem = {
     /**
+ * Exclui um usuário permanentemente
+ */
+async function excluirUsuario(email) {
+  console.log('🗑️ Excluindo usuário:', email);
+  
+  try {
+    // Pegar email do supervisor logado
+    const usuarioSalvo = localStorage.getItem('usuario_demandas');
+    if (!usuarioSalvo) {
+      throw new Error('Supervisor não está logado');
+    }
+    
+    const supervisor = JSON.parse(usuarioSalvo);
+    
+    if (window.enviarParaGoogleAppsScript) {
+      const resultado = await window.enviarParaGoogleAppsScript({
+        acao: 'excluirUsuario',
+        email: email,  // Email do usuário a ser excluído
+        emailSupervisor: supervisor.email  // Email do supervisor que está excluindo
+      });
+      
+      console.log('✅ Resultado da exclusão:', resultado);
+      return resultado;
+    }
+    
+    throw new Error('Função não disponível');
+    
+  } catch (erro) {
+    console.error('❌ Erro ao excluir usuário:', erro);
+    return {
+      sucesso: false,
+      erro: erro.message
+    };
+  }
+}
+    /**
      * Testa a conexão com o servidor
      */
     async testarConexao() {
