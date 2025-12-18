@@ -693,18 +693,48 @@ function atualizarEstatisticas() {
     const demandasFiltradas = filtrarDemandas(state.demandas);
     const hoje = new Date();
     
+    // Calcular todas as estatísticas
     const total = demandasFiltradas.length;
     const pendentes = demandasFiltradas.filter(d => d.status === 'Pendente').length;
+    const emAndamento = demandasFiltradas.filter(d => d.status === 'Em andamento').length;
+    const concluidas = demandasFiltradas.filter(d => d.status === 'Concluída').length;
     
+    // Atrasadas: Pendentes ou Em andamento com prazo vencido
     const atrasadas = demandasFiltradas.filter(d => {
-        if (!d.prazo || d.status === 'Concluída') return false;
+        if (!d.prazo) return false;
+        if (d.status === 'Concluída') return false;
+        
         const prazo = new Date(d.prazo);
         return prazo < hoje;
     }).length;
     
+    console.log('📊 Estatísticas atualizadas:', {
+        total,
+        pendentes,
+        emAndamento,
+        concluidas,
+        atrasadas
+    });
+    
+    // Atualizar elementos do DOM (se existirem)
     if (elementos.totalDemandas) elementos.totalDemandas.textContent = total;
     if (elementos.pendentes) elementos.pendentes.textContent = pendentes;
     if (elementos.atrasadas) elementos.atrasadas.textContent = atrasadas;
+    
+    // Adicionar novos elementos
+    const emAndamentoEl = document.getElementById('em-andamento');
+    const concluidasEl = document.getElementById('concluidas');
+    
+    if (emAndamentoEl) emAndamentoEl.textContent = emAndamento;
+    if (concluidasEl) concluidasEl.textContent = concluidas;
+    
+    // Opcional: Destacar se houver atrasadas
+    if (atrasadas > 0) {
+        const atrasadasEl = document.getElementById('atrasadas');
+        if (atrasadasEl) {
+            atrasadasEl.parentElement.parentElement.style.animation = 'pulse 2s infinite';
+        }
+    }
 }
 
 /**
