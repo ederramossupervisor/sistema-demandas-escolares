@@ -3368,3 +3368,67 @@ body:has(.login-container)::before {
 .btn-atualizar:active {
     transform: translateY(0) !important;
 }
+/* ============================================
+   OCULTAR TEXTO DOS BOTÕES NO CELULAR - APENAS ÍCONES
+   ============================================ */
+
+@media (max-width: 768px) {
+    /* Esconde o texto dos botões no header do admin */
+    .admin-header .nav-buttons .btn span,
+    .admin-header .nav-buttons .btn::after {
+        display: none !important;
+    }
+    
+    /* Ajusta os botões para ficarem apenas com ícones */
+    .admin-header .nav-buttons .btn {
+        width: 44px !important;          /* Largura fixa */
+        height: 44px !important;         /* Altura fixa */
+        padding: 10px !important;        /* Padding reduzido */
+        border-radius: 12px !important;  /* Bordas arredondadas */
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 0 !important;         /* Esconde texto */
+    }
+    
+    /* Aumenta o tamanho dos ícones */
+    .admin-header .nav-buttons .btn i {
+        font-size: 18px !important;
+        margin: 0 !important;            /* Remove margens */
+    }
+    
+    /* Ajusta o container dos botões */
+    .admin-header .nav-buttons {
+        gap: 8px !important;             /* Espaço menor entre botões */
+    }
+    
+    /* Opcional: Adiciona tooltip no hover */
+    .admin-header .nav-buttons .btn {
+        position: relative;
+    }
+    
+    .admin-header .nav-buttons .btn:hover::before {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: -35px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #2c3e50;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+        z-index: 1000;
+        pointer-events: none;
+        opacity: 0;
+        animation: fadeInTooltip 0.2s ease forwards;
+    }
+    
+    @keyframes fadeInTooltip {
+        to {
+            opacity: 1;
+            bottom: -30px;
+        }
+    }
+}
