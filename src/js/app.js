@@ -391,12 +391,23 @@ function atualizarBlocoEstatisticas(demandas) {
         return prazo < hoje;
     }).length;
     
-    // Atualizar os números na tela
-    document.getElementById('total-demandas-info').textContent = total;
-    document.getElementById('pendentes-info').textContent = pendentes;
-    document.getElementById('em-andamento-info').textContent = emAndamento;
-    document.getElementById('concluidas-info').textContent = concluidas;
-    document.getElementById('atrasadas-info').textContent = atrasadas;
+    // Atualizar os números na tela - COM VERIFICAÇÃO DE NULIDADE
+    const elementosParaAtualizar = [
+        { id: 'total-demandas-info', valor: total },
+        { id: 'pendentes-info', valor: pendentes },
+        { id: 'em-andamento-info', valor: emAndamento },
+        { id: 'concluidas-info', valor: concluidas },
+        { id: 'atrasadas-info', valor: atrasadas }
+    ];
+    
+    elementosParaAtualizar.forEach(item => {
+        const elemento = document.getElementById(item.id);
+        if (elemento) {
+            elemento.textContent = item.valor;
+        } else {
+            console.warn(`⚠️ Elemento não encontrado: #${item.id}`);
+        }
+    });
     
     console.log("📊 Estatísticas:", { total, pendentes, emAndamento, concluidas, atrasadas });
 }
