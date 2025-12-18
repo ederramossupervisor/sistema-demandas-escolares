@@ -640,6 +640,23 @@ if (state.filtros.departamento && state.filtros.departamento !== '') {
         return true;
     });
 }
+async function atualizarStatusDemanda(idDemanda, novoStatus) {
+    try {
+        const dados = {
+            acao: 'atualizarDemanda',
+            id: idDemanda,
+            status: novoStatus,
+            alteracao: `Status alterado para: ${novoStatus}`
+        };
+        
+        const resultado = await enviarParaGoogleAppsScript(dados);
+        return resultado;
+        
+    } catch (erro) {
+        console.error('Erro ao atualizar status:', erro);
+        throw erro;
+    }
+}
 
 /**
  * Aplica os filtros atuais
