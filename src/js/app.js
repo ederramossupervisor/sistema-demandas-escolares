@@ -1428,7 +1428,7 @@ function mostrarDetalhesDemanda(idDemanda) {
                     </div>
                 </div>
                 
-                <div class="form-group mt-3">
+                                <div class="form-group mt-3">
                     <label><i class="fas fa-edit"></i> Ações</label>
                     <div style="display: flex; gap: 10px; margin-top: 10px;">
                         <button class="btn btn-primary" onclick="alterarStatusDemanda(${demanda.id}, 'Em andamento')">
@@ -1437,11 +1437,15 @@ function mostrarDetalhesDemanda(idDemanda) {
                         <button class="btn btn-success" onclick="alterarStatusDemanda(${demanda.id}, 'Concluída')">
                             <i class="fas fa-check"></i> Concluir
                         </button>
-                        <!-- BOTÃO DE EXCLUSÃO ADICIONADO AQUI -->
-                        <button class="btn btn-danger" onclick="excluirDemanda(${demanda.id})">
+                        <!-- BOTÃO DE EXCLUSÃO APENAS PARA SUPERVISOR -->
+                        <!-- O botão será controlado por JavaScript puro -->
+                        <button class="btn btn-danger supervisor-only" id="btn-excluir-${demanda.id}" onclick="excluirDemanda(${demanda.id})" title="Apenas Supervisor pode excluir" style="display: none;">
                             <i class="fas fa-trash"></i> Excluir
                         </button>
                     </div>
+                    <small style="color: #7f8c8d; font-size: 12px; margin-top: 5px; display: block; display: none;" id="msg-permissao-${demanda.id}">
+                        <i class="fas fa-info-circle"></i> Apenas supervisores podem excluir demandas
+                    </small>
                 </div>
             </div>
         </div>
@@ -1451,6 +1455,30 @@ function mostrarDetalhesDemanda(idDemanda) {
         elementos.modalDetalhes.querySelector('.modal').innerHTML = modalHTML;
         elementos.modalDetalhes.style.display = 'flex';
         document.body.style.overflow = 'hidden';
+        
+        // AGORA verificamos o tipo de usuário DEPOIS que o modal foi criado
+        setTimeout(() => {
+            const usuarioSalvo = localStorage.getItem('usuario_demandas');
+            if (usuarioSalvo) {
+                try {
+                    const usuario = JSON.parse(usuarioSalvo);
+                    const btnExcluir = document.getElementById(`btn-excluir-${demanda.id}`);
+                    const msgPermissao = document.getElementById(`msg-permissao-${demanda.id}`);
+                    
+                    if (usuario.tipo_usuario === 'supervisor') {
+                        // Mostrar botão para supervisor
+                        if (btnExcluir) btnExcluir.style.display = 'inline-block';
+                        if (msgPermissao) msgPermissao.style.display = 'none';
+                    } else {
+                        // Mostrar mensagem para não-supervisor
+                        if (btnExcluir) btnExcluir.style.display = 'none';
+                        if (msgPermissao) msgPermissao.style.display = 'block';
+                    }
+                } catch (e) {
+                    console.error('Erro ao verificar permissões:', e);
+                }
+            }
+        }, 100);
     }
 }
 
@@ -1498,7 +1526,28 @@ async function alterarStatusDemanda(idDemanda, novoStatus) {
  * @param {number} idDemanda - ID da demanda a excluir
  */
 async function excluirDemanda(idDemanda) {
-    // Buscar a demanda para mostrar detalhes
+    // Buscar dados do usuário logado
+    const usuarioSalvo = localStorage.getItem('usuario_demandas');
+    if (!usuarioSalvo) {
+        mostrarToast('Erro', 'Usuário não logado!', 'error');
+        return;
+    }
+    
+    let usuario;
+    try {
+        usuario = JSON.parse(usuarioSalvo);
+    } catch (e) {
+        mostrarToast('Erro', 'Erro ao ler dados do usuário!', 'error');
+        return;
+    }
+    
+    // Verificar se é supervisor
+    if (usuario.tipo_usuario !== 'supervisor') {
+        mostrarToast('Permissão Negada', 'Apenas supervisores podem excluir demandas!', 'error');
+        return;
+    }
+    
+    // Resto do código continua igual...
     const demanda = state.demandas.find(d => d.id == idDemanda);
     
     if (!demanda) {
@@ -1506,7 +1555,7 @@ async function excluirDemanda(idDemanda) {
         return;
     }
     
-    // Confirmar exclusão
+    // Confirmar exclusão (o resto do código continua IGUAL)
     const confirmacao = confirm(`Tem certeza que deseja EXCLUIR PERMANENTEMENTE a demanda?\n\n` +
                                `ID: #${demanda.id}\n` +
                                `Título: ${demanda.titulo}\n` +
