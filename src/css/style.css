@@ -1695,14 +1695,14 @@ a:hover {
     100% { border-color: rgba(231, 76, 60, 0.5); }
 }
 /* ============================================
-   ESTILOS ESPECÍFICOS PARA A TELA DE LOGIN
+   ESTILOS ESPECÍFICOS PARA A TELA DE LOGIN (VERSÃO COMPACTA)
    ============================================ */
 
-/* Container principal do login */
+/* Container principal do login - MAIS COMPACTO */
 .login-container {
     max-width: 450px;
-    margin: 40px auto;
-    padding: 30px;
+    margin: 20px auto;
+    padding: 15px;
     animation: fadeIn 0.8s ease-out;
     perspective: 1000px;
 }
@@ -1710,7 +1710,7 @@ a:hover {
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateY(30px);
+        transform: translateY(20px);
     }
     to {
         opacity: 1;
@@ -1718,17 +1718,17 @@ a:hover {
     }
 }
 
-/* Logo do login */
+/* Logo do login - MAIS COMPACTO */
 .login-logo {
     text-align: center;
-    margin-bottom: 40px;
+    margin-bottom: 25px;
     animation: slideDown 0.6s ease-out 0.3s both;
 }
 
 @keyframes slideDown {
     from {
         opacity: 0;
-        transform: translateY(-30px);
+        transform: translateY(-20px);
     }
     to {
         opacity: 1;
@@ -1737,8 +1737,8 @@ a:hover {
 }
 
 .logo-icon {
-    font-size: 4.5rem;
-    margin-bottom: 15px;
+    font-size: 3.5rem;
+    margin-bottom: 10px;
     background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
     -webkit-background-clip: text;
     background-clip: text;
@@ -1748,9 +1748,9 @@ a:hover {
 }
 
 .logo-text h1 {
-    font-size: 1.9rem;
+    font-size: 1.6rem;
     color: var(--primary-color);
-    margin-bottom: 8px;
+    margin-bottom: 5px;
     font-weight: 700;
     letter-spacing: -0.5px;
     background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
@@ -1762,16 +1762,17 @@ a:hover {
 
 .logo-text p {
     color: #7f8c8d;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     opacity: 0.9;
+    margin: 0;
 }
 
-/* Cartão do formulário */
+/* Cartão do formulário - MAIS COMPACTO */
 .login-card {
     background: white;
-    border-radius: 20px;
-    padding: 40px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
     border: 1px solid rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(10px);
     transform-style: preserve-3d;
@@ -1788,13 +1789,13 @@ a:hover {
     right: 0;
     height: 4px;
     background: linear-gradient(to right, var(--secondary-color), var(--primary-color));
-    border-radius: 20px 20px 0 0;
+    border-radius: 16px 16px 0 0;
 }
 
 @keyframes cardAppear {
     from {
         opacity: 0;
-        transform: translateY(30px) rotateX(10deg);
+        transform: translateY(20px) rotateX(10deg);
     }
     to {
         opacity: 1;
@@ -1804,23 +1805,23 @@ a:hover {
 
 .login-card h2 {
     color: var(--primary-color);
-    margin-bottom: 35px;
-    font-size: 1.7rem;
+    margin-bottom: 25px;
+    font-size: 1.4rem;
     text-align: center;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 10px;
     position: relative;
-    padding-bottom: 15px;
+    padding-bottom: 12px;
 }
 
 .login-card h2::after {
     content: '';
     position: absolute;
     bottom: 0;
-    left: 25%;
-    right: 25%;
+    left: 30%;
+    right: 30%;
     height: 3px;
     background: linear-gradient(to right, transparent, var(--secondary-color), transparent);
     border-radius: 3px;
@@ -1828,7 +1829,7 @@ a:hover {
 
 .login-card h2 i {
     color: var(--secondary-color);
-    font-size: 1.8rem;
+    font-size: 1.4rem;
     animation: iconPulse 2s infinite;
 }
 
@@ -1837,49 +1838,49 @@ a:hover {
         transform: scale(1);
     }
     50% {
-        transform: scale(1.1);
+        transform: scale(1.05);
     }
 }
 
-/* Formulário de login com design moderno */
+/* Formulário de login - MAIS COMPACTO */
 #form-login .form-group {
-    margin-bottom: 28px;
+    margin-bottom: 20px;
     position: relative;
 }
 
 #form-login .form-group label {
     display: block;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     color: var(--primary-color);
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     transition: all 0.3s ease;
 }
 
 #form-login .form-group label i {
     color: var(--secondary-color);
-    font-size: 1.2rem;
-    width: 20px;
+    font-size: 1rem;
+    width: 18px;
     text-align: center;
 }
 
-/* Campos de entrada estilizados */
+/* Campos de entrada - MAIS COMPACTO */
 #form-login input[type="email"],
 #form-login input[type="password"] {
     width: 100%;
-    padding: 18px 20px;
-    padding-left: 55px;
+    padding: 14px 16px;
+    padding-left: 45px;
     border: 2px solid #e8f0fe;
-    border-radius: 15px;
-    font-size: 1rem;
+    border-radius: 12px;
+    font-size: 0.95rem;
     font-family: 'Roboto', sans-serif;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+    transition: all 0.3s ease;
     background: linear-gradient(to bottom right, #ffffff, #f8fafc);
     color: var(--primary-color);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
     position: relative;
     z-index: 1;
 }
@@ -1887,8 +1888,8 @@ a:hover {
 #form-login input[type="email"]:hover,
 #form-login input[type="password"]:hover {
     border-color: #c5d9ff;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(52, 152, 219, 0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.12);
 }
 
 #form-login input[type="email"]:focus,
@@ -1896,54 +1897,35 @@ a:hover {
     outline: none;
     border-color: var(--secondary-color);
     background: white;
-    box-shadow: 0 10px 30px rgba(52, 152, 219, 0.2);
-    transform: translateY(-3px);
-    padding-left: 60px;
+    box-shadow: 0 8px 25px rgba(52, 152, 219, 0.18);
+    transform: translateY(-2px);
+    padding-left: 48px;
 }
 
 /* Ícones dentro dos campos */
 .input-icon {
     position: absolute;
-    left: 20px;
+    left: 16px;
     top: 50%;
     transform: translateY(-50%);
     color: var(--secondary-color);
-    font-size: 1.3rem;
+    font-size: 1.1rem;
     z-index: 2;
     transition: all 0.3s ease;
 }
 
 #form-login .form-group:focus-within .input-icon {
     color: var(--primary-color);
-    transform: translateY(-50%) scale(1.1);
+    transform: translateY(-50%) scale(1.05);
 }
 
-/* Efeito de foco com borda animada */
-.form-group::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(to right, var(--secondary-color), var(--primary-color));
-    border-radius: 0 0 10px 10px;
-    transform: scaleX(0);
-    transition: transform 0.4s ease;
-    transform-origin: center;
-}
-
-#form-login .form-group:focus-within::after {
-    transform: scaleX(1);
-}
-
-/* Opções de formulário */
+/* Opções de formulário - MAIS COMPACTO */
 .form-options {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
-    padding: 15px 0;
+    margin-bottom: 20px;
+    padding: 12px 0;
     border-top: 1px solid rgba(0,0,0,0.05);
     border-bottom: 1px solid rgba(0,0,0,0.05);
 }
@@ -1952,15 +1934,16 @@ a:hover {
     display: flex;
     align-items: center;
     cursor: pointer;
-    gap: 10px;
+    gap: 8px;
     font-weight: 500;
     color: var(--text-color);
+    font-size: 0.9rem;
     transition: color 0.3s ease;
 }
 
 .checkbox-option input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     accent-color: var(--secondary-color);
     cursor: pointer;
     transform: scale(1);
@@ -1968,7 +1951,7 @@ a:hover {
 }
 
 .checkbox-option input[type="checkbox"]:checked {
-    transform: scale(1.1);
+    transform: scale(1.05);
 }
 
 .checkbox-option:hover {
@@ -1979,9 +1962,9 @@ a:hover {
     color: var(--secondary-color);
     font-weight: 500;
     text-decoration: none;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     position: relative;
-    padding: 5px 0;
+    padding: 4px 0;
     transition: all 0.3s ease;
 }
 
@@ -1991,7 +1974,7 @@ a:hover {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 2px;
+    height: 1px;
     background: var(--secondary-color);
     transform: scaleX(0);
     transition: transform 0.3s ease;
@@ -2007,26 +1990,27 @@ a:hover {
     transform-origin: left;
 }
 
-/* Botão de login */
+/* Botão de login - MAIS COMPACTO */
 .btn-login {
     width: 100%;
-    height: 52px;
+    height: 46px;
     background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
     color: white;
     border: none;
-    border-radius: 15px;
-    font-size: 1.1rem;
+    border-radius: 12px;
+    font-size: 1rem;
     font-weight: 600;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    box-shadow: 0 10px 30px rgba(52, 152, 219, 0.3);
+    gap: 10px;
+    box-shadow: 0 8px 25px rgba(52, 152, 219, 0.25);
+    margin-bottom: 15px;
 }
 
 .btn-login::before {
@@ -2037,12 +2021,12 @@ a:hover {
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.7s ease;
+    transition: left 0.6s ease;
 }
 
 .btn-login:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 15px 35px rgba(52, 152, 219, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(52, 152, 219, 0.35);
     background: linear-gradient(135deg, #2980b9, #34495e);
 }
 
@@ -2052,21 +2036,21 @@ a:hover {
 
 .btn-login:active {
     transform: translateY(-1px);
-    box-shadow: 0 8px 25px rgba(52, 152, 219, 0.3);
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.25);
 }
 
 .btn-login i {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     transition: transform 0.3s ease;
 }
 
 .btn-login:hover i {
-    transform: translateX(3px);
+    transform: translateX(2px);
 }
 
-/* Divisor */
+/* Divisor - MAIS COMPACTO */
 .login-divider {
-    margin: 30px 0;
+    margin: 20px 0;
     text-align: center;
     position: relative;
 }
@@ -2078,7 +2062,7 @@ a:hover {
     top: 50%;
     width: 45%;
     height: 1px;
-    background: linear-gradient(to right, transparent, rgba(0,0,0,0.1), transparent);
+    background: linear-gradient(to right, transparent, rgba(0,0,0,0.08), transparent);
 }
 
 .login-divider::before {
@@ -2091,30 +2075,30 @@ a:hover {
 
 .login-divider span {
     background: white;
-    padding: 0 20px;
+    padding: 0 15px;
     color: var(--text-light);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 500;
     position: relative;
     z-index: 1;
 }
 
-/* Botão de solicitar acesso */
+/* Botão de solicitar acesso - MAIS COMPACTO */
 .btn-secondary {
     width: 100%;
-    height: 50px;
+    height: 44px;
     background: white;
     color: var(--primary-color);
     border: 2px solid var(--primary-color);
-    border-radius: 15px;
-    font-size: 1rem;
+    border-radius: 12px;
+    font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
     position: relative;
     overflow: hidden;
     z-index: 1;
@@ -2137,7 +2121,7 @@ a:hover {
     color: white;
     border-color: transparent;
     transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(44, 62, 80, 0.2);
+    box-shadow: 0 8px 20px rgba(44, 62, 80, 0.15);
 }
 
 .btn-secondary:hover::before {
@@ -2145,50 +2129,51 @@ a:hover {
 }
 
 .btn-secondary i {
+    font-size: 1rem;
     transition: transform 0.3s ease;
 }
 
 .btn-secondary:hover i {
-    transform: rotate(10deg);
+    transform: rotate(8deg);
 }
 
-/* Informações do login */
+/* Informações do login - MAIS COMPACTO */
 .login-info {
-    margin-top: 25px;
-    padding: 15px;
+    margin-top: 20px;
+    padding: 12px;
     background: linear-gradient(135deg, rgba(52, 152, 219, 0.05), rgba(44, 62, 80, 0.05));
-    border-radius: 12px;
-    border-left: 4px solid var(--secondary-color);
+    border-radius: 10px;
+    border-left: 3px solid var(--secondary-color);
     text-align: center;
 }
 
 .login-info p {
     margin: 0;
     color: var(--text-color);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .login-info i {
     color: var(--secondary-color);
-    font-size: 1rem;
+    font-size: 0.9rem;
 }
 
-/* Estilo para o modal de solicitação de acesso */
+/* Estilo para o modal de solicitação de acesso - MAIS COMPACTO */
 #modal-solicitar-acesso .modal {
     max-width: 500px;
-    border-radius: 20px;
+    border-radius: 16px;
     overflow: hidden;
-    animation: modalSlideIn 0.4s ease-out;
+    animation: modalSlideIn 0.3s ease-out;
 }
 
 @keyframes modalSlideIn {
     from {
         opacity: 0;
-        transform: translateY(-50px) scale(0.9);
+        transform: translateY(-30px) scale(0.95);
     }
     to {
         opacity: 1;
@@ -2199,26 +2184,30 @@ a:hover {
 #modal-solicitar-acesso .modal-header {
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     color: white;
-    padding: 25px;
+    padding: 20px;
     border-bottom: none;
 }
 
 #modal-solicitar-acesso .modal-header h2 {
     color: white;
     margin: 0;
-    font-size: 1.4rem;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 #modal-solicitar-acesso .btn-close {
     color: white;
     background: rgba(255, 255, 255, 0.1);
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
+    font-size: 1rem;
 }
 
 #modal-solicitar-acesso .btn-close:hover {
@@ -2226,16 +2215,16 @@ a:hover {
     transform: rotate(90deg);
 }
 
-/* Fundo animado para a tela de login */
+/* Fundo da tela de login - SIMPLIFICADO */
 body:has(.login-container) {
-    background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+    background: linear-gradient(135deg, #f8fafc 0%, #e4edf5 100%);
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: 15px;
     position: relative;
-    overflow: hidden;
+    overflow: auto;
 }
 
 body:has(.login-container)::before {
@@ -2246,85 +2235,96 @@ body:has(.login-container)::before {
     right: 0;
     bottom: 0;
     background: 
-        radial-gradient(circle at 20% 80%, rgba(52, 152, 219, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(44, 62, 80, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 40% 40%, rgba(231, 76, 60, 0.05) 0%, transparent 50%);
+        radial-gradient(circle at 10% 20%, rgba(52, 152, 219, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 90% 80%, rgba(44, 62, 80, 0.08) 0%, transparent 50%);
     z-index: -1;
-    animation: backgroundShift 20s ease-in-out infinite alternate;
-}
-
-@keyframes backgroundShift {
-    0% {
-        transform: translate(0, 0) scale(1);
-    }
-    100% {
-        transform: translate(-50px, -50px) scale(1.1);
-    }
 }
 
 /* Responsividade para o login */
 @media (max-width: 768px) {
     .login-container {
         max-width: 100%;
-        margin: 20px auto;
-        padding: 15px;
+        margin: 10px auto;
+        padding: 10px;
     }
     
-    .login-card {
-        padding: 25px;
-    }
-    
-    .logo-icon {
-        font-size: 3.5rem;
-    }
-    
-    .logo-text h1 {
-        font-size: 1.6rem;
-    }
-    
-    #form-login input[type="email"],
-    #form-login input[type="password"] {
-        padding: 16px 15px;
-        padding-left: 50px;
-        font-size: 0.95rem;
-    }
-    
-    .btn-login,
-    .btn-secondary {
-        height: 48px;
-        font-size: 1rem;
-    }
-    
-    .form-options {
-        flex-direction: column;
-        gap: 15px;
-        align-items: flex-start;
-    }
-}
-
-@media (max-width: 480px) {
     .login-card {
         padding: 20px;
-        border-radius: 15px;
     }
     
     .logo-icon {
         font-size: 3rem;
     }
     
-    .login-card h2 {
+    .logo-text h1 {
         font-size: 1.4rem;
     }
     
     #form-login input[type="email"],
     #form-login input[type="password"] {
-        padding: 14px 12px;
-        padding-left: 45px;
+        padding: 12px 14px;
+        padding-left: 42px;
+        font-size: 0.9rem;
     }
     
     .input-icon {
-        left: 15px;
-        font-size: 1.1rem;
+        left: 14px;
+        font-size: 1rem;
+    }
+    
+    .btn-login,
+    .btn-secondary {
+        height: 42px;
+        font-size: 0.95rem;
+    }
+    
+    .form-options {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+    
+    .login-card h2 {
+        font-size: 1.3rem;
+        margin-bottom: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .login-card {
+        padding: 18px;
+        border-radius: 14px;
+    }
+    
+    .logo-icon {
+        font-size: 2.8rem;
+    }
+    
+    .login-card h2 {
+        font-size: 1.2rem;
+        gap: 8px;
+    }
+    
+    .login-card h2 i {
+        font-size: 1.2rem;
+    }
+    
+    #form-login input[type="email"],
+    #form-login input[type="password"] {
+        padding: 11px 12px;
+        padding-left: 40px;
+        border-radius: 10px;
+    }
+    
+    .btn-login,
+    .btn-secondary {
+        height: 40px;
+        border-radius: 10px;
+    }
+    
+    .login-info {
+        padding: 10px;
+        font-size: 0.8rem;
     }
 }
 
@@ -2337,13 +2337,13 @@ body:has(.login-container)::before {
 .input-invalid {
     border-color: var(--accent-color) !important;
     background: linear-gradient(to bottom right, #ffffff, rgba(231, 76, 60, 0.05)) !important;
-    animation: shake 0.5s ease;
+    animation: shake 0.4s ease;
 }
 
 @keyframes shake {
     0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
 }
 
 /* Loader para botão de login */
@@ -2355,8 +2355,8 @@ body:has(.login-container)::before {
 .btn-login.loading::after {
     content: '';
     position: absolute;
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     border: 2px solid white;
     border-top-color: transparent;
     border-radius: 50%;
@@ -2365,4 +2365,33 @@ body:has(.login-container)::before {
 
 @keyframes buttonSpin {
     to { transform: rotate(360deg); }
-   }
+}
+
+/* Mensagens de erro específicas para login */
+.login-messages {
+    margin-top: 15px;
+    max-height: 100px;
+    overflow-y: auto;
+}
+
+/* Ajuste específico para garantir que tudo caiba em uma tela */
+.login-form-container {
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--secondary-color) #f1f1f1;
+}
+
+.login-form-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.login-form-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.login-form-container::-webkit-scrollbar-thumb {
+    background: var(--secondary-color);
+    border-radius: 3px;
+}
