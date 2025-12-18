@@ -373,7 +373,8 @@ function inicializarElementos() {
         console.error("❌ ERRO: inicializarElementos chamado na página de login!");
         console.error("📍 Isso não deveria acontecer. Verifique a verificação de página.");
         return;
-    }
+    } // ← ESTA É A CHAVE QUE ESTAVA FALTANDO!
+    
     elementos = {
         // SPLASH SCREEN
         splashScreen: document.getElementById('splash-screen'),
@@ -457,7 +458,6 @@ function inicializarElementos() {
     
     console.log("✅ Elementos inicializados:", Object.keys(elementos).length);
 }
-
 /**
  * Configura todos os eventos da aplicação
  */
