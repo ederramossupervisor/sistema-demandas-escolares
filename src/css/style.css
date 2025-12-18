@@ -3432,3 +3432,24 @@ body:has(.login-container)::before {
         }
     }
 }
+@media (max-width: 768px) {
+    /* Ajusta o header no celular */
+    .admin-header {
+        flex-direction: column !important;
+        gap: 15px !important;
+        text-align: center !important;
+        padding: 15px 0 !important;
+    }
+    
+    .admin-header h1 {
+        font-size: 1.3rem !important;
+        text-align: center !important;
+        justify-content: center !important;
+        margin-bottom: 10px !important;
+    }
+    
+    .admin-header .nav-buttons {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+}
