@@ -618,84 +618,92 @@ function renderizarDemandas() {
  * Esta função vai substituir os exemplos fixos pelos dados reais
  */
 function renderizarDemandasNaLista() {
-    console.log("🎯 Renderizando demandas na LISTA...");
+    console.log("🎯 Renderizando na lista nova...");
     
-    // 1. Encontrar o container da lista
     const listaContainer = document.querySelector('.demandas-lista-container');
-    if (!listaContainer) {
-        console.error("❌ Container da lista não encontrado!");
-        return;
-    }
+    if (!listaContainer) return;
     
-    // 2. Limpar conteúdo (exceto o cabeçalho)
+    // Limpar (manter só o cabeçalho)
     const cabecalho = listaContainer.querySelector('.demanda-linha.cabecalho');
     listaContainer.innerHTML = '';
+    if (cabecalho) listaContainer.appendChild(cabecalho);
     
-    if (cabecalho) {
-        listaContainer.appendChild(cabecalho);
-    }
+    // Aplicar filtros
+    const demandasFiltradas = filtrarDemandas(state.demandas);
     
-    // 3. Verificar se temos demandas
-    if (!state.demandas || state.demandas.length === 0) {
-        console.log("📭 Nenhuma demanda para mostrar");
-        
-        // Mostrar mensagem "vazia"
+    // Se não há demandas filtradas
+    if (!demandasFiltradas || demandasFiltradas.length === 0) {
         const vazioHTML = `
             <div class="lista-vazia">
-                <i class="fas fa-clipboard-list fa-3x"></i>
+                <i class="fas fa-filter fa-3x"></i>
                 <h3>Nenhuma demanda encontrada</h3>
-                <p>Não há demandas cadastradas no momento</p>
+                <p>Tente ajustar os filtros ou criar uma nova demanda</p>
             </div>
         `;
         listaContainer.insertAdjacentHTML('beforeend', vazioHTML);
+        
+        // Atualizar estatísticas com zero (já que nada foi filtrado)
+        atualizarBlocoEstatisticas([]);
         return;
     }
     
-    console.log(`📊 Mostrando ${state.demandas.length} demandas na lista`);
+    // Ordenar: pendentes primeiro, depois por prazo
+    demandasFiltradas.sort((a, b) => {
+        // Status: Pendente → Em andamento → Concluída
+        const statusOrder = { 'Pendente': 1, 'Em andamento': 2, 'Concluída': 3 };
+        const statusA = statusOrder[a.status] || 4;
+        const statusB = statusOrder[b.status] || 4;
+        
+        if (statusA !== statusB) return statusA - statusB;
+        
+        // Por prazo (mais próximos primeiro)
+        if (!a.prazo) return 1;
+        if (!b.prazo) return -1;
+        return new Date(a.prazo) - new Date(b.prazo);
+    });
     
-    // 4. Para CADA demanda real, criar uma linha na lista
-    state.demandas.forEach((demanda, index) => {
-        // Formatar a data do prazo
-        let dataPrazo = "Não definido";
-        if (demanda.prazo) {
-            const data = new Date(demanda.prazo);
-            dataPrazo = data.toLocaleDateString('pt-BR');
+    // Para cada demanda filtrada
+    demandasFiltradas.forEach(demanda => {
+        // Formatar dados
+        const dataPrazo = demanda.prazo ? 
+            new Date(demanda.prazo).toLocaleDateString('pt-BR') : 
+            'Não definido';
+        
+        // Calcular se está atrasada
+        const hoje = new Date();
+        const prazoDate = demanda.prazo ? new Date(demanda.prazo) : null;
+        let prazoIndicador = '';
+        
+        if (prazoDate && demanda.status !== 'Concluída') {
+            const diasRestantes = Math.ceil((prazoDate - hoje) / (1000 * 60 * 60 * 24));
+            
+            if (diasRestantes < 0) {
+                prazoIndicador = `<div class="prazo-indicator prazo-atrasado">Atrasada ${Math.abs(diasRestantes)}d</div>`;
+            } else if (diasRestantes === 0) {
+                prazoIndicador = `<div class="prazo-indicator prazo-hoje">Hoje!</div>`;
+            } else if (diasRestantes <= 3) {
+                prazoIndicador = `<div class="prazo-indicator prazo-alerta">${diasRestantes}d</div>`;
+            }
         }
         
-        // Formatar escolas (pegar só a primeira se tiver muitas)
-        let escolasTexto = demanda.escolas || "Não definida";
-        if (escolasTexto.includes(',')) {
-            escolasTexto = escolasTexto.split(',')[0].trim() + " + mais";
+        // Escolas (mostrar apenas primeira se tiver muitas)
+        let escolasTexto = demanda.escolas || '';
+        const escolasArray = escolasTexto.split(',').map(e => e.trim());
+        if (escolasArray.length > 1) {
+            escolasTexto = `${escolasArray[0]} +${escolasArray.length - 1}`;
         }
         
-        // Determinar cor do status
-        let statusClass = '';
-        let statusIcon = '';
+        // Status
+        const status = demanda.status || 'Pendente';
+        const statusClass = `status-${status.toLowerCase().replace(' ', '-')}`;
         
-        switch(demanda.status) {
-            case 'Pendente':
-                statusClass = 'status-pendente';
-                statusIcon = '⏰';
-                break;
-            case 'Em andamento':
-                statusClass = 'status-andamento';
-                statusIcon = '▶️';
-                break;
-            case 'Concluída':
-                statusClass = 'status-concluida';
-                statusIcon = '✅';
-                break;
-            default:
-                statusClass = 'status-pendente';
-                statusIcon = '📝';
-        }
-        
-        // Criar HTML da linha
+        // Criar linha
         const linhaHTML = `
             <div class="demanda-linha" onclick="mostrarDetalhesDemanda(${demanda.id})" style="cursor: pointer;">
                 <div class="demanda-titulo">
                     <i class="fas fa-file-alt"></i>
                     ${demanda.titulo || 'Sem título'}
+                    ${prazoIndicador}
                 </div>
                 <div class="demanda-escola" title="${demanda.escolas || ''}">
                     ${escolasTexto}
@@ -710,16 +718,16 @@ function renderizarDemandasNaLista() {
                     ${dataPrazo}
                 </div>
                 <div class="demanda-status ${statusClass}">
-                    ${statusIcon} ${demanda.status || 'Pendente'}
+                    ${status}
                 </div>
             </div>
         `;
         
-        // Adicionar a linha ao container
         listaContainer.insertAdjacentHTML('beforeend', linhaHTML);
     });
     
-    console.log("✅ Lista renderizada com sucesso!");
+    // Atualizar estatísticas com as demandas filtradas
+    atualizarBlocoEstatisticas(demandasFiltradas);
 }
 /**
  * Filtra as demandas com base nos filtros ativos
@@ -732,25 +740,13 @@ function filtrarDemandas(demandas) {
                 return false;
             }
         }
-        // Filtro por departamento (NOVO)
-if (state.filtros.departamento && state.filtros.departamento !== '') {
-    // Se a demanda não tem departamento definido, ignora (para demandas antigas)
-    if (!demanda.departamento || demanda.departamento === '') {
-        return false; // Não mostra demandas sem departamento
-    }
-    
-    // Verificar se o departamento da demanda corresponde ao filtro
-    const deptsDemanda = demanda.departamento.split(',').map(d => d.trim());
-    
-    // Se o filtro for vazio ou "Todos", mostrar tudo
-    if (state.filtros.departamento === '') {
-        // Continua (mostra todas)
-    } 
-    // Se for um departamento específico, verificar
-    else if (!deptsDemanda.includes(state.filtros.departamento)) {
-        return false; // Não corresponde, não mostra
-    }
-}
+        
+        // Filtro por departamento
+        if (state.filtros.departamento && state.filtros.departamento !== '') {
+            if (!demanda.departamento || !demanda.departamento.includes(state.filtros.departamento)) {
+                return false;
+            }
+        }
         
         // Filtro por responsável
         if (state.filtros.responsavel && demanda.responsavel !== state.filtros.responsavel) {
@@ -2497,4 +2493,8 @@ window.mostrarDetalhesDemanda = mostrarDetalhesDemanda;
 window.fecharModalDetalhes = fecharModalDetalhes;
 window.alterarStatusDemanda = alterarStatusDemanda;
 window.excluirDemanda = excluirDemanda;
+setInterval(() => {
+    console.log('🔄 Auto-atualizando lista de demandas...');
+    carregarDemandas();
+}, 30000);
 console.log("✅ app.js carregado com sucesso!");
