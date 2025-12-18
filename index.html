@@ -21,7 +21,7 @@
     
     <!-- Fonte -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-        <style>
+    <style>
         .user-details {
             display: flex;
             align-items: center;
@@ -67,8 +67,236 @@
             color: #27ae60;
             border-color: #27ae60;
         }
-    </style>
         
+        /* Estilos para o bloco de demandas */
+        .demandas-info {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+            margin-bottom: 25px;
+            color: white;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .demandas-info::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            transform: translate(30%, -30%);
+        }
+        
+        .demandas-info::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            transform: translate(-30%, 30%);
+        }
+        
+        .demandas-info h2 {
+            margin: 0 0 20px 0;
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .demandas-info h2 i {
+            color: #3498db;
+            background: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .demandas-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .demanda-item {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 18px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        
+        .demanda-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .demanda-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: white;
+            flex-shrink: 0;
+        }
+        
+        .demanda-icon.total { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+        .demanda-icon.pendente { background: linear-gradient(135deg, #f39c12, #e67e22); }
+        .demanda-icon.andamento { background: linear-gradient(135deg, #3498db, #2980b9); }
+        .demanda-icon.concluida { background: linear-gradient(135deg, #27ae60, #229954); }
+        .demanda-icon.atrasada { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        
+        .demanda-content {
+            flex: 1;
+        }
+        
+        .demanda-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+            display: block;
+        }
+        
+        .demanda-value {
+            font-size: 28px;
+            font-weight: 700;
+            display: block;
+            line-height: 1;
+        }
+        
+        /* Estilos para a lista de demandas */
+        .demandas-lista-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .demanda-linha {
+            display: grid;
+            grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr auto;
+            gap: 15px;
+            padding: 18px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .demanda-linha:hover {
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .demanda-linha.cabecalho {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+            border-radius: 8px 8px 0 0;
+            border-bottom: 2px solid #3498db;
+            font-size: 14px;
+        }
+        
+        .demanda-titulo {
+            font-weight: 500;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .demanda-escola, .demanda-departamento, .demanda-responsavel, .demanda-prazo {
+            color: #555;
+            font-size: 14px;
+        }
+        
+        .demanda-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            min-width: 100px;
+        }
+        
+        .status-pendente { background: #fff3cd; color: #856404; }
+        .status-andamento { background: #d1ecf1; color: #0c5460; }
+        .status-concluida { background: #d4edda; color: #155724; }
+        .status-atrasada { background: #f8d7da; color: #721c24; }
+        
+        @media (max-width: 1200px) {
+            .demanda-linha {
+                grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            }
+            .demanda-departamento {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .demanda-linha {
+                grid-template-columns: 2fr 1fr 1fr auto;
+            }
+            .demanda-responsavel {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .demandas-list {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .demanda-linha {
+                grid-template-columns: 1fr auto;
+                padding: 15px;
+                gap: 10px;
+            }
+            
+            .demanda-escola, .demanda-departamento, .demanda-responsavel, .demanda-prazo {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .demandas-list {
+                grid-template-columns: 1fr;
+            }
+            
+            .demandas-info {
+                padding: 20px;
+            }
+            
+            .demanda-item {
+                padding: 15px;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- SPLASH SCREEN (logo após o body) -->
@@ -180,54 +408,58 @@
                 </button>
             </div>
             
-                <div class="stats">
-                <div class="stat-item">
-                    <div class="stat-icon">
-                        <i class="fas fa-list-check"></i>
+            <!-- BLOCO DE DEMANDAS -->
+            <div class="demandas-info">
+                <h2><i class="fas fa-chart-bar"></i> Demandas</h2>
+                <div class="demandas-list">
+                    <div class="demanda-item">
+                        <div class="demanda-icon total">
+                            <i class="fas fa-list-check"></i>
+                        </div>
+                        <div class="demanda-content">
+                            <span class="demanda-label">Total</span>
+                            <span class="demanda-value" id="total-demandas-info">15</span>
+                        </div>
                     </div>
-                    <div class="stat-info">
-                        <span class="stat-label">Total de Demandas</span>
-                        <span class="stat-value" id="total-demandas">0</span>
+                    
+                    <div class="demanda-item">
+                        <div class="demanda-icon pendente">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="demanda-content">
+                            <span class="demanda-label">Pendentes</span>
+                            <span class="demanda-value" id="pendentes-info">5</span>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="stat-item status-pendente">
-                    <div class="stat-icon">
-                        <i class="fas fa-clock"></i>
+                    
+                    <div class="demanda-item">
+                        <div class="demanda-icon andamento">
+                            <i class="fas fa-play-circle"></i>
+                        </div>
+                        <div class="demanda-content">
+                            <span class="demanda-label">Em Andamento</span>
+                            <span class="demanda-value" id="em-andamento-info">3</span>
+                        </div>
                     </div>
-                    <div class="stat-info">
-                        <span class="stat-label">Pendentes</span>
-                        <span class="stat-value" id="pendentes">0</span>
+                    
+                    <div class="demanda-item">
+                        <div class="demanda-icon concluida">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="demanda-content">
+                            <span class="demanda-label">Concluídas</span>
+                            <span class="demanda-value" id="concluidas-info">6</span>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="stat-item status-andamento">
-                    <div class="stat-icon">
-                        <i class="fas fa-play-circle"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-label">Em Andamento</span>
-                        <span class="stat-value" id="em-andamento">0</span>
-                    </div>
-                </div>
-                
-                <div class="stat-item status-concluida">
-                    <div class="stat-icon">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-label">Concluídas</span>
-                        <span class="stat-value" id="concluidas">0</span>
-                    </div>
-                </div>
-                
-                <div class="stat-item status-atrasada">
-                    <div class="stat-icon">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-label">Atrasadas</span>
-                        <span class="stat-value" id="atrasadas">0</span>
+                    
+                    <div class="demanda-item">
+                        <div class="demanda-icon atrasada">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="demanda-content">
+                            <span class="demanda-label">Atrasadas</span>
+                            <span class="demanda-value" id="atrasadas-info">1</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -237,7 +469,7 @@
             <!-- LISTA DE DEMANDAS -->
             <section class="demandas-section">
                 <div class="section-header">
-                    <h2><i class="fas fa-list-check"></i> Demandas Registradas</h2>
+                    <h2><i class="fas fa-list-ul"></i> Lista de Demandas</h2>
                     <div class="section-actions">
                         <button class="btn btn-refresh" id="btn-atualizar">
                             <i class="fas fa-arrows-rotate"></i> Atualizar
@@ -245,8 +477,71 @@
                     </div>
                 </div>
                 
-                <!-- LISTA DE DEMANDAS (SERÁ PREENCHIDA VIA JAVASCRIPT) -->
-                <div class="demandas-container" id="demandas-container">
+                <!-- CABEÇALHO DA LISTA -->
+                <div class="demandas-lista-container">
+                    <div class="demanda-linha cabecalho">
+                        <div>Título</div>
+                        <div>Escola</div>
+                        <div>Departamento</div>
+                        <div>Responsável</div>
+                        <div>Prazo</div>
+                        <div>Status</div>
+                    </div>
+                    
+                    <!-- EXEMPLO DE DEMANDAS EM LISTA -->
+                    <div class="demanda-linha">
+                        <div class="demanda-titulo">
+                            <i class="fas fa-file-alt" style="color: #3498db;"></i>
+                            Entrega do relatório bimestral
+                        </div>
+                        <div class="demanda-escola">EEEFM Pedra Azul</div>
+                        <div class="demanda-departamento">Pedagógico</div>
+                        <div class="demanda-responsavel">Escola(s)</div>
+                        <div class="demanda-prazo">15/12/2024</div>
+                        <div class="demanda-status status-pendente">Pendente</div>
+                    </div>
+                    
+                    <div class="demanda-linha">
+                        <div class="demanda-titulo">
+                            <i class="fas fa-file-alt" style="color: #3498db;"></i>
+                            Planejamento anual
+                        </div>
+                        <div class="demanda-escola">EEEFM Fioravante Caliman</div>
+                        <div class="demanda-departamento">Gestão</div>
+                        <div class="demanda-responsavel">Supervisor</div>
+                        <div class="demanda-prazo">10/12/2024</div>
+                        <div class="demanda-status status-andamento">Em Andamento</div>
+                    </div>
+                    
+                    <div class="demanda-linha">
+                        <div class="demanda-titulo">
+                            <i class="fas fa-file-alt" style="color: #3498db;"></i>
+                            Levantamento de materiais
+                        </div>
+                        <div class="demanda-escola">EEEFM Alto Rio Possmoser</div>
+                        <div class="demanda-departamento">Secretaria</div>
+                        <div class="demanda-responsavel">Escola(s)</div>
+                        <div class="demanda-prazo">05/12/2024</div>
+                        <div class="demanda-status status-concluida">Concluída</div>
+                    </div>
+                    
+                    <div class="demanda-linha">
+                        <div class="demanda-titulo">
+                            <i class="fas fa-file-alt" style="color: #3498db;"></i>
+                            Reunião pedagógica
+                        </div>
+                        <div class="demanda-escola">EEEFM Pedra Azul</div>
+                        <div class="demanda-departamento">Supervisão</div>
+                        <div class="demanda-responsavel">Supervisor</div>
+                        <div class="demanda-prazo">01/12/2024</div>
+                        <div class="demanda-status status-atrasada">Atrasada</div>
+                    </div>
+                    
+                    <!-- MAIS DEMANDAS SERÃO ADICIONADAS VIA JAVASCRIPT -->
+                </div>
+                
+                <!-- LISTA DE DEMANDAS (VERSÃO ANTIGA - MANTER PARA COMPATIBILIDADE) -->
+                <div class="demandas-container" id="demandas-container" style="display: none;">
                     <div class="empty-state">
                         <i class="fas fa-clipboard-list fa-3x"></i>
                         <h3>Nenhuma demanda cadastrada</h3>
