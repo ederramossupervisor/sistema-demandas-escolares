@@ -159,29 +159,51 @@ async function excluirDemandaNoServidor(idDemanda) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log("🚀 Sistema iniciando...");
     
-    // VERIFICAÇÃO SIMPLES E SEGURA
+    // VERIFICAÇÃO RIGOROSA DA PÁGINA
     console.log("📍 Verificando em qual página estamos...");
     
-    // Verificar por elementos específicos da página
-    const isLoginPage = document.getElementById('login-container') || 
-                        document.querySelector('.login-form') ||
-                        window.location.pathname.includes('login');
-
-    if (isLoginPage) {
-        console.log("🔐 Estamos na página de LOGIN");
+    // 1. Verificar pela URL PRIMEIRO (mais confiável)
+    const currentPath = window.location.pathname;
+    const currentPage = currentPath.split('/').pop();
+    console.log("📄 Página atual:", currentPage);
+    
+    // 2. Verificar elementos específicos
+    const hasLoginContainer = !!document.getElementById('login-container');
+    const hasLoginForm = !!document.querySelector('.login-form');
+    const isLoginUrl = currentPage === 'login.html' || 
+                      currentPage.includes('login') || 
+                      currentPath.includes('login');
+    
+    console.log("🔍 Resultados da verificação:", {
+        hasLoginContainer,
+        hasLoginForm,
+        isLoginUrl,
+        currentPath,
+        currentPage
+    });
+    
+    // 3. DECISÃO: Se for página de login, PARAR TUDO
+    if (hasLoginContainer || hasLoginForm || isLoginUrl) {
+        console.log("🔐 ESTAMOS NA PÁGINA DE LOGIN - PARANDO app.js");
         
-        // Não fazer nada mais no app.js
-        // O login.html tem seu próprio JavaScript
+        // IMPORTANTE: Esconder a splash screen se existir
+        const splash = document.getElementById('splash-screen');
+        if (splash) {
+            splash.style.display = 'none';
+            console.log("🎬 Splash screen escondida na página de login");
+        }
+        
+        // NÃO executar mais NADA do app.js
         return;
     }
     
-    // Se chegou aqui, estamos na página principal (index.html)
-    console.log("🏠 Estamos na página PRINCIPAL - Iniciar splash screen");
+    // 4. SE CHEGOU AQUI: É a página principal (index.html)
+    console.log("🏠 Estamos na página PRINCIPAL (index.html)");
     
-    // 1. Inicializar elementos
+    // 5. Inicializar elementos
     inicializarElementos();
     
-    // 2. Se houver splash screen, iniciar sequência
+    // 6. Se houver splash screen, iniciar sequência
     if (elementos.splashScreen) {
         console.log("🎬 Iniciando splash screen...");
         iniciarSplashScreen();
@@ -190,7 +212,6 @@ document.addEventListener('DOMContentLoaded', function() {
         iniciarAplicacao();
     }
 });
-
 /**
  * INICIALIZAÇÃO COM SPLASH SCREEN (COM FALLBACK)
  */
@@ -253,6 +274,16 @@ function iniciarSplashScreen() {
  */
 function iniciarAplicacao() {
     console.log("📱 Iniciando aplicação principal...");
+
+     // VERIFICAÇÃO DE SEGURANÇA
+    const isLoginPage = !!document.getElementById('login-container') || 
+                       !!document.querySelector('.login-form');
+    
+    if (isLoginPage) {
+        console.error("❌ ERRO CRÍTICO: iniciarAplicacao chamado na página de login!");
+        console.error("📍 Isso vai causar travamento!");
+        return;
+    }
     
     // 1. Esconder splash screen (com verificação)
     esconderSplashScreen();
@@ -333,6 +364,15 @@ function esconderSplashScreen() {
  */
 function inicializarElementos() {
     console.log("🔍 Inicializando elementos do DOM...");
+
+    // VERIFICAÇÃO DE SEGURANÇA: Só executar se estivermos na página principal
+    const isLoginPage = !!document.getElementById('login-container') || 
+                       !!document.querySelector('.login-form');
+    
+    if (isLoginPage) {
+        console.error("❌ ERRO: inicializarElementos chamado na página de login!");
+        console.error("📍 Isso não deveria acontecer. Verifique a verificação de página.");
+        return;
     
     elementos = {
         // SPLASH SCREEN
