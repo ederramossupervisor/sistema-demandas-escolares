@@ -375,21 +375,6 @@ function esconderLoading() {
 function atualizarBlocoEstatisticas(demandas) {
     console.log("📈 Atualizando estatísticas do bloco...");
     
-    // Verificar se temos elementos para atualizar
-    const elementosIds = [
-        'total-demandas-info',
-        'pendentes-info',
-        'em-andamento-info',
-        'concluidas-info',
-        'atrasadas-info'
-    ];
-    
-    // Debug: verificar quais elementos existem
-    elementosIds.forEach(id => {
-        const elemento = document.getElementById(id);
-        console.log(`🔍 ${id}: ${elemento ? '✅ Existe' : '❌ Não existe'}`);
-    });
-    
     // Contar por status
     const total = demandas.length;
     const pendentes = demandas.filter(d => d.status === 'Pendente').length;
@@ -406,22 +391,44 @@ function atualizarBlocoEstatisticas(demandas) {
         return prazo < hoje;
     }).length;
     
-    // Atualizar os números na tela COM VERIFICAÇÃO
-    const totalEl = document.getElementById('total-demandas-info');
-    const pendentesEl = document.getElementById('pendentes-info');
-    const emAndamentoEl = document.getElementById('em-andamento-info');
-    const concluidasEl = document.getElementById('concluidas-info');
-    const atrasadasEl = document.getElementById('atrasadas-info');
+    // Atualizar os números na tela - USANDO elementos do objeto
+    if (elementos.totalDemandasInfo) {
+        elementos.totalDemandasInfo.textContent = total;
+        console.log('✅ total-demandas-info atualizado:', total);
+    } else {
+        console.warn('⚠️ elementos.totalDemandasInfo não encontrado');
+    }
     
-    if (totalEl) totalEl.textContent = total;
-    if (pendentesEl) pendentesEl.textContent = pendentes;
-    if (emAndamentoEl) emAndamentoEl.textContent = emAndamento;
-    if (concluidasEl) concluidasEl.textContent = concluidas;
-    if (atrasadasEl) atrasadasEl.textContent = atrasadas;
+    if (elementos.pendentesInfo) {
+        elementos.pendentesInfo.textContent = pendentes;
+        console.log('✅ pendentes-info atualizado:', pendentes);
+    } else {
+        console.warn('⚠️ elementos.pendentesInfo não encontrado');
+    }
     
-    console.log("📊 Estatísticas atualizadas:", { total, pendentes, emAndamento, concluidas, atrasadas });
+    if (elementos.emAndamentoInfo) {
+        elementos.emAndamentoInfo.textContent = emAndamento;
+        console.log('✅ em-andamento-info atualizado:', emAndamento);
+    } else {
+        console.warn('⚠️ elementos.emAndamentoInfo não encontrado');
+    }
+    
+    if (elementos.concluidasInfo) {
+        elementos.concluidasInfo.textContent = concluidas;
+        console.log('✅ concluidas-info atualizado:', concluidas);
+    } else {
+        console.warn('⚠️ elementos.concluidasInfo não encontrado');
+    }
+    
+    if (elementos.atrasadasInfo) {
+        elementos.atrasadasInfo.textContent = atrasadas;
+        console.log('✅ atrasadas-info atualizado:', atrasadas);
+    } else {
+        console.warn('⚠️ elementos.atrasadasInfo não encontrado');
+    }
+    
+    console.log("📊 Estatísticas:", { total, pendentes, emAndamento, concluidas, atrasadas });
 }
-
 /**
  * Carrega as demandas do servidor
  */
