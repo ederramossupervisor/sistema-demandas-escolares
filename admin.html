@@ -248,6 +248,9 @@
                 <button class="btn btn-secondary" onclick="window.location.href='index.html'">
                     <i class="fas fa-home"></i> Voltar ao Sistema
                 </button>
+                <button class="btn btn-info" onclick="mostrarSecao('gerenciar-notificacoes')">
+                    <i class="fas fa-bell"></i> Notificações
+                </button>
                 <button class="btn btn-primary" onclick="atualizarDados()">
                     <i class="fas fa-sync-alt"></i> Atualizar
                 </button>
@@ -360,6 +363,101 @@
             </div>
         </div>
     </div>
+            <!-- SEÇÃO 4: GERENCIAR NOTIFICAÇÕES (NOVA) -->
+        <div class="admin-section" id="gerenciar-notificacoes" style="display: none;">
+            <h2><i class="fas fa-bell"></i> Gerenciar Notificações</h2>
+            
+            <div class="configuracoes-notificacoes">
+                <h3><i class="fas fa-cog"></i> Configurações Gerais</h3>
+                
+                <div class="config-card">
+                    <h4><i class="fas fa-envelope"></i> Notificações por Email</h4>
+                    <div class="toggle-group">
+                        <label class="toggle">
+                            <input type="checkbox" id="toggle-emails" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Enviar emails automáticos</span>
+                        </label>
+                        
+                        <label class="toggle">
+                            <input type="checkbox" id="toggle-emails-urgentes" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Emails para demandas urgentes</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="config-card">
+                    <h4><i class="fas fa-mobile-alt"></i> Notificações Push</h4>
+                    <div class="toggle-group">
+                        <label class="toggle">
+                            <input type="checkbox" id="toggle-push" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Notificações no celular</span>
+                        </label>
+                        
+                        <button class="btn-testar btn btn-info" onclick="testarNotificacao()">
+                            <i class="fas fa-bell"></i> Testar Notificação
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="config-card">
+                    <h4><i class="fas fa-users"></i> Segmentação por Perfil</h4>
+                    <div class="segmentacao">
+                        <label class="segmentacao-item">
+                            <input type="checkbox" name="segmentacao" value="supervisor" checked>
+                            <span class="segmentacao-label">Supervisores (recebem tudo)</span>
+                        </label>
+                        <label class="segmentacao-item">
+                            <input type="checkbox" name="segmentacao" value="diretor" checked>
+                            <span class="segmentacao-label">Diretores (apenas sua escola)</span>
+                        </label>
+                        <label class="segmentacao-item">
+                            <input type="checkbox" name="segmentacao" value="comum" checked>
+                            <span class="segmentacao-label">Usuários comuns (depto+escola)</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="config-card">
+                    <h4><i class="fas fa-history"></i> Log de Notificações</h4>
+                    <div class="logs-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Demanda</th>
+                                    <th>Enviadas</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logs-notificacoes">
+                                <tr>
+                                    <td colspan="4" class="empty-state">
+                                        <i class="fas fa-spinner fa-spin"></i> Carregando logs...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <button class="btn-carregar btn btn-secondary" onclick="carregarLogsNotificacoes()" style="margin-top: 10px;">
+                        <i class="fas fa-sync-alt"></i> Atualizar Logs
+                    </button>
+                </div>
+            </div>
+            
+            <div class="acoes-notificacoes" style="margin-top: 20px; text-align: center;">
+                <button class="btn-salvar btn btn-success" onclick="salvarConfiguracoesNotificacoes()">
+                    <i class="fas fa-save"></i> Salvar Configurações
+                </button>
+                
+                <button class="btn-testar-tudo btn btn-warning" onclick="testarTodasNotificacoes()" style="margin-left: 10px;">
+                    <i class="fas fa-vial"></i> Testar Todas as Notificações
+                </button>
+            </div>
+        </div>
+    </div> 
 
     <!-- MODAL DE AUTORIZAÇÃO -->
     <div class="modal-overlay" id="modal-autorizar">
