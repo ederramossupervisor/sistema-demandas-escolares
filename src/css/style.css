@@ -2768,3 +2768,479 @@ body:has(.login-container)::before {
 .pulse-warning {
     animation: pulse 2s infinite;
 }
+/* ============================================
+   ESTILOS PARA O BLOCO DE DEMANDAS (TOTAIS)
+   ============================================ */
+
+.demandas-info {
+    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+    border-radius: 12px;
+    padding: 25px;
+    margin-top: 20px;
+    margin-bottom: 25px;
+    color: white;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.demandas-info::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+    transform: translate(30%, -30%);
+}
+
+.demandas-info::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+    transform: translate(-30%, 30%);
+}
+
+.demandas-info h2 {
+    margin: 0 0 20px 0;
+    font-size: 24px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    z-index: 2;
+}
+
+.demandas-info h2 i {
+    color: #3498db;
+    background: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.demandas-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px;
+    position: relative;
+    z-index: 2;
+}
+
+.demanda-item {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.demanda-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.demanda-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.demanda-icon.total { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+.demanda-icon.pendente { background: linear-gradient(135deg, #f39c12, #e67e22); }
+.demanda-icon.andamento { background: linear-gradient(135deg, #3498db, #2980b9); }
+.demanda-icon.concluida { background: linear-gradient(135deg, #27ae60, #229954); }
+.demanda-icon.atrasada { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+
+.demanda-content {
+    flex: 1;
+}
+
+.demanda-label {
+    font-size: 13px;
+    opacity: 0.9;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.demanda-value {
+    font-size: 28px;
+    font-weight: 700;
+    display: block;
+    line-height: 1;
+}
+
+/* ============================================
+   ESTILOS PARA LISTA DE DEMANDAS (TABELA)
+   ============================================ */
+
+.demandas-lista-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    padding: 20px;
+    margin-top: 20px;
+    overflow-x: auto;
+}
+
+.demanda-linha {
+    display: grid;
+    grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr auto;
+    gap: 15px;
+    padding: 18px 15px;
+    border-bottom: 1px solid #f0f0f0;
+    align-items: center;
+    transition: all 0.3s ease;
+    min-width: 1000px;
+}
+
+.demanda-linha:hover {
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.demanda-linha.cabecalho {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #2c3e50;
+    border-radius: 8px 8px 0 0;
+    border-bottom: 2px solid #3498db;
+    font-size: 14px;
+    padding: 15px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.demanda-titulo {
+    font-weight: 500;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.demanda-titulo:hover {
+    color: #3498db;
+}
+
+.demanda-titulo i {
+    color: #3498db;
+    font-size: 16px;
+}
+
+.demanda-escola, 
+.demanda-departamento, 
+.demanda-responsavel, 
+.demanda-prazo {
+    color: #555;
+    font-size: 14px;
+}
+
+.demanda-status {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    min-width: 100px;
+}
+
+.status-pendente { 
+    background: #fff3cd; 
+    color: #856404; 
+    border: 1px solid #ffeaa7;
+}
+
+.status-andamento { 
+    background: #d1ecf1; 
+    color: #0c5460; 
+    border: 1px solid #bee5eb;
+}
+
+.status-concluida { 
+    background: #d4edda; 
+    color: #155724; 
+    border: 1px solid #c3e6cb;
+}
+
+.status-atrasada { 
+    background: #f8d7da; 
+    color: #721c24; 
+    border: 1px solid #f5c6cb;
+}
+
+/* Indicador de prazo */
+.prazo-indicator {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.prazo-hoje {
+    color: #e67e22;
+    font-weight: 600;
+}
+
+.prazo-atrasado {
+    color: #e74c3c;
+    font-weight: 600;
+}
+
+.prazo-normal {
+    color: #27ae60;
+}
+
+/* Responsividade */
+@media (max-width: 1200px) {
+    .demanda-linha {
+        grid-template-columns: 2fr 1fr 1fr 1fr auto;
+        min-width: 800px;
+    }
+    
+    .demanda-departamento {
+        display: none;
+    }
+}
+
+@media (max-width: 992px) {
+    .demanda-linha {
+        grid-template-columns: 2fr 1fr 1fr auto;
+        min-width: 700px;
+    }
+    
+    .demanda-responsavel {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .demandas-list {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .demanda-linha {
+        grid-template-columns: 1fr auto;
+        min-width: 500px;
+        padding: 15px;
+        gap: 10px;
+    }
+    
+    .demanda-escola, 
+    .demanda-departamento, 
+    .demanda-responsavel, 
+    .demanda-prazo {
+        display: none;
+    }
+    
+    .demanda-status {
+        min-width: 80px;
+        padding: 5px 8px;
+        font-size: 11px;
+    }
+    
+    .demandas-info {
+        padding: 20px;
+    }
+    
+    .demanda-item {
+        padding: 15px;
+    }
+    
+    .demanda-value {
+        font-size: 24px;
+    }
+}
+
+@media (max-width: 576px) {
+    .demandas-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .demandas-lista-container {
+        padding: 15px;
+        margin: 15px -15px;
+        border-radius: 0;
+        box-shadow: none;
+        border: 1px solid #eee;
+    }
+    
+    .demanda-linha {
+        padding: 12px;
+        min-width: 400px;
+    }
+    
+    .demanda-titulo {
+        font-size: 14px;
+    }
+    
+    .demanda-titulo i {
+        font-size: 14px;
+    }
+}
+
+/* ============================================
+   ANIMAÇÕES PARA AS DEMANDAS
+   ============================================ */
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.demanda-linha:not(.cabecalho) {
+    animation: slideIn 0.3s ease forwards;
+    opacity: 0;
+}
+
+.demanda-linha:nth-child(2) { animation-delay: 0.1s; }
+.demanda-linha:nth-child(3) { animation-delay: 0.2s; }
+.demanda-linha:nth-child(4) { animation-delay: 0.3s; }
+.demanda-linha:nth-child(5) { animation-delay: 0.4s; }
+.demanda-linha:nth-child(6) { animation-delay: 0.5s; }
+.demanda-linha:nth-child(7) { animation-delay: 0.6s; }
+
+/* ============================================
+   ESTILOS PARA ESTADOS VAZIOS
+   ============================================ */
+
+.lista-vazia {
+    text-align: center;
+    padding: 60px 20px;
+    color: #95a5a6;
+    grid-column: 1 / -1;
+}
+
+.lista-vazia i {
+    font-size: 48px;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.lista-vazia h3 {
+    color: #95a5a6;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.lista-vazia p {
+    color: #bdc3c7;
+    font-size: 14px;
+}
+
+/* ============================================
+   BADGES PARA PRIORIDADE
+   ============================================ */
+
+.prioridade-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.prioridade-alta {
+    background: rgba(231, 76, 60, 0.1);
+    color: #e74c3c;
+    border: 1px solid rgba(231, 76, 60, 0.2);
+}
+
+.prioridade-media {
+    background: rgba(241, 196, 15, 0.1);
+    color: #f39c12;
+    border: 1px solid rgba(241, 196, 15, 0.2);
+}
+
+.prioridade-baixa {
+    background: rgba(46, 204, 113, 0.1);
+    color: #2ecc71;
+    border: 1px solid rgba(46, 204, 113, 0.2);
+}
+
+/* ============================================
+   TOOLTIPS
+   ============================================ */
+
+[data-tooltip] {
+    position: relative;
+    cursor: help;
+}
+
+[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2c3e50;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 10;
+    margin-bottom: 5px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+[data-tooltip]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #2c3e50;
+    z-index: 10;
+    margin-bottom: -5px;
+}
+
+/* ============================================
+   AJUSTES DE LAYOUT GERAL
+   ============================================ */
+
+.main-content {
+    margin-bottom: 30px;
+}
+
+.demandas-section .section-header {
+    margin-bottom: 15px;
+}
