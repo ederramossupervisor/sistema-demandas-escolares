@@ -3314,3 +3314,16 @@ body:has(.login-container)::before {
         min-width: 70px;
     }
 }
+/* Animação para fade out da splash screen */
+.splash-screen {
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.splash-screen.fade-out {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.splash-screen.hidden {
+    display: none !important;
+}
