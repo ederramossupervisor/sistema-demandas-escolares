@@ -2587,3 +2587,50 @@ body:has(.login-container)::before {
         margin: 0 !important;
     }
 }
+/* ============================================
+   ESTILOS PARA BOTÕES DE SUPERVISOR
+   ============================================ */
+
+/* BOTÃO DE EXCLUSÃO COM COROA */
+.supervisor-only {
+    position: relative;
+    background-color: #e74c3c !important;
+}
+
+.supervisor-only:hover {
+    background-color: #c0392b !important;
+}
+
+/* COROA NO BOTÃO */
+.supervisor-only::after {
+    content: "👑";
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    font-size: 10px;
+    background: #f39c12;
+    color: white;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* MENSAGEM DE PERMISSÃO */
+.permission-message {
+    background: #f8f9fa;
+    border-left: 4px solid #3498db;
+    padding: 8px 12px;
+    margin: 10px 0;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #555;
+}
+
+.permission-message i {
+    color: #3498db;
+    margin-right: 6px;
+}
