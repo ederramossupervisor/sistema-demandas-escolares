@@ -401,7 +401,7 @@ function enviarParaGoogleAppsScript(dados) {
         const script = document.createElement('script');
                 
         // Montar URL JSONP
-        const scriptUrl = 'https://script.google.com/macros/s/AKfycbw6sYdhVHLDV-u-WxjvCq3Cu20YHwtjZeE2jO4PtQwbr7BN7FS-CfrigL9Pu-ToE5IiOA/exec';
+        const scriptUrl = 'https://script.google.com/macros/s/AKfycbxZ8B9f53KdvHiWDB5cYX5YqH5d0XMsQzNBHsbEKzhrk2Xc--lWnbO6cSXG53uUUJkzww/exec';
         let url = scriptUrl;
         url += '?callback=' + encodeURIComponent(callbackName);
         url += '&dados=' + encodeURIComponent(JSON.stringify(dados));
