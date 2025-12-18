@@ -3244,3 +3244,73 @@ body:has(.login-container)::before {
 .demandas-section .section-header {
     margin-bottom: 15px;
 }
+/* Indicador de prazo na lista */
+.demanda-linha .prazo-indicator {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 8px;
+    font-weight: bold;
+}
+
+.prazo-atrasado {
+    background: #fee;
+    color: #e74c3c;
+    border: 1px solid #e74c3c;
+}
+
+.prazo-hoje {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.prazo-alerta {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+/* Destacar linha ao passar o mouse */
+.demanda-linha:hover {
+    background: linear-gradient(90deg, rgba(52, 152, 219, 0.05) 0%, rgba(52, 152, 219, 0.02) 100%);
+    transform: translateX(2px);
+    transition: all 0.2s ease;
+}
+
+/* Tooltip para escolas */
+.demanda-escola {
+    position: relative;
+}
+
+.demanda-escola:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    background: #2c3e50;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: normal;
+    width: 200px;
+    z-index: 100;
+}
+@media (max-width: 768px) {
+    .demanda-linha {
+        padding: 12px 8px !important;
+        font-size: 14px;
+    }
+    
+    .demanda-titulo {
+        font-size: 14px;
+    }
+    
+    .demanda-status {
+        font-size: 11px;
+        padding: 4px 6px;
+        min-width: 70px;
+    }
+}
