@@ -812,12 +812,12 @@ async function salvarEdicaoUsuario() {
     
     // Validações básicas
     if (!nomeNovo || nomeNovo.trim() === '') {
-        AdminSystem.mostrarToast('Validação', 'O nome não pode ficar em branco', 'warning');
+        mostrarToast('Validação', 'O nome não pode ficar em branco', 'warning');
         return;
     }
     
     if (!emailNovo || !emailNovo.includes('@')) {
-        AdminSystem.mostrarToast('Validação', 'Informe um email válido', 'warning');
+        mostrarToast('Validação', 'Informe um email válido', 'warning');
         return;
     }
     
@@ -828,7 +828,7 @@ async function salvarEdicaoUsuario() {
     mostrarLoading(true);
     
     try {
-        // Agora passamos TODOS os dados, incluindo nome e email novos
+        // 🔥 CORREÇÃO CRÍTICA: Usar a função CORRETA de comunicação
         const resultado = await enviarParaGoogleAppsScript({
             acao: 'alterarUsuario',
             email_original: emailOriginal,   // Email ORIGINAL para buscar
@@ -841,20 +841,19 @@ async function salvarEdicaoUsuario() {
         });
         
         if (resultado.sucesso) {
-            AdminSystem.mostrarToast('Sucesso', 'Usuário atualizado com sucesso!', 'success');
+            mostrarToast('Sucesso', 'Usuário atualizado com sucesso!', 'success');
             fecharModalEditar();
             await carregarUsuarios(); // Recarrega a tabela
         } else {
-            AdminSystem.mostrarToast('Erro', resultado.erro || 'Erro ao atualizar usuário', 'error');
+            mostrarToast('Erro', resultado.erro || 'Erro ao atualizar usuário', 'error');
         }
     } catch (erro) {
         console.error('❌ Erro ao salvar edição:', erro);
-        AdminSystem.mostrarToast('Erro', 'Falha na comunicação com o servidor', 'error');
+        mostrarToast('Erro', 'Falha na comunicação com o servidor', 'error');
     } finally {
         mostrarLoading(false);
     }
-}
-async function resetarSenhaUsuario(email, nome) {
+}async function resetarSenhaUsuario(email, nome) {
     const novaSenha = prompt(`Nova senha para ${nome} (${email}):`, AdminSystem.gerarSenhaAleatoria());
     
     if (!novaSenha || novaSenha.trim() === '') {
