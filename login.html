@@ -256,7 +256,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================
-// FUNÇÃO PRINCIPAL DE LOGIN
+// FUNÇÃO PRINCIPAL DE LOGIN (CORRIGIDA)
 // ============================================
 
 async function fazerLogin() {
@@ -291,28 +291,35 @@ async function fazerLogin() {
         
         console.log('📥 Resposta do servidor:', resultado);
         
-        if (resultado.sucesso) {
+        // 🔥 CORREÇÃO CRÍTICA: Analisar a estrutura correta da resposta
+        // A resposta vem assim: {sucesso: true, dados: {sucesso: true, usuario: {...}}}
+        // ou assim: {sucesso: true, dados: {sucesso: false, erro: "..."}}
+        
+        // Extrair os dados internos
+        const dadosResposta = resultado.dados ? resultado.dados : resultado;
+        
+        if (dadosResposta.sucesso === true) {
             // Login bem-sucedido!
-            console.log('✅ Login autorizado para:', resultado.usuario.nome);
-            console.log('📊 Tipo de usuário:', resultado.usuario.tipo_usuario);
-            console.log('🏫 Escola:', resultado.usuario.escola_sre);
-            console.log('🏢 Departamento:', resultado.usuario.departamento);
+            console.log('✅ Login autorizado para:', dadosResposta.usuario.nome);
+            console.log('📊 Tipo de usuário:', dadosResposta.usuario.tipo_usuario);
+            console.log('🏫 Escola:', dadosResposta.usuario.escola_sre);
+            console.log('🏢 Departamento:', dadosResposta.usuario.departamento);
             
             // Salvar usuário no navegador
-            salvarUsuario(resultado.usuario, lembrar);
+            salvarUsuario(dadosResposta.usuario, lembrar);
             
             // Mostrar mensagem de sucesso
-            mostrarMensagem(`Bem-vindo, ${resultado.usuario.nome}!`, 'success');
+            mostrarMensagem(`Bem-vindo, ${dadosResposta.usuario.nome}!`, 'success');
             
             // Redirecionar para tela principal após 1 segundo
             setTimeout(() => {
-                window.location.href = 'login.html';
+                window.location.href = 'index.html';
             }, 1000);
             
         } else {
             // Login falhou
-            console.error('❌ Login falhou:', resultado.erro);
-            mostrarMensagem(resultado.erro || 'Login falhou. Verifique suas credenciais.', 'error');
+            console.error('❌ Login falhou:', dadosResposta.erro);
+            mostrarMensagem(dadosResposta.erro || 'Login falhou. Verifique suas credenciais.', 'error');
         }
         
     } catch (erro) {
@@ -323,7 +330,6 @@ async function fazerLogin() {
         mostrarLoading(false);
     }
 }
-
 // ============================================
 // FUNÇÃO PARA ENVIAR DADOS AO GOOGLE APPS SCRIPT (JSONP)
 // ============================================
