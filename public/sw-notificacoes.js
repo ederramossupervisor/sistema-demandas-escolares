@@ -73,7 +73,7 @@ self.addEventListener('pushsubscriptionchange', function(event) {
     event.waitUntil(
         self.registration.pushManager.subscribe({
             userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array('SERVIDOR_PUSH_KEY_AQUI')
+            applicationServerKey: urlBase64ToUint8Array('BKFl5Hc4UKk6gNm4t7wcCLnRIzYmW9TF8yOxqM0obajhIG_H0RRetGt2bT1qZoTIerYa4IVQE6Jb0D4hNRIM-Vs')
         })
         .then(function(newSubscription) {
             console.log('✅ Nova subscription criada:', newSubscription);
