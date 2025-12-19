@@ -111,7 +111,6 @@ function iniciarAplicacao() {
             console.log('🔔 TESTE ÚNICO DE NOTIFICAÇÕES');
             executarTesteNotificacoes();
         }, 2000);
-    }, 2000);
     
     // 5. Verificar se é PWA
     if (window.matchMedia('(display-mode: standalone)').matches) {
