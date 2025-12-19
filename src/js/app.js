@@ -3804,7 +3804,7 @@ async function salvarTokenFCMNoServidor(token) {
             };
             
             // Montar URL com TODOS os parâmetros
-            const url = `https://script.google.com/macros/s/AKfycbykob9YYm-X-oP1pLvjrUjyDbOeMj8yVekviXG95MBzfuGuy0kH0B2GAmVU0mKW5QDEdw/exec?callback=${callbackName}&acao=salvarSubscription&fcmToken=${encodeURIComponent(token)}&tipo=firebase&email=${encodeURIComponent(userEmail)}`;
+            const url = `https://script.google.com/macros/s/AKfycbxsmW1RfPtKMXXQdcjaAGmxnXHqNllZQRTgqVSLQcaiLHdR8YnHZC1Pv3mgDuxUPhouvg/exec?callback=${callbackName}&acao=salvarSubscription&fcmToken=${encodeURIComponent(token)}&tipo=firebase&email=${encodeURIComponent(userEmail)}`;
             
             console.log("📡 Enviando para servidor:", url.substring(0, 100) + "...");
             
@@ -4116,6 +4116,89 @@ function atualizarInterfaceNotificacoes(ativo) {
         toggleElement.checked = ativo;
     }
 }
+// Função para verificar o estado do login
+function verificarEstadoLogin() {
+    console.log("🔍 VERIFICAÇÃO DO ESTADO DE LOGIN");
+    
+    // 1. Verificar localStorage
+    const usuarioSalvo = localStorage.getItem('usuario_demandas');
+    console.log("1. localStorage 'usuario_demandas':", usuarioSalvo);
+    
+    if (usuarioSalvo) {
+        try {
+            const usuario = JSON.parse(usuarioSalvo);
+            console.log("   ✅ Usuário parseado:", usuario);
+            console.log("   📧 Email:", usuario.email);
+            console.log("   👤 Nome:", usuario.nome);
+            console.log("   🏢 Departamento:", usuario.departamento);
+        } catch (e) {
+            console.error("   ❌ Erro ao fazer parse:", e);
+        }
+    } else {
+        console.error("   ❌ Nenhum usuário no localStorage!");
+    }
+    
+    // 2. Verificar cookies
+    console.log("2. Cookies disponíveis:", document.cookie);
+    
+    // 3. Verificar elementos na página
+    const elementosEmail = document.querySelectorAll('[id*="email"], [class*="email"], [data-email]');
+    console.log("3. Elementos com email:", elementosEmail.length);
+    elementosEmail.forEach((el, i) => {
+        console.log(`   Elemento ${i}:`, {
+            tag: el.tagName,
+            id: el.id,
+            className: el.className,
+            value: el.value,
+            text: el.textContent?.substring(0, 50)
+        });
+    });
+    
+    // 4. Tentar obter email do sistema
+    const emailDoUsuario = obterEmailUsuario();
+    console.log("4. Email obtido pela função:", emailDoUsuario);
+    
+    return usuarioSalvo ? JSON.parse(usuarioSalvo) : null;
+}
+
+// Função para obter email do usuário atual
+function obterEmailUsuario() {
+    // Tentar múltiplas fontes
+    const fontes = [
+        () => {
+            const usuario = localStorage.getItem('usuario_demandas');
+            return usuario ? JSON.parse(usuario).email : null;
+        },
+        () => document.querySelector('#user-email')?.value,
+        () => document.querySelector('#user-email')?.textContent,
+        () => document.querySelector('.user-email')?.value,
+        () => document.querySelector('.user-email')?.textContent,
+        () => document.querySelector('[data-email]')?.getAttribute('data-email'),
+        () => {
+            // Verificar se há um formulário de login
+            const inputs = document.querySelectorAll('input[type="email"]');
+            for (let input of inputs) {
+                if (input.value && input.value.includes('@')) return input.value;
+            }
+            return null;
+        }
+    ];
+    
+    for (let fonte of fontes) {
+        try {
+            const email = fonte();
+            if (email && typeof email === 'string' && email.includes('@')) {
+                console.log(`✅ Email encontrado via: ${fonte.toString().substring(0, 50)}...`);
+                return email.trim();
+            }
+        } catch (e) {
+            // Continuar com próxima fonte
+        }
+    }
+    
+    return null;
+}
+
 // ============================================
 // FUNÇÕES PARA TESTE E DEBUG
 // ============================================
