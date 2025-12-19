@@ -2141,7 +2141,7 @@ function mostrarDetalhesDemanda(idDemanda) {
                         containerExclusao.innerHTML = `
                             <button class="btn btn-danger" 
                                     onclick="excluirDemanda(${demanda.id})" 
-                                    title="Excluir demanda permanentemente"
+                                    title="Excluir demanda"
                                     style="width: 100%; padding: 12px; margin-top: 5px;
                                            background: linear-gradient(135deg, #e74c3c, #c0392b);
                                            border: none; border-radius: 8px; 
