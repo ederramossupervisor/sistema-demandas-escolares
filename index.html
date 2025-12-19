@@ -1161,5 +1161,70 @@ window.addEventListener('appinstalled', () => {
 // FIM DA CONFIGURAÇÃO
 // ============================================
 </script>
+<!-- NOTIFICAÇÕES PUSH - INTEGRAÇÃO COMPLETA -->
+<script src="src/js/googleAppsScript.js"></script>
+<script src="src/js/pushNotifications.js"></script>
+<script src="src/js/app.js"></script>
+
+<script>
+    // Inicialização otimizada para PWA + Notificações
+    document.addEventListener('DOMContentLoaded', function() {
+        // 1. Registrar Service Worker (PWA)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sistema-demandas-escolares/public/sw-notificacoes.js', {
+                scope: '/sistema-demandas-escolares/'
+            }).then(function(registration) {
+                console.log('✅ Service Worker registrado:', registration.scope);
+            }).catch(function(error) {
+                console.log('⚠️ Service Worker falhou:', error);
+            });
+        }
+        
+        // 2. Inicializar sistema de notificações
+        setTimeout(function() {
+            if (window.PushNotificationSystem) {
+                window.PushNotificationSystem.initialize().then(function(success) {
+                    if (success) {
+                        console.log('🔔 Sistema de notificações inicializado');
+                        
+                        // Verificar permissão e mostrar botão se necessário
+                        const info = window.PushNotificationSystem.getInfo();
+                        
+                        // Se não tem permissão, mostrar aviso amigável após 5 segundos
+                        if (info.permission === 'default') {
+                            setTimeout(function() {
+                                if (typeof window.mostrarAvisoNotificacoes === 'function') {
+                                    window.mostrarAvisoNotificacoes();
+                                }
+                            }, 5000);
+                        }
+                    }
+                });
+            }
+        }, 3000);
+        
+        // 3. Configurar botões de notificações se existirem
+        setTimeout(function() {
+            const btnAtivarNotificacoes = document.getElementById('btn-activar-notificacoes');
+            if (btnAtivarNotificacoes) {
+                btnAtivarNotificacoes.addEventListener('click', function() {
+                    if (window.PushNotificationSystem) {
+                        window.PushNotificationSystem.requestPermission();
+                    }
+                });
+            }
+            
+            // Botão de teste
+            const btnTestarNotificacao = document.getElementById('btn-testar-notificacao');
+            if (btnTestarNotificacao) {
+                btnTestarNotificacao.addEventListener('click', function() {
+                    if (window.PushNotificationSystem) {
+                        window.PushNotificationSystem.sendTestNotification();
+                    }
+                });
+            }
+        }, 1000);
+    });
+</script>
 </body>
 </html>
