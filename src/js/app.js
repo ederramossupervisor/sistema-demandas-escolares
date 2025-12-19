@@ -2795,9 +2795,6 @@ async function enviarLembretePrazo(demanda) {
     }
 }
 
-/**
- * Inicializa sistema de notificações
- */
 async function inicializarSistemaNotificacoes() {
     console.log('🔔 Inicializando sistema de notificações...');
     
@@ -2805,12 +2802,10 @@ async function inicializarSistemaNotificacoes() {
     let tentativas = 0;
     const maxTentativas = 10;
     
-    // Função para verificar e inicializar
     const tentarInicializar = async () => {
         tentativas++;
         
-        if (typeof PushNotificationSystem !== 'undefined' && 
-            PushNotificationSystem.initialize && 
+        if (window.PushNotificationSystem && 
             typeof PushNotificationSystem.initialize === 'function') {
             
             console.log(`✅ PushNotificationSystem encontrado (tentativa ${tentativas})`);
@@ -2818,44 +2813,30 @@ async function inicializarSistemaNotificacoes() {
             try {
                 const sucesso = await PushNotificationSystem.initialize();
                 if (sucesso) {
-                    console.log('🚀 Sistema de notificações push inicializado com sucesso!');
+                    console.log('🚀 Sistema de notificações push inicializado!');
                     
-                    // Obter informações
-                    const info = PushNotificationSystem.getInfo();
-                    console.log('📊 Status:', {
-                        suportado: info.supported,
-                        permissao: info.permission,
-                        inscrito: info.subscribed
-                    });
-                    
-                    // Mostrar status na interface
-                    atualizarStatusNotificacoes(info);
+                    // Atualizar interface
+                    atualizarStatusNotificacoes(PushNotificationSystem.getInfo());
                     
                     return true;
-                } else {
-                    console.warn('⚠️ Inicialização do sistema de notificações falhou');
-                    return false;
                 }
+                return false;
             } catch (erro) {
                 console.error('❌ Erro na inicialização:', erro);
                 return false;
             }
             
         } else if (tentativas < maxTentativas) {
-            console.log(`⏳ Aguardando PushNotificationSystem... (${tentativas}/${maxTentativas})`);
-            // Tentar novamente em 500ms
+            console.log(`⏳ Aguardando... (${tentativas}/${maxTentativas})`);
             setTimeout(tentarInicializar, 500);
         } else {
-            console.error('❌ PushNotificationSystem não carregou após', maxTentativas, 'tentativas');
-            mostrarToast('Notificações', 'Sistema de notificações não disponível', 'warning');
+            console.error('❌ PushNotificationSystem não carregou');
             return false;
         }
     };
     
-    // Iniciar verificação
     return await tentarInicializar();
 }
-
 /**
  * Atualiza status das notificações na interface
  */
