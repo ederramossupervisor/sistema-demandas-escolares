@@ -103,10 +103,17 @@ function iniciarAplicacao() {
     
     // 3. Inicializar sistema de notificações (NOVO)
     setTimeout(() => {
-        inicializarSistemaNotificacoes();
+        inicializarSistemaNotificacoesPrincipal();
     }, 2000);
     
-    // 4. Verificar se é PWA
+    // 4. TESTE APENAS UMA VEZ, após notificações carregarem
+        setTimeout(() => {
+            console.log('🔔 TESTE ÚNICO DE NOTIFICAÇÕES');
+            executarTesteNotificacoes();
+        }, 2000);
+    }, 2000);
+    
+    // 5. Verificar se é PWA
     if (window.matchMedia('(display-mode: standalone)').matches) {
         console.log("📲 Aplicativo PWA em execução");
         document.body.classList.add('pwa-mode');
@@ -2819,7 +2826,7 @@ async function enviarLembretePrazo(demanda) {
     }
 }
 
-async function inicializarSistemaNotificacoes() {
+async function inicializarSistemaNotificacoesPrincipal() {
     console.log("🔔 Inicializando sistema de notificações...");
     
     // Chama a nova implementação
@@ -2874,7 +2881,7 @@ function executarTesteNotificacoes() {
   // Aguardar PushNotificationSystem carregar
   if (typeof PushNotificationSystem === 'undefined') {
     console.log('⏳ Aguardando carregamento do sistema...');
-    setTimeout(executarTesteNotificacoes, 1000);
+    
     return;
   }
   
@@ -3050,10 +3057,10 @@ function mostrarBotaoAtivacaoTeste() {
 // Aguardar página carregar
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(executarTesteNotificacoes, 3000);
+    
   });
 } else {
-  setTimeout(executarTesteNotificacoes, 3000);
+  
 }
 
 // Exportar para teste manual
