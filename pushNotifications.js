@@ -154,15 +154,78 @@ const PushNotificationSystem = {
     },
     
     /**
-     * Inscreve usuario para notificacoes push
-     */
-    subscribeToPush: function() {
-        var self = this;
-        return new Promise(function(resolve, reject) {
-            (async function() {
+ * Inscreve usuario para notificacoes push usando Firebase
+ */
+subscribeToPush: function() {
+    var self = this;
+    return new Promise(function(resolve, reject) {
+        (async function() {
+            try {
+                console.log('Registrando no Firebase FCM...');
+                
+                // Verificar se Firebase está disponível
+                if (!window.firebase || !window.firebase.messaging) {
+                    throw new Error('Firebase não carregado. Verifique os scripts.');
+                }
+                
+                // Inicializar Firebase no frontend também
+                if (!firebase.apps.length) {
+                    firebase.initializeApp({
+                        projectId: 'sistema-de-demandas-escolares',
+                        messagingSenderId: '655714446030',
+                        appId: '1:655714446030:web:seu_app_id_aqui'
+                    });
+                }
+                
+                const messaging = firebase.messaging();
+                
+                // Solicitar permissão
+                await Notification.requestPermission();
+                
+                // Obter token FCM
+                const token = await messaging.getToken({
+                    vapidKey: self.config.vapidPublicKey,
+                    serviceWorkerRegistration: await navigator.serviceWorker.ready
+                });
+                
+                if (!token) {
+                    throw new Error('Não foi possível obter token FCM');
+                }
+                
+                console.log('Token FCM obtido:', token);
+                
+                // Criar objeto subscription simulado para compatibilidade
+                const subscriptionData = {
+                    endpoint: `https://fcm.googleapis.com/fcm/send/${token}`,
+                    keys: {
+                        p256dh: self.config.vapidPublicKey,
+                        auth: 'firebase_auth_' + Date.now()
+                    }
+                };
+                
+                // Salvar no servidor
+                await self.saveSubscription({
+                    endpoint: subscriptionData.endpoint,
+                    keys: subscriptionData.keys,
+                    token: token  // Token real do Firebase
+                });
+                
+                self.state.subscription = subscriptionData;
+                self.state.isSubscribed = true;
+                self.state.fcmToken = token;
+                
+                console.log('Registrado no Firebase FCM com sucesso!');
+                self.showToast('Notificacoes ativadas com Firebase!', 'success');
+                
+                self.updateUI();
+                resolve(subscriptionData);
+                
+            } catch (error) {
+                console.error('Erro ao registrar no Firebase:', error);
+                
+                // Fallback para Web Push padrão
+                console.log('Tentando fallback para Web Push padrão...');
                 try {
-                    console.log('Inscrevendo para notificacoes push...');
-                    
                     var serviceWorker = await navigator.serviceWorker.ready;
                     
                     var subscription = await serviceWorker.pushManager.subscribe({
@@ -170,34 +233,26 @@ const PushNotificationSystem = {
                         applicationServerKey: self.urlBase64ToUint8Array(self.config.vapidPublicKey)
                     });
                     
-                    console.log('Inscrito para push:', subscription);
-                    
-                    // Salvar subscription no servidor
                     await self.saveSubscription(subscription);
                     
                     self.state.subscription = subscription;
                     self.state.isSubscribed = true;
                     
-                    console.log('Subscription salva no servidor');
-                    self.showToast('Notificacoes ativadas com sucesso!', 'success');
+                    console.log('Fallback Web Push bem-sucedido');
+                    self.showToast('Notificacoes ativadas (modo fallback)', 'success');
                     
                     self.updateUI();
                     resolve(subscription);
                     
-                } catch (error) {
-                    console.error('Erro ao inscrever para push:', error);
-                    
-                    if (error.name === 'NotAllowedError') {
-                        self.showToast('Permissao necessaria para notificacoes push', 'warning');
-                    } else {
-                        self.showToast('Erro ao ativar notificacoes', 'error');
-                    }
-                    
-                    reject(error);
+                } catch (fallbackError) {
+                    console.error('Fallback também falhou:', fallbackError);
+                    self.showToast('Erro ao ativar notificacoes', 'error');
+                    reject(fallbackError);
                 }
-            })();
-        });
-    },
+            }
+        })();
+    });
+},
     
     /**
      * Cancela inscricao nas notificacoes push
