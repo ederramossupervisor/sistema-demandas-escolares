@@ -2804,41 +2804,132 @@ async function enviarLembretePrazo(demanda) {
     }
 }
 
-// ============================================
-// INICIALIZAÇÃO DAS NOTIFICAÇÕES
-// ============================================
-
 /**
  * Inicializa sistema de notificações
  */
 async function inicializarSistemaNotificacoes() {
     console.log('🔔 Inicializando sistema de notificações...');
     
-    // 1. Solicitar permissão para notificações
-    if ('Notification' in window && Notification.permission === 'default') {
-        try {
-            const permissao = await Notification.requestPermission();
-            console.log(`Permissão para notificações: ${permissao}`);
-        } catch (erro) {
-            console.error('Erro ao solicitar permissão:', erro);
+    // AGUARDAR PushNotificationSystem carregar
+    let tentativas = 0;
+    const maxTentativas = 10;
+    
+    // Função para verificar e inicializar
+    const tentarInicializar = async () => {
+        tentativas++;
+        
+        if (typeof PushNotificationSystem !== 'undefined' && 
+            PushNotificationSystem.initialize && 
+            typeof PushNotificationSystem.initialize === 'function') {
+            
+            console.log(`✅ PushNotificationSystem encontrado (tentativa ${tentativas})`);
+            
+            try {
+                const sucesso = await PushNotificationSystem.initialize();
+                if (sucesso) {
+                    console.log('🚀 Sistema de notificações push inicializado com sucesso!');
+                    
+                    // Obter informações
+                    const info = PushNotificationSystem.getInfo();
+                    console.log('📊 Status:', {
+                        suportado: info.supported,
+                        permissao: info.permission,
+                        inscrito: info.subscribed
+                    });
+                    
+                    // Mostrar status na interface
+                    atualizarStatusNotificacoes(info);
+                    
+                    return true;
+                } else {
+                    console.warn('⚠️ Inicialização do sistema de notificações falhou');
+                    return false;
+                }
+            } catch (erro) {
+                console.error('❌ Erro na inicialização:', erro);
+                return false;
+            }
+            
+        } else if (tentativas < maxTentativas) {
+            console.log(`⏳ Aguardando PushNotificationSystem... (${tentativas}/${maxTentativas})`);
+            // Tentar novamente em 500ms
+            setTimeout(tentarInicializar, 500);
+        } else {
+            console.error('❌ PushNotificationSystem não carregou após', maxTentativas, 'tentativas');
+            mostrarToast('Notificações', 'Sistema de notificações não disponível', 'warning');
+            return false;
+        }
+    };
+    
+    // Iniciar verificação
+    return await tentarInicializar();
+}
+
+/**
+ * Atualiza status das notificações na interface
+ */
+function atualizarStatusNotificacoes(info) {
+    console.log('🎛️ Atualizando interface de notificações...');
+    
+    // Atualizar botões/toggles
+    const toggleElement = document.getElementById('toggle-push');
+    const statusElement = document.getElementById('push-status');
+    const btnAtivar = document.getElementById('btn-activate-push');
+    const btnTestar = document.getElementById('btn-testar-push');
+    
+    if (toggleElement) {
+        toggleElement.checked = info.subscribed && info.permission === 'granted';
+        toggleElement.disabled = info.permission === 'denied';
+    }
+    
+    if (statusElement) {
+        let texto = '';
+        if (!info.supported) {
+            texto = 'Navegador não suporta notificações push';
+            statusElement.className = 'status-error';
+        } else if (info.permission === 'granted' && info.subscribed) {
+            texto = '✅ Notificações ativas';
+            statusElement.className = 'status-success';
+        } else if (info.permission === 'granted' && !info.subscribed) {
+            texto = '⚠️ Permissão concedida, mas não inscrito';
+            statusElement.className = 'status-warning';
+        } else if (info.permission === 'denied') {
+            texto = '❌ Permissão negada';
+            statusElement.className = 'status-error';
+        } else {
+            texto = '⏳ Aguardando permissão...';
+            statusElement.className = 'status-info';
+        }
+        statusElement.textContent = texto;
+    }
+    
+    if (btnAtivar) {
+        if (info.permission === 'default') {
+            btnAtivar.textContent = 'Ativar Notificações';
+            btnAtivar.disabled = false;
+            btnAtivar.style.display = 'block';
+        } else if (info.permission === 'granted' && !info.subscribed) {
+            btnAtivar.textContent = 'Completar Ativação';
+            btnAtivar.disabled = false;
+            btnAtivar.style.display = 'block';
+        } else if (info.permission === 'granted' && info.subscribed) {
+            btnAtivar.textContent = 'Notificações Ativas';
+            btnAtivar.disabled = true;
+            btnAtivar.style.display = 'block';
+            btnAtivar.classList.add('active');
+        } else {
+            btnAtivar.textContent = 'Permissão Negada';
+            btnAtivar.disabled = true;
+            btnAtivar.style.display = 'block';
         }
     }
     
-    // 2. Carregar configurações do usuário
-    const configuracoes = await carregarConfiguracoesUsuario();
-    if (configuracoes) {
-        console.log('Configurações de notificação carregadas:', configuracoes);
+    if (btnTestar) {
+        btnTestar.style.display = info.subscribed ? 'block' : 'none';
     }
     
-    // 3. Configurar verificação periódica de lembretes (a cada 1 hora)
-    setInterval(verificarLembretesPrazos, 60 * 60 * 1000);
-    
-    // 4. Verificar agora também
-    setTimeout(verificarLembretesPrazos, 5000);
-    
-    console.log('✅ Sistema de notificações inicializado');
+    console.log('✅ Interface de notificações atualizada');
 }
-
 // ============================================
 // EXPORTAR FUNÇÕES PARA USO GLOBAL
 // ============================================
