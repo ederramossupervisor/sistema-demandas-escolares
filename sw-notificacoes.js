@@ -14,13 +14,13 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-comp
 
 // Configuração do Firebase (USE SEUS DADOS REAIS)
 firebase.initializeApp({
-    apiKey: "AIzaSyCtRftclCCH3Y5i6c2pl7TxC_SeRNdY3zo",
+    apiKey: "AIzaSyA4FdLA3O1EDDpVtvlr9OTW1_D0J1zDV_g",
     authDomain: "sistema-de-demandas-escolares.firebaseapp.com",
     projectId: "sistema-de-demandas-escolares",
-    storageBucket: "sistema-de-demandas-escolares.appspot.com",
+    storageBucket: "sistema-de-demandas-escolares.firebasestorage.app",
     messagingSenderId: "655714446030",
-    appId: "1:655714446030:web:3a8d8e5c89f1c2d3c7f2b3"
-});
+    appId: "1:655714446030:web:5e7ecb83df5d7c21c2fe9f"
+};
 
 const messaging = firebase.messaging();
 
