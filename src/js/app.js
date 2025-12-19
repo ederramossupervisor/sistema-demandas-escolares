@@ -2809,37 +2809,6 @@ async function sincronizarNotificacoesPendentes() {
         console.error('❌ Erro na sincronização de notificações:', error);
     }
 }
-// DEBUG TEMPORÁRIO - REMOVER DEPOIS
-console.log("=== DEBUG MODE ===");
-console.log("URL atual: " + window.location.href);
-console.log("Estou na página de login ou demandas?");
-
-// Verificar se estamos na página certa
-if (window.location.href.includes('login')) {
-    console.log("📱 Estamos na página de LOGIN");
-    // Não tentar carregar demandas aqui
-} else {
-    console.log("📊 Estamos na página de DEMANDAS");
-}
-
-// Verificar elementos básicos
-setTimeout(function() {
-    console.log("🔍 Verificando elementos importantes:");
-    
-    // Elementos do login
-    const loginElements = ['login-container', 'login-form', 'username', 'password'];
-    loginElements.forEach(function(id) {
-        const el = document.getElementById(id);
-        console.log(id + ": " + (el ? "✅" : "❌"));
-    });
-    
-    // Elementos das demandas
-    const demandaElements = ['main-container', 'demandas-container', 'btn-nova-demanda'];
-    demandaElements.forEach(function(id) {
-        const el = document.getElementById(id);
-        console.log(id + ": " + (el ? "✅" : "❌"));
-    });
-}, 2000);
 /**
  * Obtém ID do usuário logado
  */
