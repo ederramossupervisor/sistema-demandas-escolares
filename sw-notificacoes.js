@@ -318,34 +318,41 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 // ============================================
-// 10. BACKGROUND SYNC PERIÓDICO
+// 10. BACKGROUND SYNC PERIÓDICO (VERSÃO CORRIGIDA)
 // ============================================
 
 // Verificar periodicamente por atualizações
 async function checkForUpdates() {
     try {
-        // Verificar se há novas notificações no servidor
-        const response = await fetch(`${APP_PATH}api/check-updates?lastCheck=${lastUpdateCheck}`);
-        const data = await response.json();
+        // Usar localStorage para armazenar último check
+        const lastCheck = localStorage.getItem('sw_last_update_check') || 0;
+        const now = Date.now();
         
-        if (data.updatesAvailable) {
-            console.log('🆕 Atualizações disponíveis');
+        // Verificar apenas se passou mais de 1 hora
+        if (now - lastCheck > 60 * 60 * 1000) {
+            console.log('🔍 Verificando atualizações...');
             
-            // Disparar sync event
-            if ('sync' in self.registration) {
-                self.registration.sync.register('check-updates');
+            // Atualizar timestamp
+            localStorage.setItem('sw_last_update_check', now);
+            
+            // Verificar se há novas notificações no servidor
+            const response = await fetch(\`\${APP_PATH}api/check-updates?lastCheck=\${lastCheck}\`);
+            const data = await response.json();
+            
+            if (data.updatesAvailable) {
+                console.log('🆕 Atualizações disponíveis');
             }
         }
         
         // Agendar próximo check (a cada 1 hora)
         setTimeout(checkForUpdates, 60 * 60 * 1000);
+        
     } catch (error) {
         console.log('Offline ou erro ao verificar atualizações:', error);
         // Tentar novamente em 5 minutos
         setTimeout(checkForUpdates, 5 * 60 * 1000);
     }
 }
-
 // Iniciar verificação periódica (após 30 segundos da ativação)
 setTimeout(() => {
     checkForUpdates();
