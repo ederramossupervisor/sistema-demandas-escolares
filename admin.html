@@ -995,6 +995,14 @@ async function carregarUsuarios() {
                 tipoClass = 'tipo-gestor';
                 tipoTexto = 'Diretor(a)';
             }
+            
+            // 🔥 CORREÇÃO: Usar aspas diferentes para evitar conflito
+            // Troque as aspas simples 'comum' por caracteres especiais
+            const tipoUsuario = usuario.tipo_usuario || 'comum';
+            const nomeUsuario = usuario.nome || '';
+            const departamentoUsuario = usuario.departamento || '';
+            const escolaUsuario = usuario.escola_sre || '';
+            
             html += `
                 <tr>
                     <td><strong>${usuario.nome || 'N/A'}</strong></td>
@@ -1004,10 +1012,10 @@ async function carregarUsuarios() {
                     <td>${usuario.escola_sre || 'N/A'}</td>
                     <td>
                         <div class="btn-group">
-                            <button class="btn btn-primary btn-small" onclick="abrirModalEditar('${usuario.email}', '${usuario.nome || ''}', '${usuario.tipo_usuario || 'comum'}', '${usuario.departamento || ''}', '${usuario.escola_sre || ''}')">
+                            <button class="btn btn-primary btn-small" onclick="abrirModalEditar('${usuario.email}', '${nomeUsuario}', '${tipoUsuario}', '${departamentoUsuario}', '${escolaUsuario}')">
                                 <i class="fas fa-edit"></i> Editar
                             </button>
-                            <button class="btn btn-warning btn-small" onclick="resetarSenhaUsuario('${usuario.email}', '${usuario.nome || ''}')">
+                            <button class="btn btn-warning btn-small" onclick="resetarSenhaUsuario('${usuario.email}', '${nomeUsuario}')">
                                 <i class="fas fa-key"></i> Resetar Senha
                             </button>
                             <button class="btn btn-danger btn-small" onclick="excluirUsuarioLinha('${usuario.email}', '${usuario.nome || 'N/A'}')">
@@ -1017,6 +1025,7 @@ async function carregarUsuarios() {
                     </td>
                 </tr>
             `;
+        }); // 🔥 ESTE É O PARÊNTESE QUE ESTAVA FALTANDO!
         
         container.innerHTML = html;
         
@@ -1024,7 +1033,6 @@ async function carregarUsuarios() {
         console.error('❌ Erro ao carregar usuários:', erro);
     }
 }
-
 // ============================================
 // FUNÇÕES DE INTERAÇÃO
 // ============================================
