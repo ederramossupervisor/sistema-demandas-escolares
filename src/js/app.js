@@ -3950,7 +3950,7 @@ async function salvarWebPushNoServidor(subscription) {
 async function fazerRequisicaoServidor(dados) {
     // Use sua função existente que chama o backend
     // Esta é uma implementação genérica
-    const url = "https://script.google.com/macros/s/AKfycbyDIgMxkwXcsOvEy68MblMq9MESAvkAu23u39J04ILefk3E3SuxWtJPOHz-94vhJtrNfA/exec";
+    const url = "https://script.google.com/macros/s/AKfycbwPHLUnKJO-LWPcw4uSBbDXJz5ej2SyUcGkJtARQfPUDOPVQDVLM60Mqqu5U5xRS8OiqA/exec";
     
     try {
         const resposta = await fetch(url, {
