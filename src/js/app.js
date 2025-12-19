@@ -3256,6 +3256,92 @@ async function sincronizarNotificacoesPendentes() {
         console.error('❌ Erro na sincronização de notificações:', error);
     }
 }
+// ============================================
+// ENVIAR NOTIFICAÇÃO VIA FIREBASE FCM
+// ============================================
+
+async function enviarNotificacaoFirebase(dados) {
+    console.log('🔥 Enviando notificação via Firebase FCM...');
+    
+    try {
+        // Verificar se Firebase está disponível
+        if (typeof firebase === 'undefined') {
+            console.warn('⚠️ Firebase não carregado');
+            return { sucesso: false, erro: 'Firebase não carregado' };
+        }
+        
+        // Obter token FCM do usuário atual
+        const tokenFCM = await obterTokenFCM();
+        
+        if (!tokenFCM) {
+            console.warn('⚠️ Token FCM não disponível');
+            return { sucesso: false, erro: 'Token FCM não disponível' };
+        }
+        
+        // Dados da notificação
+        const notificacaoData = {
+            acao: 'enviarNotificacaoFirebase',
+            token: tokenFCM,
+            titulo: dados.titulo || 'Nova Demanda',
+            mensagem: dados.mensagem || 'Você tem uma nova demanda',
+            demandaId: dados.demandaId,
+            departamento: dados.departamento,
+            escolas: dados.escolas,
+            importante: dados.importante || false,
+            timestamp: new Date().toISOString()
+        };
+        
+        // Enviar para Google Apps Script
+        const resultado = await enviarParaGoogleAppsScript(notificacaoData);
+        
+        if (resultado && resultado.sucesso) {
+            console.log('✅ Notificação Firebase enviada:', resultado);
+            return resultado;
+        } else {
+            throw new Error(resultado?.erro || 'Erro desconhecido');
+        }
+        
+    } catch (erro) {
+        console.error('❌ Erro ao enviar notificação Firebase:', erro);
+        return { sucesso: false, erro: erro.message };
+    }
+}
+
+// ============================================
+// INTEGRAÇÃO COM O SALVAR DEMANDA
+// ============================================
+
+// MODIFIQUE a função `salvarDemanda` (linha ~480)
+// Adicione esta linha após salvar a demanda (depois da linha que salva no servidor):
+
+// Após a linha: const resultadoSalvar = await salvarDemandaNoServidor(dadosDemanda);
+// Adicione:
+
+// Enviar notificação Firebase se configurado
+setTimeout(async () => {
+    try {
+        const usuarioSalvo = localStorage.getItem('usuario_demandas');
+        if (usuarioSalvo) {
+            const usuario = JSON.parse(usuarioSalvo);
+            
+            // Verificar se usuário quer notificações push
+            if (usuario.notificacoesPush !== false) {
+                const notificacaoData = {
+                    titulo: dadosDemanda.titulo,
+                    mensagem: `Nova demanda criada: ${dadosDemanda.titulo}`,
+                    demandaId: resultadoSalvar.id,
+                    departamento: dadosDemanda.departamento,
+                    escolas: dadosDemanda.escolas.join(', '),
+                    importante: true
+                };
+                
+                await enviarNotificacaoFirebase(notificacaoData);
+            }
+        }
+    } catch (notifErro) {
+        console.warn('⚠️ Erro na notificação Firebase (não crítico):', notifErro);
+    }
+}, 1000);
 /**
  * Ajusta o modal para telas pequenas
  */
