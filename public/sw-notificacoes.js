@@ -157,7 +157,7 @@ self.addEventListener('notificationclose', (event) => {
     // Exemplo: Enviar para Google Apps Script
     self.registration.pushManager.getSubscription().then(subscription => {
         if (subscription) {
-            fetch('https://script.google.com/macros/s/AKfycbxQScM5c4i4xbVxrYBjlpG-s8wPWM9nx3JCOi4t3jVhmhPnpbO2yOvS1hPQXb1ZVlUuwg/exec', {
+            fetch('https://script.google.com/macros/s/AKfycbzipAeNlapZ3ks_YkU4nT5dRtMBbMhvDqZbuQIMefrJpz0lswmaOhehBsz4YKEfGYs90A/exec', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
