@@ -2861,6 +2861,201 @@ async function inicializarSistemaNotificacoes() {
     
     return await tentarInicializar();
 }
+// ============================================
+// TESTE AUTOMÁTICO DE NOTIFICAÇÕES
+// ============================================
+
+function executarTesteNotificacoes() {
+  console.log('🔔 INICIANDO TESTE DE NOTIFICAÇÕES');
+  
+  // Aguardar PushNotificationSystem carregar
+  if (typeof PushNotificationSystem === 'undefined') {
+    console.log('⏳ Aguardando carregamento do sistema...');
+    setTimeout(executarTesteNotificacoes, 1000);
+    return;
+  }
+  
+  // Verificar suporte
+  if (!PushNotificationSystem.checkSupport()) {
+    console.error('❌ Navegador não suporta notificações push');
+    mostrarMensagemTeste('❌ Seu navegador não suporta notificações push', 'error');
+    return;
+  }
+  
+  console.log('✅ Sistema carregado:', PushNotificationSystem);
+  
+  // Inicializar
+  PushNotificationSystem.initialize()
+    .then(sucesso => {
+      if (sucesso) {
+        const info = PushNotificationSystem.getInfo();
+        console.log('📊 Status do sistema:', info);
+        
+        // Mostrar resultado
+        let mensagem = '✅ Sistema de notificações carregado!\n';
+        mensagem += `📊 Permissão: ${info.permission}\n`;
+        mensagem += `🔔 Inscrito: ${info.subscribed ? 'Sim' : 'Não'}`;
+        
+        mostrarMensagemTeste(mensagem, 'success');
+        
+        // Se não tem permissão, mostrar botão
+        if (info.permission === 'default') {
+          mostrarBotaoAtivacaoTeste();
+        }
+        
+      } else {
+        mostrarMensagemTeste('❌ Falha ao inicializar notificações', 'error');
+      }
+    })
+    .catch(erro => {
+      console.error('❌ Erro na inicialização:', erro);
+      mostrarMensagemTeste('❌ Erro: ' + erro.message, 'error');
+    });
+}
+
+// ============================================
+// FUNÇÕES AUXILIARES PARA O TESTE
+// ============================================
+
+function mostrarMensagemTeste(mensagem, tipo) {
+  console.log(`[TESTE ${tipo.toUpperCase()}] ${mensagem}`);
+  
+  // Criar elemento para mostrar na tela
+  const divTeste = document.getElementById('teste-notificacoes') || criarDivTeste();
+  
+  divTeste.innerHTML = `
+    <div class="teste-mensagem teste-${tipo}">
+      <strong>🔔 Teste de Notificações</strong><br>
+      ${mensagem.replace(/\n/g, '<br>')}
+    </div>
+  `;
+  
+  // Estilos
+  const style = document.createElement('style');
+  style.textContent = `
+    .teste-mensagem {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      max-width: 300px;
+      z-index: 9999;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      font-size: 14px;
+    }
+    .teste-success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .teste-error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .teste-warning {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+    }
+  `;
+  
+  if (!document.querySelector('#estilo-teste-notificacoes')) {
+    style.id = 'estilo-teste-notificacoes';
+    document.head.appendChild(style);
+  }
+}
+
+function criarDivTeste() {
+  const div = document.createElement('div');
+  div.id = 'teste-notificacoes';
+  document.body.appendChild(div);
+  return div;
+}
+
+function mostrarBotaoAtivacaoTeste() {
+  const botao = document.createElement('button');
+  botao.id = 'btn-testar-ativacao';
+  botao.innerHTML = '🔔 Testar Ativação de Notificações';
+  botao.className = 'btn-teste-ativacao';
+  
+  // Estilos
+  botao.style.cssText = `
+    position: fixed;
+    bottom: 120px;
+    right: 20px;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 25px;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 9998;
+    animation: pulse-teste 2s infinite;
+  `;
+  
+  // Animação
+  const styleAnim = document.createElement('style');
+  styleAnim.textContent = `
+    @keyframes pulse-teste {
+      0% { transform: scale(1); box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4); }
+      50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(52, 152, 219, 0.6); }
+      100% { transform: scale(1); box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4); }
+    }
+  `;
+  document.head.appendChild(styleAnim);
+  
+  // Ação do botão
+  botao.onclick = function() {
+    botao.disabled = true;
+    botao.innerHTML = '⏳ Solicitando permissão...';
+    
+    if (window.PushNotificationSystem) {
+      PushNotificationSystem.requestPermission()
+        .then(permissao => {
+          mostrarMensagemTeste(`Permissão: ${permissao}`, 
+            permissao === 'granted' ? 'success' : 'warning');
+          
+          if (permissao === 'granted') {
+            botao.innerHTML = '✅ Notificações Ativadas!';
+            botao.style.background = 'linear-gradient(135deg, #27ae60, #229954)';
+          } else {
+            botao.innerHTML = '❌ Permissão Negada';
+            botao.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)';
+          }
+        });
+    }
+  };
+  
+  document.body.appendChild(botao);
+  
+  // Remover após 60 segundos
+  setTimeout(() => {
+    if (botao.parentNode) {
+      botao.remove();
+    }
+  }, 60000);
+}
+
+// ============================================
+// INICIAR TESTE AUTOMATICAMENTE
+// ============================================
+
+// Aguardar página carregar
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(executarTesteNotificacoes, 3000);
+  });
+} else {
+  setTimeout(executarTesteNotificacoes, 3000);
+}
+
+// Exportar para teste manual
+window.testarNotificacoes = executarTesteNotificacoes;
+console.log('✅ Teste de notificações carregado. Use: testarNotificacoes()');
 /**
  * Atualiza status das notificações na interface
  */
