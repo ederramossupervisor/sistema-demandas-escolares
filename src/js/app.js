@@ -4198,7 +4198,46 @@ function obterEmailUsuario() {
     
     return null;
 }
-
+// Adicione esta função no app.js (pode ser no final do arquivo)
+function mostrarNotificacao(payload) {
+    console.log("📱 Mostrando notificação local:", payload);
+    
+    // Verificar permissão
+    if (!('Notification' in window)) {
+        console.warn("⚠️ Este navegador não suporta notificações");
+        return;
+    }
+    
+    if (Notification.permission === 'granted') {
+        const notificacao = new Notification(payload.notification?.title || "Nova Demanda", {
+            body: payload.notification?.body || "Você tem uma nova demanda",
+            icon: '/sistema-demandas-escolares/public/icons/192x192.png',
+            badge: '/sistema-demandas-escolares/public/icons/96x96.png',
+            tag: `demanda-${payload.data?.demandaId || Date.now()}`,
+            data: payload.data || {}
+        });
+        
+        notificacao.onclick = function() {
+            if (this.data.demandaId) {
+                mostrarDetalhesDemanda(this.data.demandaId);
+            }
+            this.close();
+        };
+        
+        notificacao.onclose = function() {
+            console.log("📭 Notificação fechada");
+        };
+        
+        return notificacao;
+    } else if (Notification.permission !== 'denied') {
+        console.log("🔔 Solicitando permissão para notificações...");
+        Notification.requestPermission().then(permissao => {
+            if (permissao === 'granted') {
+                mostrarNotificacao(payload);
+            }
+        });
+    }
+}
 // ============================================
 // FUNÇÕES PARA TESTE E DEBUG
 // ============================================
