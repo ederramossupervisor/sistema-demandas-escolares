@@ -3,7 +3,7 @@ const PushNotificationSystem = {
     // Configurações
     config: {
         vapidPublicKey: 'BKFl5Hc4UKk6gNm4t7wcCLnRIzYmW9TF8yOxqM0obajhIG_H0RRetGt2bT1qZoTIerYa4IVQE6Jb0D4hNRIM-Vs',
-        googleScriptUrl: 'https://script.google.com/macros/s/AKfycbxQScM5c4i4xbVxrYBjlpG-s8wPWM9nx3JCOi4t3jVhmhPnpbO2yOvS1hPQXb1ZVlUuwg/exec',
+        googleScriptUrl: 'https://script.google.com/macros/s/AKfycbzipAeNlapZ3ks_YkU4nT5dRtMBbMhvDqZbuQIMefrJpz0lswmaOhehBsz4YKEfGYs90A/exec',
         appPath: '/sistema-demandas-escolares/',
         swPath: '/sistema-demandas-escolares/public/sw-notificacoes.js'
     },
