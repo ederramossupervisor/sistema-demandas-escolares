@@ -3936,9 +3936,22 @@ async function configurarListenersFCM(messaging) {
     
     // Método moderno para token refresh
     messaging.onMessage((payload) => {
-      console.log("📩 Mensagem recebida em foreground:", payload);
-      mostrarNotificacao(payload.notification);
-    });
+  console.log("📩 Mensagem recebida em foreground:", payload);
+  
+  // Verificar se a função existe antes de chamar
+  if (typeof mostrarNotificacao === 'function') {
+    mostrarNotificacao(payload);
+  } else {
+    console.log("📢 Notificação recebida (função mostrarNotificacao não está disponível)");
+    
+    // Mostrar um toast ou alerta simples
+    if (typeof mostrarToast === 'function') {
+      mostrarToast('Nova Demanda', 
+        payload.notification?.body || 'Você tem uma nova demanda', 
+        'info');
+    }
+  }
+});
     
     // Verificar se o método existe antes de chamar
     if (messaging.onTokenRefresh) {
