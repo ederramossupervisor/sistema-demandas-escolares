@@ -2,22 +2,24 @@
 // ============================================
 
 const PushNotificationSystem = {
-    // Configurações
+    // Configurações ATUALIZADAS
     config: {
-        vapidPublicKey: 'BKFl5Hc4UKk6gNm4t7wcCLnRIzYmW9TF8yOxqM0obajhIG_H0RRetGt2bT1qZoTIerYa4IVQE6Jb0D4hNRIM-Vs',
+        // COLE AQUI SUA CHAVE PÚBLICA DO FIREBASE
+        vapidPublicKey: 'BKYmA5_HGRoYckulvip4sBqmWdTUSyer7LJh4EE1jVajz5WHfN3yWANavQEjuvi0fdbXYGCCZu-ETLYAqUDOR7g',
+        
+        // URL do seu Google Apps Script
         googleScriptUrl: 'https://script.google.com/macros/s/AKfycbzipAeNlapZ3ks_YkU4nT5dRtMBbMhvDqZbuQIMefrJpz0lswmaOhehBsz4YKEfGYs90A/exec',
+        
+        // Caminhos atualizados
         appPath: '/sistema-demandas-escolares/',
-        swPath: '/sistema-demandas-escolares/sw-notificacoes.js'
-    },
-    
-    // Estado do sistema
-    state: {
-        isSupported: false,
-        permission: 'default',
-        subscription: null,
-        isSubscribed: false
-    },
-    
+        swPath: '/sistema-demandas-escolares/sw-notificacoes.js',
+        
+        // Configurações do Firebase
+        firebaseConfig: {
+            projectId: 'sistema-de-demandas-escolares', // Seu ID do projeto
+            messagingSenderId: '655714446030' // ID do remetente que você viu
+        }
+    },    
     // ============================================
     // MÉTODOS PRINCIPAIS
     // ============================================
