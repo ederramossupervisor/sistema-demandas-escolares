@@ -1,6 +1,7 @@
 // ============================================
-// SERVICE WORKER DE NOTIFICAÇÕES PUSH COMPLETO
-// Compatível com seu sistema existente
+// SERVICE WORKER DE NOTIFICAÇÕES PUSH CORRIGIDO
+// sw-notificacoes.js
+// Compatível com GitHub Pages
 // ============================================
 
 const APP_PATH = '/sistema-demandas-escolares/';
@@ -62,8 +63,7 @@ self.addEventListener('push', (event) => {
                     demandaId: data.demandaId,
                     userId: data.userId,
                     type: data.type || 'demanda',
-                    timestamp: Date.now(),
-                    ...data.data
+                    timestamp: Date.now()
                 },
                 actions: data.actions || [
                     {
@@ -118,7 +118,7 @@ self.addEventListener('notificationclick', (event) => {
                     // Adicionar parâmetros específicos se houver
                     let finalUrl = urlToOpen;
                     if (notificationData.demandaId) {
-                        finalUrl += `?demanda=${notificationData.demandaId}`;
+                        finalUrl += '?demanda=' + notificationData.demandaId;
                     }
                     
                     console.log('🌐 Abrindo URL:', finalUrl);
@@ -207,93 +207,7 @@ self.addEventListener('pushsubscriptionchange', (event) => {
 });
 
 // ============================================
-// 7. SINCRONIZAÇÃO EM BACKGROUND
-// ============================================
-self.addEventListener('sync', (event) => {
-    console.log('🔄 Evento de sync:', event.tag);
-    
-    if (event.tag === 'sync-notificacoes') {
-        event.waitUntil(syncNotificacoesPendentes());
-    }
-    
-    if (event.tag === 'sync-configuracoes') {
-        event.waitUntil(syncConfiguracoesUsuario());
-    }
-});
-
-async function syncNotificacoesPendentes() {
-    console.log('📡 Sincronizando notificações pendentes...');
-    
-    // Implementar lógica de sincronização
-    // Exemplo: Buscar notificações não recebidas
-    try {
-        const response = await fetch(APP_PATH + 'api/notificacoes-pendentes');
-        const data = await response.json();
-        
-        if (data.notificacoes && data.notificacoes.length > 0) {
-            console.log(`📨 ${data.notificacoes.length} notificações pendentes`);
-            
-            // Mostrar cada notificação
-            for (const notif of data.notificacoes) {
-                self.registration.showNotification(notif.title, notif);
-            }
-        }
-    } catch (error) {
-        console.error('Erro na sincronização:', error);
-    }
-}
-
-async function syncConfiguracoesUsuario() {
-    console.log('⚙️ Sincronizando configurações...');
-    // Implementar sincronização de configurações
-}
-
-// ============================================
-// 8. INTERCEPTAÇÃO DE MENSAGENS (do app para o SW)
-// ============================================
-self.addEventListener('message', (event) => {
-    console.log('📨 Mensagem recebida no Service Worker:', event.data);
-    
-    switch(event.data.type) {
-        case 'GET_SUBSCRIPTION':
-            event.waitUntil(
-                self.registration.pushManager.getSubscription()
-                    .then(subscription => {
-                        event.ports[0].postMessage({
-                            type: 'SUBSCRIPTION_INFO',
-                            subscription: subscription ? subscription.toJSON() : null
-                        });
-                    })
-            );
-            break;
-            
-        case 'SEND_TEST_NOTIFICATION':
-            event.waitUntil(
-                self.registration.showNotification('🔔 Teste de Notificação', {
-                    body: 'Esta é uma notificação de teste do sistema',
-                    icon: APP_PATH + 'public/icons/192x192.png',
-                    badge: APP_PATH + 'public/icons/96x96.png',
-                    vibrate: [200, 100, 200],
-                    data: {
-                        url: APP_PATH + 'index.html',
-                        type: 'teste'
-                    }
-                })
-            );
-            break;
-            
-        case 'REGISTER_SYNC':
-            if ('sync' in self.registration) {
-                event.waitUntil(
-                    self.registration.sync.register(event.data.tag || 'sync-default')
-                );
-            }
-            break;
-    }
-});
-
-// ============================================
-// 9. FUNÇÕES AUXILIARES
+// 7. FUNÇÕES AUXILIARES
 // ============================================
 
 function urlBase64ToUint8Array(base64String) {
@@ -318,44 +232,80 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 // ============================================
-// 10. BACKGROUND SYNC PERIÓDICO (VERSÃO CORRIGIDA)
+// 8. SINCRONIZAÇÃO EM BACKGROUND (SIMPLIFICADA)
 // ============================================
+self.addEventListener('sync', (event) => {
+    console.log('🔄 Evento de sync:', event.tag);
+    
+    if (event.tag === 'sync-notificacoes') {
+        event.waitUntil(syncNotificacoesPendentes());
+    }
+});
 
-// Verificar periodicamente por atualizações
-async function checkForUpdates() {
+async function syncNotificacoesPendentes() {
+    console.log('📡 Sincronizando notificações pendentes...');
+    
     try {
-        // Usar localStorage para armazenar último check
-        const lastCheck = localStorage.getItem('sw_last_update_check') || 0;
-        const now = Date.now();
-        
-        // Verificar apenas se passou mais de 1 hora
-        if (now - lastCheck > 60 * 60 * 1000) {
-            console.log('🔍 Verificando atualizações...');
-            
-            // Atualizar timestamp
-            localStorage.setItem('sw_last_update_check', now);
-            
-            // Verificar se há novas notificações no servidor
-            const response = await fetch(\`\${APP_PATH}api/check-updates?lastCheck=\${lastCheck}\`);
+        // Tentar buscar do servidor
+        const response = await fetch(APP_PATH + 'api/check-updates');
+        if (response.ok) {
             const data = await response.json();
-            
-            if (data.updatesAvailable) {
-                console.log('🆕 Atualizações disponíveis');
+            if (data.notifications && data.notifications.length > 0) {
+                console.log(`📨 ${data.notifications.length} notificações recebidas`);
+                // Processar notificações...
             }
         }
-        
-        // Agendar próximo check (a cada 1 hora)
-        setTimeout(checkForUpdates, 60 * 60 * 1000);
-        
     } catch (error) {
-        console.log('Offline ou erro ao verificar atualizações:', error);
-        // Tentar novamente em 5 minutos
-        setTimeout(checkForUpdates, 5 * 60 * 1000);
+        console.log('📴 Offline ou erro na sincronização:', error);
     }
 }
-// Iniciar verificação periódica (após 30 segundos da ativação)
-setTimeout(() => {
-    checkForUpdates();
-}, 30000);
+
+// ============================================
+// 9. MENSAGENS DO APP
+// ============================================
+self.addEventListener('message', (event) => {
+    console.log('📨 Mensagem recebida no Service Worker:', event.data);
+    
+    switch(event.data.type) {
+        case 'GET_SUBSCRIPTION':
+            self.registration.pushManager.getSubscription()
+                .then(subscription => {
+                    event.ports[0].postMessage({
+                        type: 'SUBSCRIPTION_INFO',
+                        subscription: subscription ? subscription.toJSON() : null
+                    });
+                });
+            break;
+            
+        case 'SEND_TEST_NOTIFICATION':
+            self.registration.showNotification('🔔 Teste de Notificação', {
+                body: 'Esta é uma notificação de teste do sistema',
+                icon: APP_PATH + 'public/icons/192x192.png',
+                badge: APP_PATH + 'public/icons/96x96.png',
+                vibrate: [200, 100, 200],
+                data: {
+                    url: APP_PATH + 'index.html',
+                    type: 'teste'
+                }
+            });
+            break;
+            
+        case 'SEND_CUSTOM_NOTIFICATION':
+            if (event.data.data) {
+                self.registration.showNotification(event.data.data.title || 'Sistema de Demandas', {
+                    body: event.data.data.body || 'Nova atualização',
+                    icon: event.data.data.icon || APP_PATH + 'public/icons/192x192.png',
+                    badge: APP_PATH + 'public/icons/96x96.png',
+                    data: {
+                        url: event.data.data.url || APP_PATH + 'index.html',
+                        demandaId: event.data.data.demandaId,
+                        userId: event.data.data.userId,
+                        type: event.data.data.type || 'custom'
+                    }
+                });
+            }
+            break;
+    }
+});
 
 console.log('✅ Service Worker de notificações carregado com sucesso!');
