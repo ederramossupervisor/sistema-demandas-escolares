@@ -1886,7 +1886,7 @@ function validarFormulario() {
 }
 
 /**
- * Mostra os detalhes de uma demanda
+ * Mostra os detalhes de uma demanda - VERSÃO RESPONSIVA
  */
 function mostrarDetalhesDemanda(idDemanda) {
     const demanda = state.demandas.find(d => d.id == idDemanda);
@@ -1904,6 +1904,7 @@ function mostrarDetalhesDemanda(idDemanda) {
     // Calcular dias restantes
     let diasRestantes = 'N/A';
     let prazoStatus = '';
+    let prazoColor = '#27ae60'; // Verde padrão
     
     if (demanda.prazo) {
         try {
@@ -1914,96 +1915,194 @@ function mostrarDetalhesDemanda(idDemanda) {
             if (dias < 0) {
                 diasRestantes = `${Math.abs(dias)} dias atrasado`;
                 prazoStatus = 'atrasado';
+                prazoColor = '#e74c3c'; // Vermelho
             } else if (dias === 0) {
                 diasRestantes = 'Vence hoje';
                 prazoStatus = 'urgente';
+                prazoColor = '#e67e22'; // Laranja forte
             } else if (dias <= 3) {
-                diasRestantes = `${dias} dias`;
+                diasRestantes = `${dias} dias restantes`;
                 prazoStatus = 'alerta';
+                prazoColor = '#f39c12'; // Laranja
             } else {
-                diasRestantes = `${dias} dias`;
+                diasRestantes = `${dias} dias restantes`;
                 prazoStatus = 'ok';
+                prazoColor = '#27ae60'; // Verde
             }
         } catch (e) {
             diasRestantes = 'Erro no cálculo';
+            prazoColor = '#95a5a6'; // Cinza
         }
     }
     
-    // Preparar modal HTML
+    // Verificar se é mobile
+    const isMobile = window.innerWidth <= 768;
+    
+    // Estilo do container de ações RESPONSIVO
+    const acoesStyle = isMobile 
+        ? `display: flex; flex-direction: column; gap: 10px; margin-top: 15px;`  // Coluna no mobile
+        : `display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;`;      // Linha no desktop
+    
+    // Criar botões dinamicamente baseado no status atual
+    let botoesAcoes = '';
+    
+    // Botão "Iniciar" só se estiver pendente
+    if (demanda.status === 'Pendente') {
+        botoesAcoes += `
+            <button class="btn btn-primary" onclick="alterarStatusDemanda(${demanda.id}, 'Em andamento')" 
+                    style="flex: 1; min-width: ${isMobile ? '100%' : '120px'};">
+                <i class="fas fa-play"></i> ${isMobile ? 'Iniciar Demanda' : 'Iniciar'}
+            </button>
+        `;
+    }
+    
+    // Botão "Concluir" só se não estiver concluída
+    if (demanda.status !== 'Concluída') {
+        botoesAcoes += `
+            <button class="btn btn-success" onclick="alterarStatusDemanda(${demanda.id}, 'Concluída')" 
+                    style="flex: 1; min-width: ${isMobile ? '100%' : '120px'};">
+                <i class="fas fa-check"></i> ${isMobile ? 'Concluir Demanda' : 'Concluir'}
+            </button>
+        `;
+    }
+    
+    // Botão "Reabrir" só se estiver concluída
+    if (demanda.status === 'Concluída') {
+        botoesAcoes += `
+            <button class="btn btn-warning" onclick="alterarStatusDemanda(${demanda.id}, 'Pendente')" 
+                    style="flex: 1; min-width: ${isMobile ? '100%' : '120px'}; background: #f39c12;">
+                <i class="fas fa-redo"></i> ${isMobile ? 'Reabrir Demanda' : 'Reabrir'}
+            </button>
+        `;
+    }
+    
+    // Status color
+    let statusColor = '#95a5a6';
+    switch(demanda.status) {
+        case 'Pendente': statusColor = '#e74c3c'; break;
+        case 'Em andamento': statusColor = '#f39c12'; break;
+        case 'Concluída': statusColor = '#27ae60'; break;
+    }
+    
+    // Preparar modal HTML RESPONSIVO
     const modalHTML = `
-        <div class="modal-header">
-            <h2><i class="fas fa-file-lines"></i> Detalhes da Demanda #${demanda.id || 'N/A'}</h2>
-            <button class="btn-close" onclick="fecharModalDetalhes()">
-                <i class="fas fa-times"></i>
+        <div class="modal-header" style="padding: ${isMobile ? '15px' : '20px'};">
+            <h2 style="margin: 0; font-size: ${isMobile ? '18px' : '20px'}; display: flex; align-items: center;">
+                <i class="fas fa-file-lines" style="margin-right: 10px; color: #3498db;"></i>
+                Demanda #${demanda.id || 'N/A'}
+            </h2>
+            <button class="btn-close" onclick="fecharModalDetalhes()" 
+                    style="font-size: ${isMobile ? '20px' : '24px'}; padding: 0; background: none; border: none; cursor: pointer;">
+                <i class="fas fa-times" style="color: #7f8c8d;"></i>
             </button>
         </div>
         
-        <div class="modal-body">
+        <div class="modal-body" style="padding: ${isMobile ? '15px' : '20px'}; max-height: ${isMobile ? '70vh' : '80vh'}; overflow-y: auto;">
             <div class="demanda-detalhes">
-                <div class="detalhes-grid">
-                    <div class="detalhe-item">
-                        <div class="detalhe-label"><i class="fas fa-heading"></i> Título</div>
-                        <div class="detalhe-valor">${demanda.titulo || 'Sem título'}</div>
-                    </div>
-                    
-                    <div class="detalhe-item">
-                        <div class="detalhe-label"><i class="fas fa-user-tag"></i> Responsável</div>
-                        <div class="detalhe-valor ${(demanda.responsavel || '').includes('Supervisor') ? 'supervisor' : 'escola'}">
-                            ${demanda.responsavel || 'Não definido'}
-                        </div>
-                    </div>
-                    
-                    <div class="detalhe-item">
-                        <div class="detalhe-label"><i class="fas fa-tasks"></i> Status</div>
-                        <div class="detalhe-valor status-${(demanda.status || 'pendente').toLowerCase().replace(' ', '-')}">
-                            ${demanda.status || 'Pendente'}
-                        </div>
-                    </div>
-                    
-                    <div class="detalhe-item">
-                        <div class="detalhe-label"><i class="fas fa-calendar-day"></i> Prazo</div>
-                        <div class="detalhe-valor">${dataPrazo}</div>
-                        <small>${diasRestantes}</small>
-                    </div>
-                    
-                    <div class="detalhe-item">
-                        <div class="detalhe-label"><i class="fas fa-school"></i> Escolas</div>
-                        <div class="detalhe-valor">${demanda.escolas ? demanda.escolas.split(',').length : 0}</div>
-                        <small>${demanda.escolas || 'Nenhuma escola'}</small>
-                    </div>
-                    
-                    <div class="detalhe-item">
-                        <div class="detalhe-label"><i class="fas fa-calendar-plus"></i> Criada em</div>
-                        <div class="detalhe-valor">${dataCriacao}</div>
-                    </div>
-                </div>
                 
-                <div class="form-group mt-3">
-                    <label><i class="fas fa-align-left"></i> Descrição</label>
-                    <div style="padding: 15px; background-color: #f9f9f9; border-radius: var(--border-radius-sm);">
+                <!-- INFORMAÇÕES PRINCIPAIS -->
+                <div style="margin-bottom: 20px;">
+                    <div style="font-size: ${isMobile ? '16px' : '18px'}; font-weight: 600; color: #2c3e50; margin-bottom: 10px;">
+                        ${demanda.titulo || 'Sem título'}
+                    </div>
+                    <div style="font-size: 14px; color: #7f8c8d; line-height: 1.5;">
                         ${demanda.descricao || 'Sem descrição'}
                     </div>
                 </div>
                 
-                                <div class="form-group mt-3">
-                    <label><i class="fas fa-edit"></i> Ações</label>
-                    <div style="display: flex; gap: 10px; margin-top: 10px;">
-                        <button class="btn btn-primary" onclick="alterarStatusDemanda(${demanda.id}, 'Em andamento')">
-                            <i class="fas fa-play"></i> Iniciar
-                        </button>
-                        <button class="btn btn-success" onclick="alterarStatusDemanda(${demanda.id}, 'Concluída')">
-                            <i class="fas fa-check"></i> Concluir
-                        </button>
-                        <!-- BOTÃO DE EXCLUSÃO APENAS PARA SUPERVISOR -->
-                        <!-- O botão será controlado por JavaScript puro -->
-                        <button class="btn btn-danger supervisor-only" id="btn-excluir-${demanda.id}" onclick="excluirDemanda(${demanda.id})" title="Apenas Supervisor pode excluir" style="display: none;">
-                            <i class="fas fa-trash"></i> Excluir
-                        </button>
+                <!-- DETALHES EM GRID RESPONSIVO -->
+                <div style="${isMobile ? 'display: flex; flex-direction: column; gap: 15px;' : 'display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;'}">
+                    
+                    <!-- Status -->
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                        <div style="font-size: 12px; color: #6c757d; margin-bottom: 5px;">
+                            <i class="fas fa-tasks"></i> Status
+                        </div>
+                        <div style="font-size: 14px; font-weight: 600; color: ${statusColor};">
+                            ${demanda.status || 'Pendente'}
+                        </div>
                     </div>
-                    <small style="color: #7f8c8d; font-size: 12px; margin-top: 5px; display: block; display: none;" id="msg-permissao-${demanda.id}">
+                    
+                    <!-- Responsável -->
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                        <div style="font-size: 12px; color: #6c757d; margin-bottom: 5px;">
+                            <i class="fas fa-user-tag"></i> Responsável
+                        </div>
+                        <div style="font-size: 14px; font-weight: 600; color: #2c3e50;">
+                            ${demanda.responsavel || 'Não definido'}
+                        </div>
+                    </div>
+                    
+                    <!-- Prazo -->
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                        <div style="font-size: 12px; color: #6c757d; margin-bottom: 5px;">
+                            <i class="fas fa-calendar-alt"></i> Prazo
+                        </div>
+                        <div style="font-size: 14px; font-weight: 600; color: ${prazoColor};">
+                            ${dataPrazo}
+                        </div>
+                        <div style="font-size: 12px; color: ${prazoColor}; margin-top: 3px;">
+                            ${diasRestantes}
+                        </div>
+                    </div>
+                    
+                    <!-- Criada em -->
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                        <div style="font-size: 12px; color: #6c757d; margin-bottom: 5px;">
+                            <i class="fas fa-calendar-plus"></i> Criada em
+                        </div>
+                        <div style="font-size: 14px; font-weight: 600; color: #2c3e50;">
+                            ${dataCriacao}
+                        </div>
+                    </div>
+                    
+                </div>
+                
+                <!-- ESCOLAS -->
+                <div style="margin-top: 20px;">
+                    <div style="font-size: 14px; color: #6c757d; margin-bottom: 8px; display: flex; align-items: center;">
+                        <i class="fas fa-school" style="margin-right: 8px;"></i>
+                        Escolas Envolvidas
+                    </div>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; font-size: 14px; color: #2c3e50;">
+                        ${demanda.escolas || 'Nenhuma escola definida'}
+                    </div>
+                </div>
+                
+                <!-- DEPARTAMENTO -->
+                <div style="margin-top: 15px;">
+                    <div style="font-size: 14px; color: #6c757d; margin-bottom: 8px; display: flex; align-items: center;">
+                        <i class="fas fa-building" style="margin-right: 8px;"></i>
+                        Departamento
+                    </div>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; font-size: 14px; color: #2c3e50;">
+                        ${demanda.departamento || 'Não definido'}
+                    </div>
+                </div>
+                
+                <!-- AÇÕES -->
+                <div style="margin-top: 25px;">
+                    <div style="font-size: 14px; color: #6c757d; margin-bottom: 10px; display: flex; align-items: center;">
+                        <i class="fas fa-edit" style="margin-right: 8px;"></i>
+                        Ações
+                    </div>
+                    
+                    <!-- Botões de Ação (Status) -->
+                    <div style="${acoesStyle}">
+                        ${botoesAcoes}
+                    </div>
+                    
+                    <!-- Botão de Exclusão (Só para Supervisor) -->
+                    <div id="container-exclusao-${demanda.id}" style="margin-top: ${isMobile ? '15px' : '10px'};">
+                        <!-- O botão será adicionado dinamicamente se for supervisor -->
+                    </div>
+                    
+                    <small style="color: #7f8c8d; font-size: 12px; margin-top: 8px; display: none;" 
+                           id="msg-permissao-${demanda.id}">
                         <i class="fas fa-info-circle"></i> Apenas supervisores podem excluir demandas
                     </small>
                 </div>
+                
             </div>
         </div>
     `;
@@ -2013,23 +2112,57 @@ function mostrarDetalhesDemanda(idDemanda) {
         elementos.modalDetalhes.style.display = 'flex';
         document.body.style.overflow = 'hidden';
         
-        // AGORA verificamos o tipo de usuário DEPOIS que o modal foi criado
+        // Estilo responsivo para o modal
+        const modalElement = elementos.modalDetalhes.querySelector('.modal');
+        if (modalElement) {
+            modalElement.style.cssText = `
+                width: ${isMobile ? '90%' : '70%'};
+                max-width: ${isMobile ? '500px' : '800px'};
+                max-height: ${isMobile ? '85vh' : '90vh'};
+                margin: ${isMobile ? '10px' : '20px'} auto;
+                border-radius: ${isMobile ? '12px' : '12px'};
+                background: white;
+                display: flex;
+                flex-direction: column;
+            `;
+        }
+        
+        // Configurar botão de exclusão dinamicamente
         setTimeout(() => {
             const usuarioSalvo = localStorage.getItem('usuario_demandas');
             if (usuarioSalvo) {
                 try {
                     const usuario = JSON.parse(usuarioSalvo);
-                    const btnExcluir = document.getElementById(`btn-excluir-${demanda.id}`);
+                    const containerExclusao = document.getElementById(`container-exclusao-${demanda.id}`);
                     const msgPermissao = document.getElementById(`msg-permissao-${demanda.id}`);
                     
                     if (usuario.tipo_usuario === 'supervisor') {
-                        // Mostrar botão para supervisor
-                        if (btnExcluir) btnExcluir.style.display = 'inline-block';
+                        // Mostrar botão de exclusão para supervisor
+                        containerExclusao.innerHTML = `
+                            <button class="btn btn-danger" 
+                                    onclick="excluirDemanda(${demanda.id})" 
+                                    title="Excluir demanda permanentemente"
+                                    style="width: 100%; padding: 12px; margin-top: 5px;
+                                           background: linear-gradient(135deg, #e74c3c, #c0392b);
+                                           border: none; border-radius: 8px; 
+                                           color: white; font-weight: 600; cursor: pointer;
+                                           display: flex; align-items: center; justify-content: center;
+                                           gap: 8px; font-size: 14px;">
+                                <i class="fas fa-trash"></i>
+                                ${isMobile ? 'Excluir Demanda Permanentemente' : 'Excluir Demanda'}
+                            </button>
+                        `;
+                        
                         if (msgPermissao) msgPermissao.style.display = 'none';
                     } else {
                         // Mostrar mensagem para não-supervisor
-                        if (btnExcluir) btnExcluir.style.display = 'none';
-                        if (msgPermissao) msgPermissao.style.display = 'block';
+                        if (msgPermissao) {
+                            msgPermissao.style.display = 'block';
+                            msgPermissao.style.marginTop = '15px';
+                            msgPermissao.style.padding = '10px';
+                            msgPermissao.style.background = '#f8f9fa';
+                            msgPermissao.style.borderRadius = '6px';
+                        }
                     }
                 } catch (e) {
                     console.error('Erro ao verificar permissões:', e);
@@ -2038,7 +2171,6 @@ function mostrarDetalhesDemanda(idDemanda) {
         }, 100);
     }
 }
-
 /**
  * Fecha o modal de detalhes
  */
@@ -3061,6 +3193,55 @@ async function sincronizarNotificacoesPendentes() {
         console.error('❌ Erro na sincronização de notificações:', error);
     }
 }
+/**
+ * Ajusta o modal para telas pequenas
+ */
+function ajustarModalParaCelular() {
+    const isMobile = window.innerWidth <= 768;
+    
+    if (!elementos.modalDetalhes) return;
+    
+    const modal = elementos.modalDetalhes.querySelector('.modal');
+    if (!modal) return;
+    
+    if (isMobile) {
+        // Estilos para mobile
+        modal.style.cssText = `
+            width: 90% !important;
+            max-width: 500px !important;
+            max-height: 85vh !important;
+            margin: 10px auto !important;
+            border-radius: 12px !important;
+            overflow: hidden !important;
+        `;
+        
+        // Garantir que o conteúdo não transborde
+        const modalBody = modal.querySelector('.modal-body');
+        if (modalBody) {
+            modalBody.style.cssText = `
+                max-height: calc(85vh - 100px) !important;
+                overflow-y: auto !important;
+                padding: 15px !important;
+            `;
+        }
+    }
+}
+
+// Ajustar modal quando a tela for redimensionada
+window.addEventListener('resize', ajustarModalParaCelular);
+
+// Ajustar também quando o modal for aberto
+window.ajustarModalAberto = function() {
+    setTimeout(ajustarModalParaCelular, 50);
+};
+
+// Modificar a função fecharModalDetalhes para ser mais acessível
+window.fecharModalDetalhes = function() {
+    if (elementos.modalDetalhes) {
+        elementos.modalDetalhes.style.display = 'none';
+    }
+    document.body.style.overflow = 'auto';
+};
 /**
  * Obtém ID do usuário logado
  */
