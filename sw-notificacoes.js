@@ -20,7 +20,7 @@ firebase.initializeApp({
     storageBucket: "sistema-de-demandas-escolares.firebasestorage.app",
     messagingSenderId: "655714446030",
     appId: "1:655714446030:web:5e7ecb83df5d7c21c2fe9f"
-};
+});
 
 const messaging = firebase.messaging();
 
