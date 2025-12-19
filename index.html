@@ -780,6 +780,8 @@
     <script src="src/js/googleAppsScript.js"></script>
     <script src="src/js/googleSheets.js"></script>
     <script src="src/js/app.js"></script>
+    <script src="src/js/pushNotifications.js"></script>
+
 
     <!-- SERVICE WORKER REGISTRATION -->
     <script>
@@ -1157,22 +1159,13 @@ window.addEventListener('appinstalled', () => {
 
 }); // ← FECHA O document.addEventListener('DOMContentLoaded')
 
-// ============================================
-// FIM DA CONFIGURAÇÃO
-// ============================================
-</script>
-<!-- NOTIFICAÇÕES PUSH - INTEGRAÇÃO COMPLETA -->
-<script src="src/js/googleAppsScript.js"></script>
-<script src="src/js/pushNotifications.js"></script>
-<script src="src/js/app.js"></script>
-
 <script>
     // Inicialização otimizada para PWA + Notificações
     document.addEventListener('DOMContentLoaded', function() {
         // 1. Registrar Service Worker (PWA)
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sistema-demandas-escolares/public/sw-notificacoes.js', {
-                scope: '/sistema-demandas-escolares/'
+                
             }).then(function(registration) {
                 console.log('✅ Service Worker registrado:', registration.scope);
             }).catch(function(error) {
