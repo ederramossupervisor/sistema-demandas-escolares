@@ -1,12 +1,14 @@
-// pushNotifications.js - Sistema completo de notificações push para frontend
+// pushNotifications.js - VERSÃO FINAL CORRIGIDA
+// ============================================
+
 const PushNotificationSystem = {
     // Configurações
     config: {
-    vapidPublicKey: 'BKFl5Hc4UKk6gNm4t7wcCLnRIzYmW9TF8yOxqM0obajhIG_H0RRetGt2bT1qZoTIerYa4IVQE6Jb0D4hNRIM-Vs',
-    googleScriptUrl: 'https://script.google.com/macros/s/AKfycbzipAeNlapZ3ks_YkU4nT5dRtMBbMhvDqZbuQIMefrJpz0lswmaOhehBsz4YKEfGYs90A/exec',
-    appPath: '/sistema-demandas-escolares/',
-    swPath: '/sistema-demandas-escolares/sw-notificacoes.js' // ← MANTENHA ASSIM
-},
+        vapidPublicKey: 'BKFl5Hc4UKk6gNm4t7wcCLnRIzYmW9TF8yOxqM0obajhIG_H0RRetGt2bT1qZoTIerYa4IVQE6Jb0D4hNRIM-Vs',
+        googleScriptUrl: 'https://script.google.com/macros/s/AKfycbzipAeNlapZ3ks_YkU4nT5dRtMBbMhvDqZbuQIMefrJpz0lswmaOhehBsz4YKEfGYs90A/exec',
+        appPath: '/sistema-demandas-escolares/',
+        swPath: '/sistema-demandas-escolares/sw-notificacoes.js'
+    },
     
     // Estado do sistema
     state: {
@@ -16,509 +18,460 @@ const PushNotificationSystem = {
         isSubscribed: false
     },
     
+    // ============================================
+    // MÉTODOS PRINCIPAIS
+    // ============================================
+    
     /**
-     * Inicializa o sistema de notificações push
+     * Inicializa o sistema de notificacoes push
      */
-    async initialize() {
-        console.log('🔔 Inicializando sistema de notificações push...');
+    initialize: function() {
+        console.log('Inicializando sistema de notificacoes push...');
         
         // Verificar suporte do navegador
         this.state.isSupported = this.checkSupport();
         
         if (!this.state.isSupported) {
-            console.warn('⚠️ Navegador não suporta notificações push');
-            return false;
+            console.warn('Navegador nao suporta notificacoes push');
+            return Promise.resolve(false);
         }
         
-        try {
-            // Registrar Service Worker
-            await this.registerServiceWorker();
-            
-            // Verificar permissão atual
-            this.state.permission = Notification.permission;
-            
-            // Obter subscription atual
-            await this.getSubscription();
-            
-            // Configurar listeners
-            this.setupEventListeners();
-            
-            // Atualizar interface
-            this.updateUI();
-            
-            console.log('✅ Sistema de notificações inicializado');
-            console.log('📊 Status:', {
-                supported: this.state.isSupported,
-                permission: this.state.permission,
-                subscribed: this.state.isSubscribed
-            });
-            
-            return true;
-            
-        } catch (error) {
-            console.error('❌ Erro ao inicializar notificações:', error);
-            return false;
-        }
+        return this._initializeAsync();
+    },
+    
+    /**
+     * Funcao async interna para inicializacao
+     */
+    _initializeAsync: function() {
+        var self = this;
+        return new Promise(function(resolve) {
+            (async function() {
+                try {
+                    // Registrar Service Worker
+                    await self.registerServiceWorker();
+                    
+                    // Verificar permissao atual
+                    self.state.permission = Notification.permission;
+                    
+                    // Obter subscription atual
+                    await self.getSubscription();
+                    
+                    // Configurar listeners
+                    self.setupEventListeners();
+                    
+                    // Atualizar interface
+                    self.updateUI();
+                    
+                    console.log('Sistema de notificacoes inicializado');
+                    console.log('Status:', {
+                        supported: self.state.isSupported,
+                        permission: self.state.permission,
+                        subscribed: self.state.isSubscribed
+                    });
+                    
+                    resolve(true);
+                    
+                } catch (error) {
+                    console.error('Erro ao inicializar notificacoes:', error);
+                    resolve(false);
+                }
+            })();
+        });
     },
     
     /**
      * Verifica suporte do navegador
      */
-    checkSupport() {
+    checkSupport: function() {
         return 'Notification' in window &&
                'serviceWorker' in navigator &&
                'PushManager' in window &&
                'showNotification' in ServiceWorkerRegistration.prototype;
     },
     
-    async registerServiceWorker() {
-    try {
-        console.log('[PUSH] Tentando registrar SW...');
-        
-        // TENTATIVA 1: Caminho normal
-        const registration = await navigator.serviceWorker.register(this.config.swPath, {
-            scope: this.config.appPath
+    /**
+     * Registra o Service Worker de notificacoes
+     */
+    registerServiceWorker: function() {
+        var self = this;
+        return new Promise(function(resolve, reject) {
+            (async function() {
+                try {
+                    var registration = await navigator.serviceWorker.register(self.config.swPath, {
+                        scope: self.config.appPath
+                    });
+                    
+                    console.log('Service Worker registrado:', registration.scope);
+                    
+                    // Aguardar ativacao
+                    await navigator.serviceWorker.ready;
+                    
+                    resolve(registration);
+                    
+                } catch (error) {
+                    console.error('Erro ao registrar Service Worker:', error);
+                    reject(error);
+                }
+            })();
         });
-        
-        console.log('[PUSH] Service Worker registrado com sucesso:', registration.scope);
-        
-        // Aguardar SW ficar pronto
-        if (registration.installing) {
-            console.log('[PUSH] SW instalando...');
-            await new Promise(resolve => {
-                registration.installing.addEventListener('statechange', function(e) {
-                    if (e.target.state === 'activated') {
-                        console.log('[PUSH] SW ativado!');
-                        resolve();
+    },
+    
+    /**
+     * Solicita permissao para notificacoes
+     */
+    requestPermission: function() {
+        var self = this;
+        return new Promise(function(resolve, reject) {
+            (async function() {
+                try {
+                    console.log('Solicitando permissao para notificacoes...');
+                    
+                    var permission = await Notification.requestPermission();
+                    self.state.permission = permission;
+                    
+                    console.log('Permissao:', permission);
+                    
+                    if (permission === 'granted') {
+                        // Se permitido, inscrever para push
+                        await self.subscribeToPush();
+                        self.showToast('Permissao concedida!', 'success');
+                    } else if (permission === 'denied') {
+                        self.showToast('Permissao negada. Altere nas configuracoes do navegador.', 'warning');
                     }
-                });
-            });
-        }
-        
-        return registration;
-        
-    } catch (error) {
-        console.error('[PUSH] ERRO no registro do SW:', error.message);
-        
-        // TENTATIVA 2: SW ultra-simplificado
-        try {
-            console.log('[PUSH] Tentando SW simplificado...');
-            
-            // Crie um SW simplificado em tempo real
-            const swContent = `
-                self.addEventListener('install', e => self.skipWaiting());
-                self.addEventListener('activate', e => e.waitUntil(clients.claim()));
-                self.addEventListener('push', e => {
-                    e.waitUntil(self.registration.showNotification('Teste', {
-                        body: 'Notificacao teste',
-                        icon: '${this.config.appPath}public/icons/192x192.png'
-                    }));
-                });
-                console.log('SW simplificado carregado');
-            `;
-            
-            const blob = new Blob([swContent], { type: 'application/javascript' });
-            const swUrl = URL.createObjectURL(blob);
-            
-            const altRegistration = await navigator.serviceWorker.register(swUrl, {
-                scope: this.config.appPath
-            });
-            
-            console.log('[PUSH] SW simplificado registrado:', altRegistration.scope);
-            return altRegistration;
-            
-        } catch (secondError) {
-            console.error('[PUSH] Falha total no SW. Continuando sem notificacoes push.');
-            
-            // Retorna objeto mock para nao quebrar o sistema
-            return {
-                scope: this.config.appPath,
-                pushManager: {
-                    getSubscription: () => Promise.resolve(null),
-                    subscribe: () => Promise.reject(new Error('SW nao disponivel'))
-                },
-                showNotification: () => Promise.reject(new Error('SW nao disponivel'))
-            };
-        }
-    }
-}
-    
-    /**
-     * Solicita permissão para notificações
-     */
-    async requestPermission() {
-        console.log('🔐 Solicitando permissão para notificações...');
-        
-        try {
-            const permission = await Notification.requestPermission();
-            this.state.permission = permission;
-            
-            console.log(`✅ Permissão: ${permission}`);
-            
-            if (permission === 'granted') {
-                // Se permitido, inscrever para push
-                await this.subscribeToPush();
-                this.showToast('Permissão concedida!', 'success');
-            } else if (permission === 'denied') {
-                this.showToast('Permissão negada. Você pode alterar nas configurações do navegador.', 'warning');
-            }
-            
-            this.updateUI();
-            return permission;
-            
-        } catch (error) {
-            console.error('❌ Erro ao solicitar permissão:', error);
-            this.showToast('Erro ao solicitar permissão', 'error');
-            throw error;
-        }
+                    
+                    self.updateUI();
+                    resolve(permission);
+                    
+                } catch (error) {
+                    console.error('Erro ao solicitar permissao:', error);
+                    self.showToast('Erro ao solicitar permissao', 'error');
+                    reject(error);
+                }
+            })();
+        });
     },
     
     /**
-     * Inscreve usuário para notificações push
+     * Inscreve usuario para notificacoes push
      */
-    async subscribeToPush() {
-        console.log('📝 Inscrevendo para notificações push...');
-        
-        try {
-            const serviceWorker = await navigator.serviceWorker.ready;
-            
-            const subscription = await serviceWorker.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: this.urlBase64ToUint8Array(this.config.vapidPublicKey)
-            });
-            
-            console.log('✅ Inscrito para push:', subscription);
-            
-            // Salvar subscription no servidor
-            await this.saveSubscription(subscription);
-            
-            this.state.subscription = subscription;
-            this.state.isSubscribed = true;
-            
-            console.log('📋 Subscription salva no servidor');
-            this.showToast('Notificações ativadas com sucesso!', 'success');
-            
-            this.updateUI();
-            return subscription;
-            
-        } catch (error) {
-            console.error('❌ Erro ao inscrever para push:', error);
-            
-            if (error.name === 'NotAllowedError') {
-                this.showToast('Permissão necessária para notificações push', 'warning');
-            } else {
-                this.showToast('Erro ao ativar notificações', 'error');
-            }
-            
-            throw error;
-        }
+    subscribeToPush: function() {
+        var self = this;
+        return new Promise(function(resolve, reject) {
+            (async function() {
+                try {
+                    console.log('Inscrevendo para notificacoes push...');
+                    
+                    var serviceWorker = await navigator.serviceWorker.ready;
+                    
+                    var subscription = await serviceWorker.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: self.urlBase64ToUint8Array(self.config.vapidPublicKey)
+                    });
+                    
+                    console.log('Inscrito para push:', subscription);
+                    
+                    // Salvar subscription no servidor
+                    await self.saveSubscription(subscription);
+                    
+                    self.state.subscription = subscription;
+                    self.state.isSubscribed = true;
+                    
+                    console.log('Subscription salva no servidor');
+                    self.showToast('Notificacoes ativadas com sucesso!', 'success');
+                    
+                    self.updateUI();
+                    resolve(subscription);
+                    
+                } catch (error) {
+                    console.error('Erro ao inscrever para push:', error);
+                    
+                    if (error.name === 'NotAllowedError') {
+                        self.showToast('Permissao necessaria para notificacoes push', 'warning');
+                    } else {
+                        self.showToast('Erro ao ativar notificacoes', 'error');
+                    }
+                    
+                    reject(error);
+                }
+            })();
+        });
     },
     
     /**
-     * Cancela inscrição nas notificações push
+     * Cancela inscricao nas notificacoes push
      */
-    async unsubscribeFromPush() {
-        console.log('🔕 Cancelando inscrição...');
-        
-        try {
-            const serviceWorker = await navigator.serviceWorker.ready;
-            const subscription = await serviceWorker.pushManager.getSubscription();
-            
-            if (subscription) {
-                await subscription.unsubscribe();
-                await this.deleteSubscription(subscription);
-                
-                this.state.subscription = null;
-                this.state.isSubscribed = false;
-                
-                console.log('✅ Inscrição cancelada');
-                this.showToast('Notificações desativadas', 'info');
-                
-                this.updateUI();
-                return true;
-            }
-            
-            return false;
-            
-        } catch (error) {
-            console.error('❌ Erro ao cancelar inscrição:', error);
-            this.showToast('Erro ao desativar notificações', 'error');
-            throw error;
-        }
+    unsubscribeFromPush: function() {
+        var self = this;
+        return new Promise(function(resolve, reject) {
+            (async function() {
+                try {
+                    console.log('Cancelando inscricao...');
+                    
+                    var serviceWorker = await navigator.serviceWorker.ready;
+                    var subscription = await serviceWorker.pushManager.getSubscription();
+                    
+                    if (subscription) {
+                        await subscription.unsubscribe();
+                        await self.deleteSubscription(subscription);
+                        
+                        self.state.subscription = null;
+                        self.state.isSubscribed = false;
+                        
+                        console.log('Inscricao cancelada');
+                        self.showToast('Notificacoes desativadas', 'info');
+                        
+                        self.updateUI();
+                        resolve(true);
+                    } else {
+                        resolve(false);
+                    }
+                    
+                } catch (error) {
+                    console.error('Erro ao cancelar inscricao:', error);
+                    self.showToast('Erro ao desativar notificacoes', 'error');
+                    reject(error);
+                }
+            })();
+        });
     },
     
     /**
-     * Obtém a subscription atual
+     * Obtem a subscription atual
      */
-    async getSubscription() {
-        try {
-            const serviceWorker = await navigator.serviceWorker.ready;
-            const subscription = await serviceWorker.pushManager.getSubscription();
-            
-            if (subscription) {
-                this.state.subscription = subscription;
-                this.state.isSubscribed = true;
-                console.log('📋 Subscription atual encontrada');
-            } else {
-                this.state.isSubscribed = false;
-                console.log('📭 Nenhuma subscription ativa');
-            }
-            
-            return subscription;
-            
-        } catch (error) {
-            console.error('❌ Erro ao obter subscription:', error);
-            return null;
-        }
+    getSubscription: function() {
+        var self = this;
+        return new Promise(function(resolve) {
+            (async function() {
+                try {
+                    var serviceWorker = await navigator.serviceWorker.ready;
+                    var subscription = await serviceWorker.pushManager.getSubscription();
+                    
+                    if (subscription) {
+                        self.state.subscription = subscription;
+                        self.state.isSubscribed = true;
+                        console.log('Subscription atual encontrada');
+                    } else {
+                        self.state.isSubscribed = false;
+                        console.log('Nenhuma subscription ativa');
+                    }
+                    
+                    resolve(subscription);
+                    
+                } catch (error) {
+                    console.error('Erro ao obter subscription:', error);
+                    resolve(null);
+                }
+            })();
+        });
     },
     
     /**
      * Salva subscription no servidor (Google Apps Script)
      */
-    async saveSubscription(subscription) {
-        try {
-            // Obter dados do usuário logado
-            const usuarioSalvo = localStorage.getItem('usuario_demandas');
-            let usuario = null;
-            
-            if (usuarioSalvo) {
+    saveSubscription: function(subscription) {
+        var self = this;
+        return new Promise(function(resolve, reject) {
+            (async function() {
                 try {
-                    usuario = JSON.parse(usuarioSalvo);
-                } catch (e) {
-                    console.error('Erro ao ler usuário:', e);
+                    // Obter dados do usuario logado
+                    var usuarioSalvo = localStorage.getItem('usuario_demandas');
+                    var usuario = null;
+                    
+                    if (usuarioSalvo) {
+                        try {
+                            usuario = JSON.parse(usuarioSalvo);
+                        } catch (e) {
+                            console.error('Erro ao ler usuario:', e);
+                        }
+                    }
+                    
+                    var subscriptionData = subscription.toJSON();
+                    var dados = {
+                        acao: 'salvarSubscription',
+                        subscription: subscriptionData,
+                        usuario: usuario ? {
+                            email: usuario.email,
+                            nome: usuario.nome,
+                            tipo: usuario.tipo_usuario,
+                            escola: usuario.escola_sre,
+                            departamento: usuario.departamento
+                        } : null,
+                        timestamp: new Date().toISOString(),
+                        userAgent: navigator.userAgent,
+                        endpoint: subscriptionData.endpoint
+                    };
+                    
+                    // Enviar para Google Apps Script
+                    var resultado = await self.enviarParaGoogleAppsScript(dados);
+                    
+                    if (resultado && resultado.sucesso) {
+                        console.log('Subscription salva no servidor');
+                        resolve(true);
+                    } else {
+                        throw new Error(resultado?.erro || 'Erro ao salvar subscription');
+                    }
+                    
+                } catch (error) {
+                    console.error('Erro ao salvar subscription:', error);
+                    
+                    // Fallback: salvar localmente
+                    try {
+                        localStorage.setItem('push_subscription', JSON.stringify(subscription.toJSON()));
+                        console.log('Subscription salva localmente (fallback)');
+                    } catch (e) {
+                        console.error('Nao foi possivel salvar localmente:', e);
+                    }
+                    
+                    resolve(false);
                 }
-            }
-            
-            const subscriptionData = subscription.toJSON();
-            const dados = {
-                acao: 'salvarSubscription',
-                subscription: subscriptionData,
-                usuario: usuario ? {
-                    email: usuario.email,
-                    nome: usuario.nome,
-                    tipo: usuario.tipo_usuario,
-                    escola: usuario.escola_sre,
-                    departamento: usuario.departamento
-                } : null,
-                timestamp: new Date().toISOString(),
-                userAgent: navigator.userAgent,
-                endpoint: subscriptionData.endpoint
-            };
-            
-            // Enviar para Google Apps Script
-            const resultado = await this.enviarParaGoogleAppsScript(dados);
-            
-            if (resultado && resultado.sucesso) {
-                console.log('💾 Subscription salva no servidor');
-                return true;
-            } else {
-                throw new Error(resultado?.erro || 'Erro ao salvar subscription');
-            }
-            
-        } catch (error) {
-            console.error('❌ Erro ao salvar subscription:', error);
-            
-            // Fallback: salvar localmente
-            try {
-                localStorage.setItem('push_subscription', JSON.stringify(subscription.toJSON()));
-                console.log('💾 Subscription salva localmente (fallback)');
-            } catch (e) {
-                console.error('❌ Não foi possível salvar localmente:', e);
-            }
-            
-            return false;
-        }
+            })();
+        });
     },
     
     /**
      * Remove subscription do servidor
      */
-    async deleteSubscription(subscription) {
-        try {
-            const subscriptionData = subscription.toJSON();
-            const dados = {
-                acao: 'removerSubscription',
-                endpoint: subscriptionData.endpoint,
-                timestamp: new Date().toISOString()
-            };
-            
-            await this.enviarParaGoogleAppsScript(dados);
-            console.log('🗑️ Subscription removida do servidor');
-            
-            // Remover localmente
-            localStorage.removeItem('push_subscription');
-            
-        } catch (error) {
-            console.error('❌ Erro ao remover subscription:', error);
-        }
+    deleteSubscription: function(subscription) {
+        var self = this;
+        return new Promise(function(resolve) {
+            (async function() {
+                try {
+                    var subscriptionData = subscription.toJSON();
+                    var dados = {
+                        acao: 'removerSubscription',
+                        endpoint: subscriptionData.endpoint,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    await self.enviarParaGoogleAppsScript(dados);
+                    console.log('Subscription removida do servidor');
+                    
+                    // Remover localmente
+                    localStorage.removeItem('push_subscription');
+                    
+                    resolve();
+                    
+                } catch (error) {
+                    console.error('Erro ao remover subscription:', error);
+                    resolve();
+                }
+            })();
+        });
     },
     
     /**
-     * Envia notificação de teste
+     * Envia notificacao de teste
      */
-    async sendTestNotification() {
-        console.log('🧪 Enviando notificação de teste...');
-        
-        try {
-            const serviceWorker = await navigator.serviceWorker.ready;
-            
-            // Enviar mensagem para o Service Worker
-            if (serviceWorker.active) {
-                serviceWorker.active.postMessage({
-                    type: 'SEND_TEST_NOTIFICATION',
-                    data: {
-                        title: '🔔 Teste de Notificação',
-                        body: 'Esta é uma notificação de teste do sistema de demandas',
-                        timestamp: Date.now()
+    sendTestNotification: function() {
+        var self = this;
+        return new Promise(function(resolve) {
+            (async function() {
+                try {
+                    console.log('Enviando notificacao de teste...');
+                    
+                    var serviceWorker = await navigator.serviceWorker.ready;
+                    
+                    // Enviar mensagem para o Service Worker
+                    if (serviceWorker.active) {
+                        serviceWorker.active.postMessage({
+                            type: 'SEND_TEST_NOTIFICATION',
+                            data: {
+                                title: 'Teste de Notificacao',
+                                body: 'Esta e uma notificacao de teste do sistema',
+                                timestamp: Date.now()
+                            }
+                        });
+                        
+                        self.showToast('Notificacao de teste enviada!', 'success');
+                        resolve(true);
+                    } else {
+                        resolve(false);
                     }
-                });
-                
-                this.showToast('Notificação de teste enviada!', 'success');
-                return true;
-            }
-            
-            return false;
-            
-        } catch (error) {
-            console.error('❌ Erro ao enviar teste:', error);
-            this.showToast('Erro ao enviar teste', 'error');
-            return false;
-        }
+                    
+                } catch (error) {
+                    console.error('Erro ao enviar teste:', error);
+                    self.showToast('Erro ao enviar teste', 'error');
+                    resolve(false);
+                }
+            })();
+        });
     },
     
     /**
-     * Envia notificação personalizada
+     * Envia notificacao personalizada
      */
-    async sendCustomNotification(dados) {
-        try {
-            const serviceWorker = await navigator.serviceWorker.ready;
-            
-            if (serviceWorker.active) {
-                serviceWorker.active.postMessage({
-                    type: 'SEND_CUSTOM_NOTIFICATION',
-                    data: {
-                        title: dados.titulo || 'Sistema de Demandas',
-                        body: dados.mensagem || 'Nova atualização',
-                        icon: dados.icone || this.config.appPath + 'public/icons/192x192.png',
-                        url: dados.url || this.config.appPath + 'index.html',
-                        demandaId: dados.demandaId,
-                        userId: dados.userId,
-                        important: dados.importante || false,
-                        actions: dados.acoes || [],
-                        vibrate: [200, 100, 200],
-                        tag: dados.tag || 'custom-notification'
+    sendCustomNotification: function(dados) {
+        var self = this;
+        return new Promise(function(resolve) {
+            (async function() {
+                try {
+                    var serviceWorker = await navigator.serviceWorker.ready;
+                    
+                    if (serviceWorker.active) {
+                        serviceWorker.active.postMessage({
+                            type: 'SEND_CUSTOM_NOTIFICATION',
+                            data: {
+                                title: dados.titulo || 'Sistema de Demandas',
+                                body: dados.mensagem || 'Nova atualizacao',
+                                icon: dados.icone || self.config.appPath + 'public/icons/192x192.png',
+                                url: dados.url || self.config.appPath + 'index.html',
+                                demandaId: dados.demandaId,
+                                userId: dados.userId,
+                                important: dados.importante || false,
+                                actions: dados.acoes || [],
+                                vibrate: [200, 100, 200],
+                                tag: dados.tag || 'custom-notification'
+                            }
+                        });
+                        
+                        console.log('Notificacao personalizada enviada:', dados);
+                        resolve(true);
+                    } else {
+                        resolve(false);
                     }
-                });
-                
-                console.log('📤 Notificação personalizada enviada:', dados);
-                return true;
-            }
-            
-            return false;
-            
-        } catch (error) {
-            console.error('❌ Erro ao enviar notificação personalizada:', error);
-            return false;
-        }
+                    
+                } catch (error) {
+                    console.error('Erro ao enviar notificacao personalizada:', error);
+                    resolve(false);
+                }
+            })();
+        });
     },
     
     /**
      * Configura listeners de eventos
      */
-    setupEventListeners() {
-        // Listener para mudanças de permissão
+    setupEventListeners: function() {
+        var self = this;
+        
+        // Listener para mudancas de permissao
         if ('permissions' in navigator) {
             navigator.permissions.query({ name: 'notifications' })
-                .then(permissionStatus => {
-                    permissionStatus.onchange = () => {
-                        this.state.permission = Notification.permission;
-                        this.updateUI();
-                        console.log('🔄 Permissão alterada:', this.state.permission);
+                .then(function(permissionStatus) {
+                    permissionStatus.onchange = function() {
+                        self.state.permission = Notification.permission;
+                        self.updateUI();
+                        console.log('Permissao alterada:', self.state.permission);
                     };
                 });
-        }
-        
-        // Listener para clique em notificação (quando app já está aberto)
-        window.addEventListener('focus', () => {
-            this.checkForPendingNotifications();
-        });
-    },
-    
-    /**
-     * Verifica notificações pendentes
-     */
-    async checkForPendingNotifications() {
-        try {
-            // Implementar lógica para verificar notificações pendentes
-            // quando o usuário volta ao app
-            console.log('🔍 Verificando notificações pendentes...');
-            
-        } catch (error) {
-            console.error('❌ Erro ao verificar notificações:', error);
         }
     },
     
     /**
      * Atualiza a interface com o status atual
      */
-    updateUI() {
-        // Atualizar botões/toggles na interface
-        const toggleElement = document.getElementById('toggle-push');
-        const statusElement = document.getElementById('push-status');
-        const buttonElement = document.getElementById('btn-activate-push');
-        
-        if (toggleElement) {
-            toggleElement.checked = this.state.isSubscribed && this.state.permission === 'granted';
-            toggleElement.disabled = this.state.permission === 'denied';
-        }
-        
-        if (statusElement) {
-            let statusText = '';
-            let statusClass = '';
-            
-            if (!this.state.isSupported) {
-                statusText = 'Navegador não suporta notificações';
-                statusClass = 'error';
-            } else if (this.state.permission === 'granted' && this.state.isSubscribed) {
-                statusText = '✅ Notificações ativas';
-                statusClass = 'success';
-            } else if (this.state.permission === 'granted' && !this.state.isSubscribed) {
-                statusText = '⚠️ Permissão concedida, mas não inscrito';
-                statusClass = 'warning';
-            } else if (this.state.permission === 'denied') {
-                statusText = '❌ Permissão negada. Ative nas configurações do navegador.';
-                statusClass = 'error';
-            } else {
-                statusText = '⏳ Aguardando permissão...';
-                statusClass = 'info';
-            }
-            
-            statusElement.textContent = statusText;
-            statusElement.className = `notification-status ${statusClass}`;
-        }
-        
-        if (buttonElement) {
-            if (this.state.permission === 'default') {
-                buttonElement.textContent = 'Ativar Notificações';
-                buttonElement.disabled = false;
-            } else if (this.state.permission === 'granted' && !this.state.isSubscribed) {
-                buttonElement.textContent = 'Completar Ativação';
-                buttonElement.disabled = false;
-            } else if (this.state.permission === 'granted' && this.state.isSubscribed) {
-                buttonElement.textContent = 'Notificações Ativas';
-                buttonElement.disabled = true;
-                buttonElement.classList.add('active');
-            } else {
-                buttonElement.textContent = 'Permissão Negada';
-                buttonElement.disabled = true;
-            }
+    updateUI: function() {
+        // Esta funcao sera implementada pelo app.js
+        if (typeof window.atualizarStatusNotificacoes === 'function') {
+            var info = this.getInfo();
+            window.atualizarStatusNotificacoes(info);
         }
     },
     
     /**
-     * Obtém informações do sistema
+     * Obtem informacoes do sistema
      */
-    getInfo() {
+    getInfo: function() {
         return {
             supported: this.state.isSupported,
             permission: this.state.permission,
@@ -531,9 +484,9 @@ const PushNotificationSystem = {
     /**
      * Envia dados para Google Apps Script
      */
-    async enviarParaGoogleAppsScript(dados) {
-        return new Promise((resolve, reject) => {
-            const callbackName = 'callback_' + Date.now();
+    enviarParaGoogleAppsScript: function(dados) {
+        return new Promise(function(resolve, reject) {
+            var callbackName = 'callback_' + Date.now();
             
             window[callbackName] = function(resposta) {
                 delete window[callbackName];
@@ -545,35 +498,35 @@ const PushNotificationSystem = {
                 }
             };
             
-            const script = document.createElement('script');
-            let url = this.config.googleScriptUrl;
+            var script = document.createElement('script');
+            var url = this.config.googleScriptUrl;
             url += '?callback=' + encodeURIComponent(callbackName);
             url += '&dados=' + encodeURIComponent(JSON.stringify(dados));
             url += '&_=' + Date.now();
             
             script.src = url;
-            script.onerror = () => {
+            script.onerror = function() {
                 delete window[callbackName];
-                reject(new Error('Falha na conexão com o servidor'));
+                reject(new Error('Falha na conexao com o servidor'));
             };
             
             document.body.appendChild(script);
-        });
+        }.bind(this));
     },
     
     /**
      * Converte chave VAPID de base64 para Uint8Array
      */
-    urlBase64ToUint8Array(base64String) {
-        const padding = '='.repeat((4 - base64String.length % 4) % 4);
-        const base64 = (base64String + padding)
+    urlBase64ToUint8Array: function(base64String) {
+        var padding = '='.repeat((4 - base64String.length % 4) % 4);
+        var base64 = (base64String + padding)
             .replace(/\-/g, '+')
             .replace(/_/g, '/');
         
-        const rawData = atob(base64);
-        const outputArray = new Uint8Array(rawData.length);
+        var rawData = atob(base64);
+        var outputArray = new Uint8Array(rawData.length);
         
-        for (let i = 0; i < rawData.length; ++i) {
+        for (var i = 0; i < rawData.length; ++i) {
             outputArray[i] = rawData.charCodeAt(i);
         }
         
@@ -583,11 +536,11 @@ const PushNotificationSystem = {
     /**
      * Mostra toast message
      */
-    showToast(mensagem, tipo = 'info') {
+    showToast: function(mensagem, tipo) {
         if (typeof window.mostrarToast === 'function') {
-            window.mostrarToast('Notificações', mensagem, tipo);
+            window.mostrarToast('Notificacoes', mensagem, tipo);
         } else {
-            console.log(`📢 ${tipo.toUpperCase()}: ${mensagem}`);
+            console.log(tipo.toUpperCase() + ': ' + mensagem);
         }
     }
 };
@@ -595,15 +548,4 @@ const PushNotificationSystem = {
 // Exportar para uso global
 window.PushNotificationSystem = PushNotificationSystem;
 
-// Inicializar automaticamente quando a página carregar
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        PushNotificationSystem.initialize().then(success => {
-            if (success) {
-                console.log('🚀 Sistema de notificações push pronto!');
-            }
-        });
-    }, 2000);
-});
-
-console.log('✅ PushNotificationSystem carregado!');
+console.log('PushNotificationSystem carregado!');
