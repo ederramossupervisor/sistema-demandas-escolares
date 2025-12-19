@@ -3,15 +3,6 @@
 // Arquivo: app.js
 // Lógica principal da interface COM SPLASH SCREEN
 // ============================================
-if (typeof PushNotificationSystem === 'undefined') {
-    console.warn('⚠️ PushNotificationSystem não carregado, criando fallback...');
-    
-    window.PushNotificationSystem = {
-        initialize: () => Promise.resolve(false),
-        getInfo: () => ({ supported: false }),
-        requestPermission: () => Promise.resolve('default')
-    };
-}
 // CONFIGURAÇÕES GLOBAIS
 const APP_CONFIG = {
     schools: [
