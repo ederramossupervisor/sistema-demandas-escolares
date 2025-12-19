@@ -3724,53 +3724,42 @@ async function getFCMToken() {
 /**
  * 💾 SALVA TOKEN FCM NO SERVIDOR
  */
-async function salvarTokenFCMNoServidor(fcmToken) {
-    try {
-        console.log("💾 Salvando token FCM no servidor...");
-        
-        // Obter dados do usuário logado
-        let usuarioLogado;
-        try {
-            const usuarioSalvo = localStorage.getItem('usuario_demandas');
-            usuarioLogado = usuarioSalvo ? JSON.parse(usuarioSalvo) : null;
-        } catch (e) {
-            usuarioLogado = null;
-        }
-        
-        if (!usuarioLogado || !usuarioLogado.email) {
-            console.warn("⚠️ Usuário não logado, token não será salvo no servidor");
-            return false;
-        }
-        
-        const dados = {
-            acao: "salvarSubscription",
-            tipo: "firebase",
-            fcmToken: fcmToken,
-            usuario: {
-                email: usuarioLogado.email,
-                nome: usuarioLogado.nome || "Usuário",
-                departamento: usuarioLogado.departamento || "Não definido"
-            },
-            timestamp: new Date().toISOString()
-        };
-        
-        // Usar sua função existente para chamar o servidor
-        const resposta = await fazerRequisicaoServidor(dados);
-        
+async function salvarTokenFCMNoServidor(token) {
+  try {
+    console.log(`💾 Salvando token FCM via JSONP...`);
+    
+    // Usar a mesma função JSONP que já funciona
+    await new Promise((resolve, reject) => {
+      window.salvarTokenCallback = function(resposta) {
         if (resposta && resposta.sucesso) {
-            console.log("✅ Token FCM salvo no servidor com sucesso!");
-            return true;
+          console.log("✅ Token salvo no servidor via JSONP");
+          resolve();
         } else {
-            console.warn("⚠️ Não foi possível salvar token no servidor:", resposta?.erro || "Erro desconhecido");
-            return false;
+          console.error("❌ Erro ao salvar token via JSONP");
+          reject(new Error('Falha ao salvar token'));
         }
-        
-    } catch (erro) {
-        console.error("❌ Erro ao salvar token no servidor:", erro);
-        return false;
-    }
+      };
+      
+      // Criar script JSONP
+      const script = document.createElement('script');
+      const usuario = obterUsuarioLogado();
+      const url = `https://script.google.com/macros/s/AKfycbwPHLUnKJO-LWPcw4uSBbDXJz5ej2SyUcGkJtARQfPUDOPVQDVLM60Mqqu5U5xRS8OiqA/exec?callback=salvarTokenCallback&acao=salvarTokenFCM&token=${encodeURIComponent(token)}&usuario=${encodeURIComponent(usuario.nome)}&tipo=${encodeURIComponent(usuario.tipo)}&escola=${encodeURIComponent(usuario.escola)}`;
+      
+      script.src = url;
+      document.head.appendChild(script);
+      
+      // Limpar após 10 segundos
+      setTimeout(() => {
+        document.head.removeChild(script);
+        delete window.salvarTokenCallback;
+      }, 10000);
+    });
+    
+  } catch (error) {
+    console.warn("⚠️ Não foi possível salvar token via JSONP:", error);
+    // Não é crítico se falhar, o sistema ainda funciona
+  }
 }
-
 /**
  * 🔄 OBTÉM TOKEN WEB PUSH (FALLBACK)
  */
@@ -3845,49 +3834,40 @@ function urlBase64ToUint8Array(base64String) {
 /**
  * 🔧 CONFIGURA LISTENERS PARA ATUALIZAÇÕES DO TOKEN FCM
  */
-function configurarListenersFCM(messaging, currentToken) {
-    try {
-        // Listener para quando o token for atualizado
-        messaging.onTokenRefresh(async () => {
-            console.log("🔄 Token FCM está sendo atualizado...");
-            
-            try {
-                const newToken = await messaging.getToken();
-                console.log("✅ Novo token FCM gerado:", newToken.substring(0, 50) + "...");
-                
-                // Salvar novo token no servidor
-                await salvarTokenFCMNoServidor(newToken);
-                
-                // Atualizar token local
-                fcmTokenAtual = newToken;
-                localStorage.setItem('fcm_token', newToken);
-                
-                console.log("🔄 Token atualizado com sucesso no servidor");
-            } catch (refreshError) {
-                console.error("❌ Erro ao atualizar token FCM:", refreshError);
-            }
-        });
-        
-        // Listener para mensagens em foreground
-        messaging.onMessage((payload) => {
-            console.log("📨 Mensagem FCM recebida em foreground:", payload);
-            
-            // Mostrar notificação mesmo estando na aplicação
-            if (payload.notification) {
-                const { title, body } = payload.notification;
-                
-                // Mostrar notificação no sistema
-                mostrarNotificacaoLocal(title, body, payload.data);
-            }
-        });
-        
-        console.log("✅ Listeners FCM configurados com sucesso");
-        
-    } catch (listenerError) {
-        console.error("❌ Erro ao configurar listeners FCM:", listenerError);
+async function configurarListenersFCM(messaging) {
+  try {
+    console.log("🔧 Configurando listeners FCM...");
+    
+    // Método moderno para token refresh
+    messaging.onMessage((payload) => {
+      console.log("📩 Mensagem recebida em foreground:", payload);
+      mostrarNotificacao(payload.notification);
+    });
+    
+    // Verificar se o método existe antes de chamar
+    if (messaging.onTokenRefresh) {
+      messaging.onTokenRefresh(async () => {
+        console.log("🔄 Token FCM atualizado automaticamente");
+        await getFCMToken(messaging);
+      });
+    } else {
+      console.log("ℹ️ onTokenRefresh não disponível, usando alternativa");
+      // Alternativa: monitorar periodicamente
+      setInterval(async () => {
+        try {
+          const token = await messaging.getToken({ vapidKey: 'SEU_VAPID_KEY_AQUI' });
+          console.log("🔄 Token verificado periodicamente");
+        } catch (error) {
+          console.error("❌ Erro ao verificar token:", error);
+        }
+      }, 24 * 60 * 60 * 1000); // Verificar a cada 24 horas
     }
+    
+    console.log("✅ Listeners FCM configurados com sucesso!");
+  } catch (error) {
+    console.error("❌ Erro ao configurar listeners FCM:", error);
+  }
 }
-
 /**
  * 📨 MOSTRAR NOTIFICAÇÃO LOCAL NO APP
  */
