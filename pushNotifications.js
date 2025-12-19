@@ -150,65 +150,440 @@ const PushNotificationSystem = {
     },
     
     /**
-     * Obtém token FCM do Firebase
-     */
-    getFCMToken: function() {
-        var self = this;
-        return new Promise(function(resolve, reject) {
-            (async function() {
-                try {
-                    if (typeof firebase === 'undefined' || !firebase.messaging) {
-                        throw new Error('Firebase não carregado');
-                    }
-                    
-                    // Inicializar Firebase se necessário
-                    if (!firebase.apps.length) {
-                        console.log('🔥 Firebase não inicializado, usando Web Push');
-                        throw new Error('Firebase não inicializado');
-                    }
-                    
-                    const messaging = firebase.messaging();
-                    
-                    // Solicitar permissão se ainda não tem
-                    if (self.state.permission === 'default') {
-                        self.state.permission = await Notification.requestPermission();
-                    }
-                    
-                    if (self.state.permission !== 'granted') {
-                        throw new Error('Permissão negada: ' + self.state.permission);
-                    }
-                    
-                    // Obter token FCM
-                    const token = await messaging.getToken({
-                        vapidKey: self.config.vapidPublicKey,
-                        serviceWorkerRegistration: await navigator.serviceWorker.ready
-                    });
-                    
-                    if (!token) {
-                        throw new Error('Token FCM não gerado');
-                    }
-                    
-                    console.log('✅ Token FCM obtido:', token.substring(0, 50) + '...');
-                    
-                    // Salvar no servidor
-                    await self.saveFCMToken(token);
-                    
-                    self.state.fcmToken = token;
-                    self.state.isSubscribed = true;
-                    self.state.subscription = {
-                        endpoint: `https://fcm.googleapis.com/fcm/send/${token}`,
-                        token: token
-                    };
-                    
-                    resolve(token);
-                    
-                } catch (error) {
-                    console.error('❌ Erro no Firebase FCM:', error);
-                    reject(error);
-                }
-            })();
-        });
-    },
+ * 🔥 OBTÉM TOKEN FCM DO FIREBASE MESSAGING
+ * Tenta obter o token FCM do Firebase com fallback para Web Push
+ * @returns {Promise<string|null>} Token FCM ou null se falhar
+ */
+async function getFCMToken() {
+  console.log("🔥 Iniciando obtenção de token FCM...");
+  
+  try {
+    // 1. VERIFICAR SE O FIREBASE ESTÁ DISPONÍVEL
+    if (typeof firebase === 'undefined' || !firebase.messaging) {
+      console.warn("⚠️ Firebase Messaging não disponível no navegador");
+      throw new Error("Firebase não carregado");
+    }
+    
+    // 2. OBTER INSTÂNCIA DO MESSAGING
+    const messaging = firebase.messaging();
+    
+    // 3. VERIFICAR/OBTER PERMISSÃO PARA NOTIFICAÇÕES
+    const permissaoAtual = Notification.permission;
+    
+    if (permissaoAtual === 'denied') {
+      console.warn("❌ Permissão para notificações foi negada pelo usuário");
+      throw new Error("Permissão para notificações negada");
+    }
+    
+    if (permissaoAtual === 'default') {
+      console.log("🔔 Solicitando permissão para notificações...");
+      const novaPermissao = await Notification.requestPermission();
+      
+      if (novaPermissao !== 'granted') {
+        console.warn("❌ Usuário não concedeu permissão para notificações");
+        throw new Error("Permissão não concedida");
+      }
+      
+      console.log("✅ Permissão para notificações concedida!");
+    }
+    
+    // 4. REGISTRAR SERVICE WORKER ESPECÍFICO DO FIREBASE
+    console.log("👷 Registrando Service Worker do Firebase...");
+    
+    // Certifique-se de que o caminho do service worker está correto
+    const serviceWorkerPath = '/sistema-demandas-escolares/sw-notificacoes.js';
+    
+    let registration;
+    try {
+      registration = await navigator.serviceWorker.register(serviceWorkerPath, {
+        scope: '/sistema-demandas-escolares/'
+      });
+      
+      console.log("✅ Service Worker registrado com sucesso:", registration.scope);
+      
+      // Aguardar o service worker estar ativo
+      await navigator.serviceWorker.ready;
+      console.log("✅ Service Worker está pronto!");
+      
+    } catch (swError) {
+      console.error("❌ Erro ao registrar Service Worker:", swError);
+      throw new Error(`Falha no Service Worker: ${swError.message}`);
+    }
+    
+    // 5. OBTER TOKEN FCM COM VAPID KEY
+    console.log("🔐 Gerando token FCM...");
+    
+    // VAPID KEY do seu projeto Firebase (VERIFIQUE SE ESTÁ CORRETA!)
+    const vapidKey = "BEOHDwWjTbmMFmT8RQl6T6CF4GPC9EjrEVuVkSaCgfgWg4cI68s6LRlIL196LCRjEWr6AEMMHhrjW4OXtrKwUsw";
+    
+    if (!vapidKey || vapidKey.length < 10) {
+      throw new Error("VAPID Key inválida ou não configurada");
+    }
+    
+    const fcmToken = await messaging.getToken({
+      vapidKey: vapidKey,
+      serviceWorkerRegistration: registration
+    });
+    
+    if (!fcmToken) {
+      throw new Error("Firebase não retornou token FCM");
+    }
+    
+    console.log("✅ TOKEN FCM OBTIDO COM SUCESSO!");
+    console.log("📋 Token (primeiros 50 chars):", fcmToken.substring(0, 50) + "...");
+    console.log("📏 Comprimento total:", fcmToken.length, "caracteres");
+    
+    // 6. ✅ SALVAR TOKEN NO SERVIDOR (APÓS OBTENÇÃO BEM-SUCEDIDA)
+    await salvarTokenFCMNoServidor(fcmToken);
+    
+    // 7. CONFIGURAR LISTENERS PARA ATUALIZAÇÕES DO TOKEN
+    configurarListenersFCM(messaging, fcmToken);
+    
+    return fcmToken;
+    
+  } catch (erro) {
+    console.error("❌ FALHA AO OBTER TOKEN FCM:", erro);
+    
+    // 8. 🔄 FALLBACK: TENTAR WEB PUSH PADRÃO
+    console.log("🔄 Tentando fallback para Web Push padrão...");
+    
+    try {
+      const webPushToken = await getWebPushToken();
+      if (webPushToken) {
+        console.log("✅ Token Web Push obtido como fallback");
+        return webPushToken;
+      }
+    } catch (webPushError) {
+      console.error("❌ Fallback Web Push também falhou:", webPushError);
+    }
+    
+    return null;
+  }
+}
+
+// ============================================
+// FUNÇÕES AUXILIARES
+// ============================================
+
+/**
+ * 💾 SALVA TOKEN FCM NO SERVIDOR
+ * @param {string} fcmToken - Token FCM a ser salvo
+ */
+async function salvarTokenFCMNoServidor(fcmToken) {
+  try {
+    console.log("💾 Salvando token FCM no servidor...");
+    
+    // Obter dados do usuário logado (você precisa implementar esta função)
+    const usuarioLogado = obterUsuarioLogado();
+    
+    if (!usuarioLogado || !usuarioLogado.email) {
+      console.warn("⚠️ Usuário não logado, token não será salvo no servidor");
+      return false;
+    }
+    
+    const dados = {
+      acao: "salvarSubscription",
+      tipo: "firebase",
+      fcmToken: fcmToken,
+      usuario: {
+        email: usuarioLogado.email,
+        nome: usuarioLogado.nome || "Usuário",
+        departamento: usuarioLogado.departamento || "Não definido"
+      },
+      timestamp: new Date().toISOString()
+    };
+    
+    // Usar sua função existente para chamar o servidor
+    const resposta = await fazerRequisicaoServidor(dados);
+    
+    if (resposta && resposta.sucesso) {
+      console.log("✅ Token FCM salvo no servidor com sucesso!");
+      return true;
+    } else {
+      console.warn("⚠️ Não foi possível salvar token no servidor:", resposta?.erro || "Erro desconhecido");
+      return false;
+    }
+    
+  } catch (erro) {
+    console.error("❌ Erro ao salvar token no servidor:", erro);
+    return false;
+  }
+}
+
+/**
+ * 🔄 OBTÉM TOKEN WEB PUSH (FALLBACK)
+ * @returns {Promise<string|null>} Endpoint Web Push ou null
+ */
+async function getWebPushToken() {
+  try {
+    console.log("🌐 Tentando Web Push padrão...");
+    
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      throw new Error("Web Push não suportado pelo navegador");
+    }
+    
+    // Registrar service worker
+    const registration = await navigator.serviceWorker.register('/sistema-demandas-escolares/sw-notificacoes.js', {
+      scope: '/sistema-demandas-escolares/'
+    });
+    
+    // Obter subscription existente
+    let subscription = await registration.pushManager.getSubscription();
+    
+    if (!subscription) {
+      console.log("🔔 Criando nova subscription Web Push...");
+      
+      // VAPID Key pública (mesma do Firebase)
+      const vapidKey = "BEOHDwWjTbmMFmT8RQl6T6CF4GPC9EjrEVuVkSaCgfgWg4cI68s6LRlIL196LCRjEWr6AEMMHhrjW4OXtrKwUsw";
+      const applicationServerKey = urlBase64ToUint8Array(vapidKey);
+      
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: applicationServerKey
+      });
+      
+      console.log("✅ Nova subscription Web Push criada");
+    }
+    
+    const endpoint = subscription.endpoint;
+    console.log("✅ Endpoint Web Push:", endpoint);
+    
+    // Salvar no servidor como Web Push
+    await salvarWebPushNoServidor(subscription);
+    
+    return endpoint;
+    
+  } catch (erro) {
+    console.error("❌ Erro no Web Push:", erro);
+    throw erro;
+  }
+}
+
+/**
+ * 🔧 CONFIGURA LISTENERS PARA ATUALIZAÇÕES DO TOKEN FCM
+ * @param {Object} messaging - Instância do Firebase Messaging
+ * @param {string} currentToken - Token FCM atual
+ */
+function configurarListenersFCM(messaging, currentToken) {
+  try {
+    // Listener para quando o token for atualizado (ex: refresh)
+    messaging.onTokenRefresh(async () => {
+      console.log("🔄 Token FCM está sendo atualizado...");
+      
+      try {
+        const newToken = await messaging.getToken();
+        console.log("✅ Novo token FCM gerado:", newToken.substring(0, 50) + "...");
+        
+        // Salvar novo token no servidor
+        await salvarTokenFCMNoServidor(newToken);
+        
+        console.log("🔄 Token atualizado com sucesso no servidor");
+      } catch (refreshError) {
+        console.error("❌ Erro ao atualizar token FCM:", refreshError);
+      }
+    });
+    
+    // Listener para mensagens em foreground
+    messaging.onMessage((payload) => {
+      console.log("📨 Mensagem FCM recebida em foreground:", payload);
+      
+      // Mostrar notificação mesmo estando na aplicação
+      if (payload.notification) {
+        const { title, body } = payload.notification;
+        
+        // Você pode mostrar uma notificação customizada no seu app
+        mostrarNotificacaoApp(title, body, payload.data);
+      }
+    });
+    
+    console.log("✅ Listeners FCM configurados com sucesso");
+    
+  } catch (listenerError) {
+    console.error("❌ Erro ao configurar listeners FCM:", listenerError);
+  }
+}
+
+/**
+ * 🔧 CONVERTE CHAVE VAPID BASE64 PARA UINT8ARRAY
+ * @param {string} base64String - Chave pública VAPID em base64
+ * @returns {Uint8Array}
+ */
+function urlBase64ToUint8Array(base64String) {
+  if (!base64String) {
+    throw new Error("String base64 vazia");
+  }
+  
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/\-/g, '+')
+    .replace(/_/g, '/');
+  
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  
+  return outputArray;
+}
+
+/**
+ * 👤 OBTÉM USUÁRIO LOGADO (VOCÊ PRECISA IMPLEMENTAR)
+ * @returns {Object|null} Dados do usuário logado
+ */
+function obterUsuarioLogado() {
+  // Esta função deve retornar os dados do usuário logado
+  // Exemplo de implementação:
+  
+  // 1. Verificar localStorage/sessionStorage
+  try {
+    const usuarioSalvo = localStorage.getItem('usuario_demandas');
+    if (usuarioSalvo) {
+      return JSON.parse(usuarioSalvo);
+    }
+  } catch (e) {
+    console.warn("Não foi possível ler usuário do localStorage:", e);
+  }
+  
+  // 2. Verificar variável global do seu app
+  if (window.usuarioAtual && window.usuarioAtual.email) {
+    return window.usuarioAtual;
+  }
+  
+  // 3. Retornar dados padrão se não encontrar
+  return {
+    email: "usuario@exemplo.com",
+    nome: "Usuário Convidado",
+    departamento: "Não definido"
+  };
+}
+
+/**
+ * 📨 FUNÇÃO PARA MOSTRAR NOTIFICAÇÃO NO APP
+ * @param {string} title - Título da notificação
+ * @param {string} body - Corpo da notificação
+ * @param {Object} data - Dados adicionais
+ */
+function mostrarNotificacaoApp(title, body, data) {
+  // Implemente esta função para mostrar notificações dentro do seu app
+  // Pode ser um toast, modal, ou atualização de interface
+  
+  console.log("📢 Mostrar notificação no app:", { title, body, data });
+  
+  // Exemplo simples com alerta (substitua por sua UI)
+  if (window.showAppNotification) {
+    window.showAppNotification(title, body, data);
+  }
+}
+
+// ============================================
+// INICIALIZAÇÃO AUTOMÁTICA
+// ============================================
+
+/**
+ * 🚀 INICIALIZA O SISTEMA DE NOTIFICAÇÕES
+ * Esta função deve ser chamada quando o app carregar
+ */
+async function inicializarSistemaNotificacoes() {
+  console.log("🚀 Inicializando sistema de notificações...");
+  
+  try {
+    // Verificar se o navegador suporta notificações
+    if (!('Notification' in window)) {
+      console.warn("⚠️ Este navegador não suporta notificações");
+      return null;
+    }
+    
+    // Aguardar um pouco para o app carregar completamente
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Verificar se o usuário já está logado
+    const usuario = obterUsuarioLogado();
+    if (!usuario || !usuario.email) {
+      console.log("⏳ Aguardando login do usuário para notificações...");
+      return null;
+    }
+    
+    // Tentar obter token FCM
+    const token = await getFCMToken();
+    
+    if (token) {
+      console.log("🎉 Sistema de notificações inicializado com sucesso!");
+      console.log("📊 Token ativo:", token.substring(0, 30) + "...");
+      
+      // Armazenar token globalmente se necessário
+      window.fcmTokenAtual = token;
+      
+      return token;
+    } else {
+      console.warn("⚠️ Sistema de notificações não pôde ser inicializado");
+      return null;
+    }
+    
+  } catch (erro) {
+    console.error("❌ Erro na inicialização do sistema de notificações:", erro);
+    return null;
+  }
+}
+
+// ============================================
+// FUNÇÃO PARA CHAMAR O SERVIDOR (ADAPTE À SUA IMPLEMENTAÇÃO)
+// ============================================
+
+/**
+ * 📡 FAZ REQUISIÇÃO AO SERVIDOR GOOGLE APPS SCRIPT
+ * @param {Object} dados - Dados a serem enviados
+ * @returns {Promise<Object>} Resposta do servidor
+ */
+async function fazerRequisicaoServidor(dados) {
+  // Esta é a função que você já usa para chamar seu backend
+  // Mantenha sua implementação atual
+  
+  const url = "https://script.google.com/macros/s/AKfycbyDIgMxkwXcsOvEy68MblMq9MESAvkAu23u39J04ILefk3E3SuxWtJPOHz-94vhJtrNfA/exec";
+  
+  try {
+    const resposta = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(dados)
+    });
+    
+    return await resposta.json();
+  } catch (erro) {
+    console.error("❌ Erro na requisição ao servidor:", erro);
+    return { sucesso: false, erro: erro.message };
+  }
+}
+
+/**
+ * 💾 SALVA SUBSCRIPTION WEB PUSH NO SERVIDOR
+ * @param {PushSubscription} subscription - Subscription Web Push
+ */
+async function salvarWebPushNoServidor(subscription) {
+  try {
+    const usuarioLogado = obterUsuarioLogado();
+    
+    const dados = {
+      acao: "salvarSubscription",
+      tipo: "webpush",
+      subscription: subscription.toJSON(),
+      usuario: usuarioLogado
+    };
+    
+    const resposta = await fazerRequisicaoServidor(dados);
+    
+    if (resposta.sucesso) {
+      console.log("✅ Web Push salvo no servidor");
+    } else {
+      console.warn("⚠️ Web Push não foi salvo:", resposta.erro);
+    }
+  } catch (erro) {
+    console.error("❌ Erro ao salvar Web Push:", erro);
+  }
+},
     
     /**
      * Obtém subscription Web Push padrão
