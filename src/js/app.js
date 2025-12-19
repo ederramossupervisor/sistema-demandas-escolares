@@ -471,16 +471,20 @@ async function carregarDemandas() {
         // 4. Atualizar estatísticas
         atualizarEstatisticas();
         
-        // 5. Atualizar o bloco "Demandas" com números reais
-        // Usamos try-catch para não parar se der erro nas estatísticas
+                // 5. Atualizar o bloco "Demandas" com números reais
         try {
+            // Usamos setTimeout para não interferir no carregamento principal
             setTimeout(function() {
-    try {
-        atualizarBlocoEstatisticas(demandas);
-    } catch (erro) {
-        console.log("⚠️ Erro não crítico nas estatísticas: " + erro.message);
-    }
-}, 100);
+                try {
+                    atualizarBlocoEstatisticas(demandas);
+                } catch (erro) {
+                    console.log("⚠️ Erro não crítico nas estatísticas: " + erro.message);
+                }
+            }, 100);
+        } catch (erro) {
+            console.log("⚠️ Erro externo nas estatísticas: " + erro.message);
+        }
+        
         // 6. Se não houver demandas, mostrar mensagem
         if (demandas.length === 0) {
             mostrarToast('Info', 'Nenhuma demanda cadastrada ainda.', 'info');
