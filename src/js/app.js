@@ -3752,7 +3752,7 @@ async function salvarTokenFCMNoServidor(token) {
       };
       
       // 4. Montar URL do JEITO CERTO para JSONP
-      const url = `https://script.google.com/macros/s/AKfycbwPHLUnKJO-LWPcw4uSBbDXJz5ej2SyUcGkJtARQfPUDOPVQDVLM60Mqqu5U5xRS8OiqA/exec?callback=${callbackName}&acao=salvarSubscription&fcmToken=${encodeURIComponent(token)}&tipo=firebase&usuario=${encodeURIComponent(JSON.stringify(usuario))}`;
+      const url = `https://script.google.com/macros/s/AKfycbwfLZDqCBVfBUVnvOODB7Ws8bySdrGsZuxY6nusAtlv1_fD4qBCWprznPRD-V0KvjgUcg/exec?callback=${callbackName}&acao=salvarSubscription&fcmToken=${encodeURIComponent(token)}&tipo=firebase&usuario=${encodeURIComponent(JSON.stringify(usuario))}`;
       
       console.log("📡 Enviando token via JSONP...");
       
