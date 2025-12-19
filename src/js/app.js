@@ -3,7 +3,15 @@
 // Arquivo: app.js
 // Lógica principal da interface COM SPLASH SCREEN
 // ============================================
-
+if (typeof PushNotificationSystem === 'undefined') {
+    console.warn('⚠️ PushNotificationSystem não carregado, criando fallback...');
+    
+    window.PushNotificationSystem = {
+        initialize: () => Promise.resolve(false),
+        getInfo: () => ({ supported: false }),
+        requestPermission: () => Promise.resolve('default')
+    };
+}
 // CONFIGURAÇÕES GLOBAIS
 const APP_CONFIG = {
     schools: [
@@ -620,17 +628,48 @@ function renderizarDemandas() {
 function renderizarDemandasNaLista() {
     console.log("🎯 Renderizando demandas na LISTA...");
     
-    // 1. Encontrar o container da lista
-    const listaContainer = document.querySelector('.demandas-lista-container');
+    // 1. Encontrar o container da lista (AGORA COM ID)
+    const listaContainer = document.getElementById('demandas-lista-container') || 
+                          document.querySelector('.demandas-lista-container');
+    
     if (!listaContainer) {
         console.error("❌ Container da lista não encontrado!");
+        
+        // Tentar criar dinamicamente
+        const mainContent = document.querySelector('.main-content');
+        if (mainContent) {
+            const novoContainer = document.createElement('div');
+            novoContainer.className = 'demandas-lista-container';
+            novoContainer.id = 'demandas-lista-container';
+            mainContent.appendChild(novoContainer);
+            
+            console.log("✅ Container criado dinamicamente");
+            return renderizarDemandasNaLista(); // Tentar novamente
+        }
+        
         return;
     }
     
-    // 2. Limpar conteúdo (exceto o cabeçalho)
+    // 2. Limpar conteúdo (exceto o cabeçalho se existir)
     const cabecalho = listaContainer.querySelector('.demanda-linha.cabecalho');
     listaContainer.innerHTML = '';
     
+    if (cabecalho) {
+        listaContainer.appendChild(cabecalho);
+    } else {
+        // Criar cabeçalho se não existir
+        const cabecalhoHTML = `
+            <div class="demanda-linha cabecalho">
+                <div>Título</div>
+                <div>Escola</div>
+                <div>Departamento</div>
+                <div>Responsável</div>
+                <div>Prazo</div>
+                <div>Status</div>
+            </div>
+        `;
+        listaContainer.innerHTML = cabecalhoHTML;
+    }    
     if (cabecalho) {
         listaContainer.appendChild(cabecalho);
     }
