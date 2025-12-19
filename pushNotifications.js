@@ -1,48 +1,60 @@
-// pushNotifications.js - VERSÃO FINAL CORRIGIDA
+// pushNotifications.js - VERSÃO ATUALIZADA PARA FIREBASE FCM
 // ============================================
 
 const PushNotificationSystem = {
     // Configurações ATUALIZADAS
     config: {
-        // COLE AQUI SUA CHAVE PÚBLICA DO FIREBASE
-        vapidPublicKey: 'BKYmA5_HGRoYckulvip4sBqmWdTUSyer7LJh4EE1jVajz5WHfN3yWANavQEjuvi0fdbXYGCCZu-ETLYAqUDOR7g',
+        // Chave pública VAPID (a mesma que você já tem)
+        vapidPublicKey: 'BKFl5Hc4UKk6gNm4t7wcCLnRIzYmW9TF8yOxqM0obajhIG_H0RRetGt2bT1qZoTIerYa4IVQE6Jb0D4hNRIM-Vs',
         
         // URL do seu Google Apps Script
         googleScriptUrl: 'https://script.google.com/macros/s/AKfycbzipAeNlapZ3ks_YkU4nT5dRtMBbMhvDqZbuQIMefrJpz0lswmaOhehBsz4YKEfGYs90A/exec',
         
-        // Caminhos atualizados
+        // Caminhos para GitHub Pages
         appPath: '/sistema-demandas-escolares/',
         swPath: '/sistema-demandas-escolares/sw-notificacoes.js',
         
-        // Configurações do Firebase
-        firebaseConfig: {
-            projectId: 'sistema-de-demandas-escolares', // Seu ID do projeto
-            messagingSenderId: '655714446030' // ID do remetente que você viu
-        }
-    },    
+        // ID do seu projeto Firebase (você já tem: 655714446030)
+        firebaseSenderId: '655714446030'
+    },
+    
+    // Estado do sistema
+    state: {
+        isSupported: false,
+        permission: 'default',
+        subscription: null,
+        isSubscribed: false,
+        fcmToken: null,
+        useFirebase: true // Tentar usar Firebase primeiro
+    },
+    
     // ============================================
     // MÉTODOS PRINCIPAIS
     // ============================================
     
     /**
-     * Inicializa o sistema de notificacoes push
+     * Inicializa o sistema de notificacoes
      */
     initialize: function() {
-        console.log('Inicializando sistema de notificacoes push...');
+        console.log('🔔 Inicializando notificações push...');
         
-        // Verificar suporte do navegador
+        // Verificar suporte
         this.state.isSupported = this.checkSupport();
         
         if (!this.state.isSupported) {
-            console.warn('Navegador nao suporta notificacoes push');
+            console.warn('⚠️ Navegador não suporta notificações push');
             return Promise.resolve(false);
         }
         
+        // Verificar se já tem permissão
+        this.state.permission = Notification.permission;
+        
+        // Inicializar async
         return this._initializeAsync();
     },
     
     /**
-     * Funcao async interna para inicializacao
+     * Inicialização assíncrona
      */
     _initializeAsync: function() {
         var self = this;
@@ -52,29 +64,36 @@ const PushNotificationSystem = {
                     // Registrar Service Worker
                     await self.registerServiceWorker();
                     
-                    // Verificar permissao atual
-                    self.state.permission = Notification.permission;
-                    
-                    // Obter subscription atual
-                    await self.getSubscription();
-                    
-                    // Configurar listeners
-                    self.setupEventListeners();
+                    // Tentar obter token FCM se Firebase disponível
+                    if (self.state.useFirebase && typeof firebase !== 'undefined') {
+                        try {
+                            await self.getFCMToken();
+                            console.log('✅ Firebase FCM configurado');
+                        } catch (firebaseError) {
+                            console.warn('⚠️ Firebase falhou, usando Web Push padrão:', firebaseError);
+                            self.state.useFirebase = false;
+                            await self.getWebPushSubscription();
+                        }
+                    } else {
+                        // Usar Web Push padrão
+                        await self.getWebPushSubscription();
+                    }
                     
                     // Atualizar interface
                     self.updateUI();
                     
-                    console.log('Sistema de notificacoes inicializado');
-                    console.log('Status:', {
-                        supported: self.state.isSupported,
-                        permission: self.state.permission,
-                        subscribed: self.state.isSubscribed
+                    console.log('✅ Sistema de notificações inicializado');
+                    console.log('📊 Status:', {
+                        suportado: self.state.isSupported,
+                        permissao: self.state.permission,
+                        inscrito: self.state.isSubscribed,
+                        usandoFirebase: self.state.useFirebase
                     });
                     
                     resolve(true);
                     
                 } catch (error) {
-                    console.error('Erro ao inicializar notificacoes:', error);
+                    console.error('❌ Erro ao inicializar notificações:', error);
                     resolve(false);
                 }
             })();
@@ -87,31 +106,104 @@ const PushNotificationSystem = {
     checkSupport: function() {
         return 'Notification' in window &&
                'serviceWorker' in navigator &&
-               'PushManager' in window &&
-               'showNotification' in ServiceWorkerRegistration.prototype;
+               'PushManager' in window;
     },
     
     /**
-     * Registra o Service Worker de notificacoes
+     * Registra o Service Worker
      */
     registerServiceWorker: function() {
         var self = this;
         return new Promise(function(resolve, reject) {
             (async function() {
                 try {
-                    var registration = await navigator.serviceWorker.register(self.config.swPath, {
+                    // Usar caminho absoluto para GitHub Pages
+                    const swUrl = self.config.appPath + 'sw-notificacoes.js';
+                    
+                    const registration = await navigator.serviceWorker.register(swUrl, {
                         scope: self.config.appPath
                     });
                     
-                    console.log('Service Worker registrado:', registration.scope);
+                    console.log('✅ Service Worker registrado:', registration.scope);
                     
-                    // Aguardar ativacao
+                    // Aguardar ativação
+                    await registration.update();
                     await navigator.serviceWorker.ready;
                     
                     resolve(registration);
                     
                 } catch (error) {
-                    console.error('Erro ao registrar Service Worker:', error);
+                    console.error('❌ Erro ao registrar Service Worker:', error);
+                    
+                    // Tentar caminho alternativo
+                    try {
+                        const registration = await navigator.serviceWorker.register('sw-notificacoes.js');
+                        console.log('✅ Service Worker registrado (caminho alternativo)');
+                        resolve(registration);
+                    } catch (fallbackError) {
+                        console.error('❌ Fallback também falhou:', fallbackError);
+                        reject(fallbackError);
+                    }
+                }
+            })();
+        });
+    },
+    
+    /**
+     * Obtém token FCM do Firebase
+     */
+    getFCMToken: function() {
+        var self = this;
+        return new Promise(function(resolve, reject) {
+            (async function() {
+                try {
+                    if (typeof firebase === 'undefined' || !firebase.messaging) {
+                        throw new Error('Firebase não carregado');
+                    }
+                    
+                    // Inicializar Firebase se necessário
+                    if (!firebase.apps.length) {
+                        console.log('🔥 Firebase não inicializado, usando Web Push');
+                        throw new Error('Firebase não inicializado');
+                    }
+                    
+                    const messaging = firebase.messaging();
+                    
+                    // Solicitar permissão se ainda não tem
+                    if (self.state.permission === 'default') {
+                        self.state.permission = await Notification.requestPermission();
+                    }
+                    
+                    if (self.state.permission !== 'granted') {
+                        throw new Error('Permissão negada: ' + self.state.permission);
+                    }
+                    
+                    // Obter token FCM
+                    const token = await messaging.getToken({
+                        vapidKey: self.config.vapidPublicKey,
+                        serviceWorkerRegistration: await navigator.serviceWorker.ready
+                    });
+                    
+                    if (!token) {
+                        throw new Error('Token FCM não gerado');
+                    }
+                    
+                    console.log('✅ Token FCM obtido:', token.substring(0, 50) + '...');
+                    
+                    // Salvar no servidor
+                    await self.saveFCMToken(token);
+                    
+                    self.state.fcmToken = token;
+                    self.state.isSubscribed = true;
+                    self.state.subscription = {
+                        endpoint: `https://fcm.googleapis.com/fcm/send/${token}`,
+                        token: token
+                    };
+                    
+                    resolve(token);
+                    
+                } catch (error) {
+                    console.error('❌ Erro no Firebase FCM:', error);
                     reject(error);
                 }
             })();
@@ -119,267 +211,280 @@ const PushNotificationSystem = {
     },
     
     /**
-     * Solicita permissao para notificacoes
+     * Obtém subscription Web Push padrão
      */
-    requestPermission: function() {
+    getWebPushSubscription: function() {
         var self = this;
         return new Promise(function(resolve, reject) {
             (async function() {
                 try {
-                    console.log('Solicitando permissao para notificacoes...');
+                    const serviceWorker = await navigator.serviceWorker.ready;
+                    let subscription = await serviceWorker.pushManager.getSubscription();
                     
-                    var permission = await Notification.requestPermission();
+                    if (!subscription) {
+                        // Criar nova subscription se não existir
+                        subscription = await serviceWorker.pushManager.subscribe({
+                            userVisibleOnly: true,
+                            applicationServerKey: self.urlBase64ToUint8Array(self.config.vapidPublicKey)
+                        });
+                        
+                        // Salvar no servidor
+                        await self.saveSubscription(subscription);
+                    }
+                    
+                    self.state.subscription = subscription;
+                    self.state.isSubscribed = true;
+                    
+                    console.log('✅ Web Push subscription:', subscription.endpoint);
+                    resolve(subscription);
+                    
+                } catch (error) {
+                    console.error('❌ Erro no Web Push:', error);
+                    reject(error);
+                }
+            })();
+        });
+    },
+    
+    /**
+     * Solicita permissão para notificações
+     */
+    requestPermission: function() {
+        var self = this;
+        return new Promise(function(resolve) {
+            (async function() {
+                try {
+                    console.log('🔔 Solicitando permissão...');
+                    
+                    const permission = await Notification.requestPermission();
                     self.state.permission = permission;
                     
-                    console.log('Permissao:', permission);
+                    console.log('📋 Permissão:', permission);
                     
                     if (permission === 'granted') {
-                        // Se permitido, inscrever para push
-                        await self.subscribeToPush();
-                        self.showToast('Permissao concedida!', 'success');
+                        // Inscrever de acordo com o método disponível
+                        if (self.state.useFirebase && typeof firebase !== 'undefined') {
+                            await self.getFCMToken();
+                            self.showMessage('✅ Notificações ativadas com Firebase!', 'success');
+                        } else {
+                            await self.getWebPushSubscription();
+                            self.showMessage('✅ Notificações ativadas!', 'success');
+                        }
                     } else if (permission === 'denied') {
-                        self.showToast('Permissao negada. Altere nas configuracoes do navegador.', 'warning');
+                        self.showMessage('❌ Permissão negada. Ative nas configurações do navegador.', 'warning');
                     }
                     
                     self.updateUI();
                     resolve(permission);
                     
                 } catch (error) {
-                    console.error('Erro ao solicitar permissao:', error);
-                    self.showToast('Erro ao solicitar permissao', 'error');
-                    reject(error);
+                    console.error('❌ Erro na permissão:', error);
+                    self.showMessage('❌ Erro ao ativar notificações', 'error');
+                    resolve('error');
                 }
             })();
         });
     },
     
     /**
- * Inscreve usuario para notificacoes push usando Firebase
- */
-subscribeToPush: function() {
-    var self = this;
-    return new Promise(function(resolve, reject) {
-        (async function() {
-            try {
-                console.log('Registrando no Firebase FCM...');
-                
-                // Verificar se Firebase está disponível
-                if (!window.firebase || !window.firebase.messaging) {
-                    throw new Error('Firebase não carregado. Verifique os scripts.');
-                }
-                
-                // Inicializar Firebase no frontend também
-                if (!firebase.apps.length) {
-                    firebase.initializeApp({
-                        projectId: 'sistema-de-demandas-escolares',
-                        messagingSenderId: '655714446030',
-                        appId: '1:655714446030:web:seu_app_id_aqui'
-                    });
-                }
-                
-                const messaging = firebase.messaging();
-                
-                // Solicitar permissão
-                await Notification.requestPermission();
-                
-                // Obter token FCM
-                const token = await messaging.getToken({
-                    vapidKey: self.config.vapidPublicKey,
-                    serviceWorkerRegistration: await navigator.serviceWorker.ready
-                });
-                
-                if (!token) {
-                    throw new Error('Não foi possível obter token FCM');
-                }
-                
-                console.log('Token FCM obtido:', token);
-                
-                // Criar objeto subscription simulado para compatibilidade
-                const subscriptionData = {
-                    endpoint: `https://fcm.googleapis.com/fcm/send/${token}`,
-                    keys: {
-                        p256dh: self.config.vapidPublicKey,
-                        auth: 'firebase_auth_' + Date.now()
-                    }
-                };
-                
-                // Salvar no servidor
-                await self.saveSubscription({
-                    endpoint: subscriptionData.endpoint,
-                    keys: subscriptionData.keys,
-                    token: token  // Token real do Firebase
-                });
-                
-                self.state.subscription = subscriptionData;
-                self.state.isSubscribed = true;
-                self.state.fcmToken = token;
-                
-                console.log('Registrado no Firebase FCM com sucesso!');
-                self.showToast('Notificacoes ativadas com Firebase!', 'success');
-                
-                self.updateUI();
-                resolve(subscriptionData);
-                
-            } catch (error) {
-                console.error('Erro ao registrar no Firebase:', error);
-                
-                // Fallback para Web Push padrão
-                console.log('Tentando fallback para Web Push padrão...');
-                try {
-                    var serviceWorker = await navigator.serviceWorker.ready;
-                    
-                    var subscription = await serviceWorker.pushManager.subscribe({
-                        userVisibleOnly: true,
-                        applicationServerKey: self.urlBase64ToUint8Array(self.config.vapidPublicKey)
-                    });
-                    
-                    await self.saveSubscription(subscription);
-                    
-                    self.state.subscription = subscription;
-                    self.state.isSubscribed = true;
-                    
-                    console.log('Fallback Web Push bem-sucedido');
-                    self.showToast('Notificacoes ativadas (modo fallback)', 'success');
-                    
-                    self.updateUI();
-                    resolve(subscription);
-                    
-                } catch (fallbackError) {
-                    console.error('Fallback também falhou:', fallbackError);
-                    self.showToast('Erro ao ativar notificacoes', 'error');
-                    reject(fallbackError);
-                }
-            }
-        })();
-    });
-},
-    
-    /**
-     * Cancela inscricao nas notificacoes push
+     * Desativa notificações
      */
-    unsubscribeFromPush: function() {
-        var self = this;
-        return new Promise(function(resolve, reject) {
-            (async function() {
-                try {
-                    console.log('Cancelando inscricao...');
-                    
-                    var serviceWorker = await navigator.serviceWorker.ready;
-                    var subscription = await serviceWorker.pushManager.getSubscription();
-                    
-                    if (subscription) {
-                        await subscription.unsubscribe();
-                        await self.deleteSubscription(subscription);
-                        
-                        self.state.subscription = null;
-                        self.state.isSubscribed = false;
-                        
-                        console.log('Inscricao cancelada');
-                        self.showToast('Notificacoes desativadas', 'info');
-                        
-                        self.updateUI();
-                        resolve(true);
-                    } else {
-                        resolve(false);
-                    }
-                    
-                } catch (error) {
-                    console.error('Erro ao cancelar inscricao:', error);
-                    self.showToast('Erro ao desativar notificacoes', 'error');
-                    reject(error);
-                }
-            })();
-        });
-    },
-    
-    /**
-     * Obtem a subscription atual
-     */
-    getSubscription: function() {
+    unsubscribe: function() {
         var self = this;
         return new Promise(function(resolve) {
             (async function() {
                 try {
-                    var serviceWorker = await navigator.serviceWorker.ready;
-                    var subscription = await serviceWorker.pushManager.getSubscription();
+                    console.log('🔕 Desativando notificações...');
                     
-                    if (subscription) {
-                        self.state.subscription = subscription;
-                        self.state.isSubscribed = true;
-                        console.log('Subscription atual encontrada');
-                    } else {
-                        self.state.isSubscribed = false;
-                        console.log('Nenhuma subscription ativa');
+                    if (self.state.fcmToken) {
+                        // Firebase: deletar token
+                        if (firebase && firebase.messaging) {
+                            await firebase.messaging().deleteToken();
+                        }
+                        
+                        // Remover do servidor
+                        await self.deleteFCMToken(self.state.fcmToken);
+                    } else if (self.state.subscription) {
+                        // Web Push padrão: cancelar subscription
+                        const serviceWorker = await navigator.serviceWorker.ready;
+                        const subscription = await serviceWorker.pushManager.getSubscription();
+                        
+                        if (subscription) {
+                            await subscription.unsubscribe();
+                            await self.deleteSubscription(subscription);
+                        }
                     }
                     
-                    resolve(subscription);
+                    // Resetar estado
+                    self.state.fcmToken = null;
+                    self.state.subscription = null;
+                    self.state.isSubscribed = false;
+                    
+                    self.showMessage('🔕 Notificações desativadas', 'info');
+                    self.updateUI();
+                    
+                    resolve(true);
                     
                 } catch (error) {
-                    console.error('Erro ao obter subscription:', error);
-                    resolve(null);
+                    console.error('❌ Erro ao desativar:', error);
+                    self.showMessage('❌ Erro ao desativar notificações', 'error');
+                    resolve(false);
                 }
             })();
         });
     },
     
     /**
-     * Salva subscription no servidor (Google Apps Script)
+     * Salva token FCM no servidor
      */
-    saveSubscription: function(subscription) {
+    saveFCMToken: function(token) {
         var self = this;
-        return new Promise(function(resolve, reject) {
+        return new Promise(function(resolve) {
             (async function() {
                 try {
-                    // Obter dados do usuario logado
-                    var usuarioSalvo = localStorage.getItem('usuario_demandas');
-                    var usuario = null;
+                    // Obter usuário logado
+                    const usuarioSalvo = localStorage.getItem('usuario_demandas');
+                    let usuario = null;
                     
                     if (usuarioSalvo) {
                         try {
                             usuario = JSON.parse(usuarioSalvo);
                         } catch (e) {
-                            console.error('Erro ao ler usuario:', e);
+                            console.error('Erro ao ler usuário:', e);
                         }
                     }
                     
-                    var subscriptionData = subscription.toJSON();
-                    var dados = {
+                    // Dados para enviar
+                    const dados = {
                         acao: 'salvarSubscription',
-                        subscription: subscriptionData,
+                        fcmToken: token,
+                        tipo: 'firebase',
                         usuario: usuario ? {
                             email: usuario.email,
                             nome: usuario.nome,
-                            tipo: usuario.tipo_usuario,
-                            escola: usuario.escola_sre,
-                            departamento: usuario.departamento
+                            tipo: usuario.tipo_usuario
                         } : null,
                         timestamp: new Date().toISOString(),
-                        userAgent: navigator.userAgent,
-                        endpoint: subscriptionData.endpoint
+                        userAgent: navigator.userAgent
                     };
                     
                     // Enviar para Google Apps Script
-                    var resultado = await self.enviarParaGoogleAppsScript(dados);
+                    const resultado = await self.enviarParaGoogleAppsScript(dados);
                     
                     if (resultado && resultado.sucesso) {
-                        console.log('Subscription salva no servidor');
+                        console.log('✅ Token FCM salvo no servidor');
+                        localStorage.setItem('fcm_token', token);
                         resolve(true);
                     } else {
-                        throw new Error(resultado?.erro || 'Erro ao salvar subscription');
+                        console.warn('⚠️ Token FCM salvo apenas localmente');
+                        localStorage.setItem('fcm_token', token);
+                        resolve(false);
                     }
                     
                 } catch (error) {
-                    console.error('Erro ao salvar subscription:', error);
+                    console.error('❌ Erro ao salvar token FCM:', error);
                     
                     // Fallback: salvar localmente
                     try {
-                        localStorage.setItem('push_subscription', JSON.stringify(subscription.toJSON()));
-                        console.log('Subscription salva localmente (fallback)');
+                        localStorage.setItem('fcm_token', token);
+                        console.log('✅ Token FCM salvo localmente (fallback)');
                     } catch (e) {
-                        console.error('Nao foi possivel salvar localmente:', e);
+                        console.error('❌ Não foi possível salvar localmente:', e);
                     }
                     
                     resolve(false);
+                }
+            })();
+        });
+    },
+    
+    /**
+     * Salva subscription Web Push no servidor
+     */
+    saveSubscription: function(subscription) {
+        var self = this;
+        return new Promise(function(resolve) {
+            (async function() {
+                try {
+                    const usuarioSalvo = localStorage.getItem('usuario_demandas');
+                    let usuario = null;
+                    
+                    if (usuarioSalvo) {
+                        try {
+                            usuario = JSON.parse(usuarioSalvo);
+                        } catch (e) {
+                            console.error('Erro ao ler usuário:', e);
+                        }
+                    }
+                    
+                    const dados = {
+                        acao: 'salvarSubscription',
+                        subscription: subscription.toJSON(),
+                        tipo: 'webpush',
+                        usuario: usuario ? {
+                            email: usuario.email,
+                            nome: usuario.nome,
+                            tipo: usuario.tipo_usuario
+                        } : null,
+                        timestamp: new Date().toISOString(),
+                        userAgent: navigator.userAgent
+                    };
+                    
+                    const resultado = await self.enviarParaGoogleAppsScript(dados);
+                    
+                    if (resultado && resultado.sucesso) {
+                        console.log('✅ Subscription salva no servidor');
+                        localStorage.setItem('push_subscription', JSON.stringify(subscription.toJSON()));
+                        resolve(true);
+                    } else {
+                        console.warn('⚠️ Subscription salva apenas localmente');
+                        localStorage.setItem('push_subscription', JSON.stringify(subscription.toJSON()));
+                        resolve(false);
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Erro ao salvar subscription:', error);
+                    
+                    try {
+                        localStorage.setItem('push_subscription', JSON.stringify(subscription.toJSON()));
+                        console.log('✅ Subscription salva localmente (fallback)');
+                    } catch (e) {
+                        console.error('❌ Não foi possível salvar localmente:', e);
+                    }
+                    
+                    resolve(false);
+                }
+            })();
+        });
+    },
+    
+    /**
+     * Remove token FCM do servidor
+     */
+    deleteFCMToken: function(token) {
+        var self = this;
+        return new Promise(function(resolve) {
+            (async function() {
+                try {
+                    const dados = {
+                        acao: 'removerSubscription',
+                        fcmToken: token,
+                        tipo: 'firebase',
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    await self.enviarParaGoogleAppsScript(dados);
+                    console.log('✅ Token FCM removido do servidor');
+                    
+                    localStorage.removeItem('fcm_token');
+                    resolve();
+                    
+                } catch (error) {
+                    console.error('❌ Erro ao remover token FCM:', error);
+                    
+                    // Remover localmente mesmo se falhar no servidor
+                    localStorage.removeItem('fcm_token');
+                    resolve();
                 }
             })();
         });
@@ -393,23 +498,23 @@ subscribeToPush: function() {
         return new Promise(function(resolve) {
             (async function() {
                 try {
-                    var subscriptionData = subscription.toJSON();
-                    var dados = {
+                    const dados = {
                         acao: 'removerSubscription',
-                        endpoint: subscriptionData.endpoint,
+                        endpoint: subscription.endpoint,
+                        tipo: 'webpush',
                         timestamp: new Date().toISOString()
                     };
                     
                     await self.enviarParaGoogleAppsScript(dados);
-                    console.log('Subscription removida do servidor');
+                    console.log('✅ Subscription removida do servidor');
                     
-                    // Remover localmente
                     localStorage.removeItem('push_subscription');
-                    
                     resolve();
                     
                 } catch (error) {
-                    console.error('Erro ao remover subscription:', error);
+                    console.error('❌ Erro ao remover subscription:', error);
+                    
+                    localStorage.removeItem('push_subscription');
                     resolve();
                 }
             })();
@@ -417,125 +522,36 @@ subscribeToPush: function() {
     },
     
     /**
-     * Envia notificacao de teste
+     * Envia notificação de teste
      */
     sendTestNotification: function() {
         var self = this;
         return new Promise(function(resolve) {
             (async function() {
                 try {
-                    console.log('Enviando notificacao de teste...');
+                    console.log('🧪 Enviando notificação de teste...');
                     
-                    var serviceWorker = await navigator.serviceWorker.ready;
+                    const serviceWorker = await navigator.serviceWorker.ready;
                     
-                    // Enviar mensagem para o Service Worker
                     if (serviceWorker.active) {
                         serviceWorker.active.postMessage({
-                            type: 'SEND_TEST_NOTIFICATION',
-                            data: {
-                                title: 'Teste de Notificacao',
-                                body: 'Esta e uma notificacao de teste do sistema',
-                                timestamp: Date.now()
-                            }
+                            type: 'SEND_TEST_NOTIFICATION'
                         });
                         
-                        self.showToast('Notificacao de teste enviada!', 'success');
+                        self.showMessage('✅ Notificação de teste enviada!', 'success');
                         resolve(true);
                     } else {
+                        self.showMessage('❌ Service Worker não ativo', 'error');
                         resolve(false);
                     }
                     
                 } catch (error) {
-                    console.error('Erro ao enviar teste:', error);
-                    self.showToast('Erro ao enviar teste', 'error');
+                    console.error('❌ Erro no teste:', error);
+                    self.showMessage('❌ Erro ao enviar teste', 'error');
                     resolve(false);
                 }
             })();
         });
-    },
-    
-    /**
-     * Envia notificacao personalizada
-     */
-    sendCustomNotification: function(dados) {
-        var self = this;
-        return new Promise(function(resolve) {
-            (async function() {
-                try {
-                    var serviceWorker = await navigator.serviceWorker.ready;
-                    
-                    if (serviceWorker.active) {
-                        serviceWorker.active.postMessage({
-                            type: 'SEND_CUSTOM_NOTIFICATION',
-                            data: {
-                                title: dados.titulo || 'Sistema de Demandas',
-                                body: dados.mensagem || 'Nova atualizacao',
-                                icon: dados.icone || self.config.appPath + 'public/icons/192x192.png',
-                                url: dados.url || self.config.appPath + 'index.html',
-                                demandaId: dados.demandaId,
-                                userId: dados.userId,
-                                important: dados.importante || false,
-                                actions: dados.acoes || [],
-                                vibrate: [200, 100, 200],
-                                tag: dados.tag || 'custom-notification'
-                            }
-                        });
-                        
-                        console.log('Notificacao personalizada enviada:', dados);
-                        resolve(true);
-                    } else {
-                        resolve(false);
-                    }
-                    
-                } catch (error) {
-                    console.error('Erro ao enviar notificacao personalizada:', error);
-                    resolve(false);
-                }
-            })();
-        });
-    },
-    
-    /**
-     * Configura listeners de eventos
-     */
-    setupEventListeners: function() {
-        var self = this;
-        
-        // Listener para mudancas de permissao
-        if ('permissions' in navigator) {
-            navigator.permissions.query({ name: 'notifications' })
-                .then(function(permissionStatus) {
-                    permissionStatus.onchange = function() {
-                        self.state.permission = Notification.permission;
-                        self.updateUI();
-                        console.log('Permissao alterada:', self.state.permission);
-                    };
-                });
-        }
-    },
-    
-    /**
-     * Atualiza a interface com o status atual
-     */
-    updateUI: function() {
-        // Esta funcao sera implementada pelo app.js
-        if (typeof window.atualizarStatusNotificacoes === 'function') {
-            var info = this.getInfo();
-            window.atualizarStatusNotificacoes(info);
-        }
-    },
-    
-    /**
-     * Obtem informacoes do sistema
-     */
-    getInfo: function() {
-        return {
-            supported: this.state.isSupported,
-            permission: this.state.permission,
-            subscribed: this.state.isSubscribed,
-            subscription: this.state.subscription ? this.state.subscription.toJSON() : null,
-            vapidKey: this.config.vapidPublicKey
-        };
     },
     
     /**
@@ -544,7 +560,9 @@ subscribeToPush: function() {
     enviarParaGoogleAppsScript: function(dados) {
         return new Promise(function(resolve, reject) {
             var callbackName = 'callback_' + Date.now();
+            var url = this.config.googleScriptUrl;
             
+            // Criar callback
             window[callbackName] = function(resposta) {
                 delete window[callbackName];
                 
@@ -555,24 +573,27 @@ subscribeToPush: function() {
                 }
             };
             
+            // Criar script para JSONP
             var script = document.createElement('script');
-            var url = this.config.googleScriptUrl;
-            url += '?callback=' + encodeURIComponent(callbackName);
-            url += '&dados=' + encodeURIComponent(JSON.stringify(dados));
-            url += '&_=' + Date.now();
+            var parametros = new URLSearchParams({
+                callback: callbackName,
+                dados: JSON.stringify(dados),
+                _: Date.now()
+            });
             
-            script.src = url;
+            script.src = url + '?' + parametros.toString();
             script.onerror = function() {
                 delete window[callbackName];
-                reject(new Error('Falha na conexao com o servidor'));
+                reject(new Error('Falha na conexão com o servidor'));
             };
             
-            document.body.appendChild(script);
+            document.head.appendChild(script);
+            
         }.bind(this));
     },
     
     /**
-     * Converte chave VAPID de base64 para Uint8Array
+     * Converte chave de base64 para Uint8Array
      */
     urlBase64ToUint8Array: function(base64String) {
         var padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -591,18 +612,130 @@ subscribeToPush: function() {
     },
     
     /**
-     * Mostra toast message
+     * Obtém informações do sistema
      */
-    showToast: function(mensagem, tipo) {
+    getInfo: function() {
+        return {
+            suportado: this.state.isSupported,
+            permissao: this.state.permission,
+            inscrito: this.state.isSubscribed,
+            usandoFirebase: this.state.useFirebase,
+            fcmToken: this.state.fcmToken ? this.state.fcmToken.substring(0, 20) + '...' : null,
+            subscription: this.state.subscription
+        };
+    },
+    
+    /**
+     * Mostra mensagem na interface
+     */
+    showMessage: function(mensagem, tipo) {
+        // Usar toast do sistema se disponível
         if (typeof window.mostrarToast === 'function') {
-            window.mostrarToast('Notificacoes', mensagem, tipo);
+            window.mostrarToast('Notificações', mensagem, tipo);
         } else {
+            // Fallback: console e alert
             console.log(tipo.toUpperCase() + ': ' + mensagem);
+            if (tipo === 'error' || tipo === 'warning') {
+                alert('Notificações: ' + mensagem);
+            }
         }
+    },
+    
+    /**
+     * Atualiza a interface
+     */
+    updateUI: function() {
+        // Esta função será chamada pelo app.js para atualizar botões
+        if (typeof window.atualizarStatusNotificacoes === 'function') {
+            window.atualizarStatusNotificacoes(this.getInfo());
+        }
+        
+        // Verificar se precisa mostrar botão de ativação
+        this.checkAndShowActivationButton();
+    },
+    
+    /**
+     * Verifica e mostra botão de ativação
+     */
+    checkAndShowActivationButton: function() {
+        var self = this;
+        
+        // Mostrar botão se não tem permissão e é suportado
+        if (self.state.isSupported && self.state.permission === 'default') {
+            setTimeout(function() {
+                self.mostrarBotaoAtivacao();
+            }, 3000);
+        }
+    },
+    
+    /**
+     * Mostra botão para ativar notificações
+     */
+    mostrarBotaoAtivacao: function() {
+        // Verificar se já existe
+        if (document.getElementById('btn-ativar-notificacoes')) {
+            return;
+        }
+        
+        // Criar botão
+        var botao = document.createElement('button');
+        botao.id = 'btn-ativar-notificacoes';
+        botao.innerHTML = '<i class="fas fa-bell"></i> Ativar Notificações';
+        botao.className = 'btn-ativar-notif';
+        
+        // Estilos
+        botao.style.cssText = `
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            animation: pulse 2s infinite;
+        `;
+        
+        // Animação
+        var style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0% { transform: scale(1); box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4); }
+                50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(52, 152, 219, 0.6); }
+                100% { transform: scale(1); box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4); }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Evento de clique
+        botao.onclick = function() {
+            botao.style.display = 'none';
+            if (window.PushNotificationSystem) {
+                window.PushNotificationSystem.requestPermission();
+            }
+        };
+        
+        // Adicionar ao corpo
+        document.body.appendChild(botao);
+        
+        // Remover após 30 segundos
+        setTimeout(function() {
+            if (botao.parentNode) {
+                botao.remove();
+            }
+        }, 30000);
     }
 };
 
 // Exportar para uso global
 window.PushNotificationSystem = PushNotificationSystem;
 
-console.log('PushNotificationSystem carregado!');
+console.log('✅ PushNotificationSystem carregado!');
