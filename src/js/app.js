@@ -3725,68 +3725,137 @@ async function getFCMToken() {
  * 💾 SALVA TOKEN FCM NO SERVIDOR
  */
 async function salvarTokenFCMNoServidor(token) {
-  console.log("🔄 Salvando token usando método seguro...");
-  
-  try {
-    // 1. Obter dados do usuário logado de uma forma alternativa
-    let usuario = {
-      nome: "Eder Calixto Ramos",
-      email: "eder.ramos@educador.edu.es.gov.br",
-      tipo: "supervisor",
-      escola: "Todas",
-      departamento: "Supervisão"
-    };
+    console.log("🔄 Salvando token FCM no servidor...");
     
-    // 2. Criar uma função de callback ÚNICA
-    const callbackName = 'tokenSalvo_' + Date.now();
-    
-    return new Promise((resolve) => {
-      // 3. Criar função temporária
-      window[callbackName] = function(resposta) {
-        console.log("📨 Resposta do servidor para token:", resposta);
+    try {
+        // 1. TENTAR OBTER DO USUÁRIO LOGADO
+        let userEmail = null;
         
-        // Limpar função temporária
-        delete window[callbackName];
+        // Método 1: Do localStorage (sua implementação atual)
+        const usuarioSalvo = localStorage.getItem('usuario_demandas');
+        if (usuarioSalvo) {
+            try {
+                const usuario = JSON.parse(usuarioSalvo);
+                userEmail = usuario.email;
+                console.log("📧 Email do usuário logado (localStorage):", userEmail);
+            } catch (e) {
+                console.error("❌ Erro ao ler localStorage:", e);
+            }
+        }
         
-        if (resposta && resposta.sucesso) {
-          console.log("✅ Token salvo no servidor!");
-        } else {
-          console.warn("⚠️ Token pode não ter sido salvo:", resposta);
+        // Método 2: Verificar se há um usuário logado na sessão atual
+        if (!userEmail) {
+            // Verificar se há um elemento com o email na página
+            const emailElement = document.querySelector('[data-email], .user-email, #user-email');
+            if (emailElement) {
+                userEmail = emailElement.textContent || emailElement.value;
+                console.log("📧 Email do elemento DOM:", userEmail);
+            }
         }
-        resolve();
-      };
-      
-            // 4. Montar URL do JEITO CERTO para JSONP
-      // Enviar também o email do usuário para o servidor saber onde salvar
-      const url = `https://script.google.com/macros/s/AKfycbykob9YYm-X-oP1pLvjrUjyDbOeMj8yVekviXG95MBzfuGuy0kH0B2GAmVU0mKW5QDEdw/exec?callback=${callbackName}&acao=salvarSubscription&fcmToken=${encodeURIComponent(token)}&tipo=firebase&email=${encodeURIComponent("eder.ramos@educador.edu.es.gov.br")}`;
-      
-      console.log("📡 Enviando token via JSONP...");
-      
-      // 5. Criar script JSONP (funciona SEM CORS)
-      const script = document.createElement('script');
-      script.src = url;
-      
-      // 6. Remover script após 10 segundos (timeout)
-      const timeout = setTimeout(() => {
-        if (script.parentNode) {
-          document.head.removeChild(script);
+        
+        // Método 3: Fallback - verificar login no console
+        console.log("🔍 Verificando dados de sessão...");
+        console.log("   localStorage 'usuario_demandas':", usuarioSalvo);
+        
+        // 2. VALIDAR EMAIL OBTIDO
+        if (!userEmail || !userEmail.includes('@')) {
+            console.error("❌ EMAIL NÃO ENCONTRADO OU INVÁLIDO!");
+            console.error("   Email obtido:", userEmail);
+            console.error("   localStorage:", usuarioSalvo);
+            
+            // Mostrar alerta para usuário
+            mostrarToast('Configuração', 
+                'Não foi possível identificar seu usuário. Faça login novamente.', 
+                'warning');
+            
+            return { 
+                sucesso: false, 
+                erro: "Email do usuário não encontrado",
+                recomendacao: "Faça login novamente no sistema"
+            };
         }
-        if (window[callbackName]) {
-          delete window[callbackName];
-          console.warn("⚠️ Timeout - servidor não respondeu em 10 segundos");
-        }
-        resolve();
-      }, 10000);
-      
-      // 7. Adicionar script à página
-      document.head.appendChild(script);
-    });
-    
-  } catch (erro) {
-    console.warn("⚠️ Não foi possível salvar token (não crítico):", erro);
-    // Não lança erro - apenas loga
-  }
+        
+        console.log("✅ Email validado para salvar token:", userEmail);
+        
+        // 3. ENVIAR PARA O SERVIDOR
+        const callbackName = 'tokenSalvo_' + Date.now();
+        
+        return new Promise((resolve) => {
+            window[callbackName] = function(resposta) {
+                console.log("📨 Resposta COMPLETA do servidor:", resposta);
+                delete window[callbackName];
+                
+                if (resposta && resposta.sucesso) {
+                    console.log("✅ Token salvo para", userEmail);
+                    console.log("   Linha:", resposta.dados?.linha);
+                    console.log("   Tipo:", resposta.dados?.tipo);
+                } else {
+                    console.error("❌ ERRO ao salvar token:", resposta);
+                    
+                    // Tentar método alternativo se falhar
+                    if (resposta?.erro?.includes("não encontrado")) {
+                        console.log("🔄 Tentando método alternativo...");
+                        tentarSalvarTokenAlternativo(token, userEmail)
+                            .then(resolve);
+                        return;
+                    }
+                }
+                resolve(resposta);
+            };
+            
+            // Montar URL com TODOS os parâmetros
+            const url = `https://script.google.com/macros/s/AKfycbykob9YYm-X-oP1pLvjrUjyDbOeMj8yVekviXG95MBzfuGuy0kH0B2GAmVU0mKW5QDEdw/exec?callback=${callbackName}&acao=salvarSubscription&fcmToken=${encodeURIComponent(token)}&tipo=firebase&email=${encodeURIComponent(userEmail)}`;
+            
+            console.log("📡 Enviando para servidor:", url.substring(0, 100) + "...");
+            
+            const script = document.createElement('script');
+            script.src = url;
+            
+            // Timeout
+            setTimeout(() => {
+                if (script.parentNode) document.head.removeChild(script);
+                if (window[callbackName]) {
+                    delete window[callbackName];
+                    console.error("❌ Timeout - servidor não respondeu");
+                    resolve({ sucesso: false, erro: "timeout" });
+                }
+            }, 10000);
+            
+            document.head.appendChild(script);
+        });
+        
+    } catch (erro) {
+        console.error("❌ Erro crítico ao salvar token:", erro);
+        return { sucesso: false, erro: erro.message };
+    }
 }
+
+// Função alternativa caso a principal falhe
+async function tentarSalvarTokenAlternativo(token, email) {
+    console.log("🔄 Usando método alternativo para:", email);
+    
+    // Tentar via POST em vez de JSONP
+    try {
+        const resposta = await fetch('https://script.google.com/macros/s/AKfycbykob9YYm-X-oP1pLvjrUjyDbOeMj8yVekviXG95MBzfuGuy0kH0B2GAmVU0mKW5QDEdw/exec', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                acao: 'salvarSubscription',
+                fcmToken: token,
+                tipo: 'firebase',
+                email: email
+            })
+        });
+        
+        const resultado = await resposta.json();
+        console.log("📨 Resposta alternativa:", resultado);
+        return resultado;
+    } catch (erro) {
+        console.error("❌ Método alternativo também falhou:", erro);
+        return { sucesso: false, erro: erro.message };
+    }
+}
+
 /**
  * 🔄 OBTÉM TOKEN WEB PUSH (FALLBACK)
  */
