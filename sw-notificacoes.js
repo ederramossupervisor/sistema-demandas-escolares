@@ -179,7 +179,7 @@ self.addEventListener('message', function(event) {
         case 'GET_FCM_TOKEN':
             // Obter token FCM atual
             messaging.getToken({
-                vapidKey: 'BEOHDwWjTbmMFmT8RQl6T6CF4GPC9EjrEVuVkSaCgfgWg4cI68s6LRlIL196LCRjEWr6AEMMHhrjW4OXtrKwUsw',
+                vapidKey: 'BMQIERFqdSFhiX319L_Wfa176UU8nzop-9-SB4pPxowM6yBo9gIrnU5-PtsENsc_XWXZJTQHCgMeYtiztUE9C3Q',
                 serviceWorkerRegistration: self.registration
             }).then(function(currentToken) {
                 event.ports[0].postMessage({
