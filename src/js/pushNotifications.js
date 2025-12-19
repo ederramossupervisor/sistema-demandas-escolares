@@ -5,7 +5,7 @@ const PushNotificationSystem = {
         vapidPublicKey: 'BKFl5Hc4UKk6gNm4t7wcCLnRIzYmW9TF8yOxqM0obajhIG_H0RRetGt2bT1qZoTIerYa4IVQE6Jb0D4hNRIM-Vs',
         googleScriptUrl: 'https://script.google.com/macros/s/AKfycbzipAeNlapZ3ks_YkU4nT5dRtMBbMhvDqZbuQIMefrJpz0lswmaOhehBsz4YKEfGYs90A/exec',
         appPath: '/sistema-demandas-escolares/',
-        swPath: '/sistema-demandas-escolares/public/sw-notificacoes.js'
+        swPath: '/sistema-demandas-escolares/sw-notificacoes.js'
     },
     
     // Estado do sistema
@@ -77,7 +77,7 @@ const PushNotificationSystem = {
     async registerServiceWorker() {
         try {
             const registration = await navigator.serviceWorker.register(this.config.swPath, {
-                scope: '/sistema-demandas-escolares/public/'
+                scope: '/sistema-demandas-escolares/'
             });
             
             console.log('✅ Service Worker registrado:', registration.scope);
