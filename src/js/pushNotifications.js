@@ -71,27 +71,77 @@ const PushNotificationSystem = {
                'showNotification' in ServiceWorkerRegistration.prototype;
     },
     
-    /**
-     * Registra o Service Worker de notificações
-     */
     async registerServiceWorker() {
+    try {
+        console.log('[PUSH] Tentando registrar SW...');
+        
+        // TENTATIVA 1: Caminho normal
+        const registration = await navigator.serviceWorker.register(this.config.swPath, {
+            scope: this.config.appPath
+        });
+        
+        console.log('[PUSH] Service Worker registrado com sucesso:', registration.scope);
+        
+        // Aguardar SW ficar pronto
+        if (registration.installing) {
+            console.log('[PUSH] SW instalando...');
+            await new Promise(resolve => {
+                registration.installing.addEventListener('statechange', function(e) {
+                    if (e.target.state === 'activated') {
+                        console.log('[PUSH] SW ativado!');
+                        resolve();
+                    }
+                });
+            });
+        }
+        
+        return registration;
+        
+    } catch (error) {
+        console.error('[PUSH] ERRO no registro do SW:', error.message);
+        
+        // TENTATIVA 2: SW ultra-simplificado
         try {
-            const registration = await navigator.serviceWorker.register(this.config.swPath, {
-                scope: '/sistema-demandas-escolares/'
+            console.log('[PUSH] Tentando SW simplificado...');
+            
+            // Crie um SW simplificado em tempo real
+            const swContent = `
+                self.addEventListener('install', e => self.skipWaiting());
+                self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+                self.addEventListener('push', e => {
+                    e.waitUntil(self.registration.showNotification('Teste', {
+                        body: 'Notificacao teste',
+                        icon: '${this.config.appPath}public/icons/192x192.png'
+                    }));
+                });
+                console.log('SW simplificado carregado');
+            `;
+            
+            const blob = new Blob([swContent], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            
+            const altRegistration = await navigator.serviceWorker.register(swUrl, {
+                scope: this.config.appPath
             });
             
-            console.log('✅ Service Worker registrado:', registration.scope);
+            console.log('[PUSH] SW simplificado registrado:', altRegistration.scope);
+            return altRegistration;
             
-            // Aguardar ativação
-            await navigator.serviceWorker.ready;
+        } catch (secondError) {
+            console.error('[PUSH] Falha total no SW. Continuando sem notificacoes push.');
             
-            return registration;
-            
-        } catch (error) {
-            console.error('❌ Erro ao registrar Service Worker:', error);
-            throw error;
+            // Retorna objeto mock para nao quebrar o sistema
+            return {
+                scope: this.config.appPath,
+                pushManager: {
+                    getSubscription: () => Promise.resolve(null),
+                    subscribe: () => Promise.reject(new Error('SW nao disponivel'))
+                },
+                showNotification: () => Promise.reject(new Error('SW nao disponivel'))
+            };
         }
-    },
+    }
+}
     
     /**
      * Solicita permissão para notificações
