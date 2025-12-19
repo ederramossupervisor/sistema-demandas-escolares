@@ -1,37 +1,36 @@
 // ============================================
-// SERVICE WORKER DE NOTIFICAÇÕES PUSH CORRIGIDO
-// sw-notificacoes.js
-// Compatível com GitHub Pages
+// SERVICE WORKER DE NOTIFICACOES PUSH
+// sw-notificacoes.js - VERSAO SEM CARACTERES ESPECIAIS
 // ============================================
 
 const APP_PATH = '/sistema-demandas-escolares/';
 const VAPID_PUBLIC_KEY = 'BKFl5Hc4UKk6gNm4t7wcCLnRIzYmW9TF8yOxqM0obajhIG_H0RRetGt2bT1qZoTIerYa4IVQE6Jb0D4hNRIM-Vs';
 
 // ============================================
-// 1. INSTALAÇÃO DO SERVICE WORKER
+// 1. INSTALACAO DO SERVICE WORKER
 // ============================================
-self.addEventListener('install', (event) => {
-    console.log('🔧 Service Worker de notificações: Instalando...');
+self.addEventListener('install', function(event) {
+    console.log('[SW] Service Worker de notificacoes: Instalando...');
     self.skipWaiting(); // Ativar imediatamente
 });
 
 // ============================================
-// 2. ATIVAÇÃO DO SERVICE WORKER
+// 2. ATIVACAO DO SERVICE WORKER
 // ============================================
-self.addEventListener('activate', (event) => {
-    console.log('✅ Service Worker de notificações: Ativado!');
+self.addEventListener('activate', function(event) {
+    console.log('[SW] Service Worker de notificacoes: Ativado!');
     event.waitUntil(self.clients.claim());
 });
 
 // ============================================
-// 3. RECEBIMENTO DE NOTIFICAÇÕES PUSH
+// 3. RECEBIMENTO DE NOTIFICACOES PUSH
 // ============================================
-self.addEventListener('push', (event) => {
-    console.log('📲 Recebida notificação push:', event);
+self.addEventListener('push', function(event) {
+    console.log('[SW] Recebida notificacao push');
     
     let notificationData = {
         title: 'Sistema de Demandas Escolares',
-        body: 'Nova atualização disponível',
+        body: 'Nova atualizacao disponivel',
         icon: APP_PATH + 'public/icons/192x192.png',
         badge: APP_PATH + 'public/icons/96x96.png',
         data: {
@@ -41,10 +40,10 @@ self.addEventListener('push', (event) => {
     };
     
     try {
-        // Tentar obter dados da notificação
+        // Tentar obter dados da notificacao
         if (event.data) {
             const data = event.data.json();
-            console.log('📋 Dados da notificação:', data);
+            console.log('[SW] Dados da notificacao:', data);
             
             notificationData = {
                 title: data.title || 'Sistema de Demandas',
@@ -68,20 +67,20 @@ self.addEventListener('push', (event) => {
                 actions: data.actions || [
                     {
                         action: 'open',
-                        title: '👁️ Abrir Sistema'
+                        title: 'Abrir Sistema'
                     },
                     {
                         action: 'dismiss',
-                        title: '✖️ Fechar'
+                        title: 'Fechar'
                     }
                 ]
             };
         }
     } catch (error) {
-        console.warn('⚠️ Não foi possível parsear dados da notificação, usando padrão:', error);
+        console.warn('[SW] Nao foi possivel parsear dados da notificacao, usando padrao:', error);
     }
     
-    console.log('📤 Mostrando notificação:', notificationData);
+    console.log('[SW] Mostrando notificacao:', notificationData);
     
     event.waitUntil(
         self.registration.showNotification(notificationData.title, notificationData)
@@ -89,73 +88,74 @@ self.addEventListener('push', (event) => {
 });
 
 // ============================================
-// 4. CLIQUE EM NOTIFICAÇÃO
+// 4. CLIQUE EM NOTIFICACAO
 // ============================================
-self.addEventListener('notificationclick', (event) => {
-    console.log('🔔 Notificação clicada:', event.notification.data);
+self.addEventListener('notificationclick', function(event) {
+    console.log('[SW] Notificacao clicada:', event.notification.data);
     
     event.notification.close();
     
     const notificationData = event.notification.data || {};
     const urlToOpen = notificationData.url || APP_PATH + 'index.html';
     
-    // Verificar qual ação foi clicada
+    // Verificar qual acao foi clicada
     if (event.action === 'open' || event.action === 'ver') {
         event.waitUntil(
             clients.matchAll({
                 type: 'window',
                 includeUncontrolled: true
-            }).then((clientList) => {
+            }).then(function(clientList) {
                 // Procurar por uma aba/janela aberta
-                for (const client of clientList) {
+                for (var i = 0; i < clientList.length; i++) {
+                    var client = clientList[i];
                     if (client.url.includes(APP_PATH) && 'focus' in client) {
                         return client.focus();
                     }
                 }
                 
-                // Se não encontrou, abrir nova janela
+                // Se nao encontrou, abrir nova janela
                 if (clients.openWindow) {
-                    // Adicionar parâmetros específicos se houver
-                    let finalUrl = urlToOpen;
+                    // Adicionar parametros especificos se houver
+                    var finalUrl = urlToOpen;
                     if (notificationData.demandaId) {
                         finalUrl += '?demanda=' + notificationData.demandaId;
                     }
                     
-                    console.log('🌐 Abrindo URL:', finalUrl);
+                    console.log('[SW] Abrindo URL:', finalUrl);
                     return clients.openWindow(finalUrl);
                 }
             })
         );
     } 
     
-    // Para outras ações
+    // Para outras acoes
     else if (event.action === 'dismiss' || event.action === 'fechar') {
-        console.log('❌ Notificação descartada');
+        console.log('[SW] Notificacao descartada');
         event.notification.close();
     }
     
-    // Se clicou na notificação (sem ação específica)
+    // Se clicou na notificacao (sem acao especifica)
     else {
         event.waitUntil(
-            clients.openWindow(urlToOpen).catch(err => {
-                console.error('Erro ao abrir janela:', err);
+            clients.openWindow(urlToOpen).catch(function(err) {
+                console.error('[SW] Erro ao abrir janela:', err);
             })
         );
     }
 });
 
 // ============================================
-// 5. FECHAMENTO DE NOTIFICAÇÃO
+// 5. FECHAMENTO DE NOTIFICACAO
 // ============================================
-self.addEventListener('notificationclose', (event) => {
-    console.log('📭 Notificação fechada:', event.notification.data);
+self.addEventListener('notificationclose', function(event) {
+    console.log('[SW] Notificacao fechada:', event.notification.data);
     
-    // Aqui você pode enviar métricas para o servidor
-    // sobre notificações fechadas
-    const notificationData = event.notification.data || {};
+    // Aqui voce pode enviar metricas para o servidor
+    // sobre notificacoes fechadas
+    var notificationData = event.notification.data || {};
     
     // Exemplo: Enviar para Google Apps Script
-    self.registration.pushManager.getSubscription().then(subscription => {
+    self.registration.pushManager.getSubscription().then(function(subscription) {
         if (subscription) {
             fetch('https://script.google.com/macros/s/AKfycbzipAeNlapZ3ks_YkU4nT5dRtMBbMhvDqZbuQIMefrJpz0lswmaOhehBsz4YKEfGYs90A/exec', {
                 method: 'POST',
@@ -168,24 +168,26 @@ self.addEventListener('notificationclose', (event) => {
                     notificationData: notificationData,
                     timestamp: Date.now()
                 })
-            }).catch(err => console.log('Não foi possível logar fechamento'));
+            }).catch(function(err) {
+                console.log('[SW] Nao foi possivel logar fechamento:', err);
+            });
         }
     });
 });
 
 // ============================================
-// 6. RENOVAÇÃO DE SUBSCRIPTION
+// 6. RENOVACAO DE SUBSCRIPTION
 // ============================================
-self.addEventListener('pushsubscriptionchange', (event) => {
-    console.log('🔄 Subscription alterada:', event);
+self.addEventListener('pushsubscriptionchange', function(event) {
+    console.log('[SW] Subscription alterada:', event);
     
     event.waitUntil(
         self.registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
         })
-        .then((newSubscription) => {
-            console.log('✅ Nova subscription criada:', newSubscription);
+        .then(function(newSubscription) {
+            console.log('[SW] Nova subscription criada:', newSubscription);
             
             // Enviar nova subscription para o servidor
             return fetch('https://script.google.com/macros/s/AKfycbxQScM5c4i4xbVxrYBjlpG-s8wPWM9nx3JCOi4t3jVhmhPnpbO2yOvS1hPQXb1ZVlUuwg/exec', {
@@ -200,16 +202,15 @@ self.addEventListener('pushsubscriptionchange', (event) => {
                 })
             });
         })
-        .catch((error) => {
-            console.error('❌ Erro ao renovar subscription:', error);
+        .catch(function(error) {
+            console.error('[SW] Erro ao renovar subscription:', error);
         })
     );
 });
 
 // ============================================
-// 7. FUNÇÕES AUXILIARES
+// 7. FUNCOES AUXILIARES
 // ============================================
-
 function urlBase64ToUint8Array(base64String) {
     try {
         const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -226,16 +227,16 @@ function urlBase64ToUint8Array(base64String) {
         
         return outputArray;
     } catch (error) {
-        console.error('❌ Erro ao converter chave VAPID:', error);
+        console.error('[SW] Erro ao converter chave VAPID:', error);
         return new Uint8Array([]);
     }
 }
 
 // ============================================
-// 8. SINCRONIZAÇÃO EM BACKGROUND (SIMPLIFICADA)
+// 8. SINCRONIZACAO EM BACKGROUND (SIMPLIFICADA)
 // ============================================
-self.addEventListener('sync', (event) => {
-    console.log('🔄 Evento de sync:', event.tag);
+self.addEventListener('sync', function(event) {
+    console.log('[SW] Evento de sync:', event.tag);
     
     if (event.tag === 'sync-notificacoes') {
         event.waitUntil(syncNotificacoesPendentes());
@@ -243,7 +244,7 @@ self.addEventListener('sync', (event) => {
 });
 
 async function syncNotificacoesPendentes() {
-    console.log('📡 Sincronizando notificações pendentes...');
+    console.log('[SW] Sincronizando notificacoes pendentes...');
     
     try {
         // Tentar buscar do servidor
@@ -251,25 +252,25 @@ async function syncNotificacoesPendentes() {
         if (response.ok) {
             const data = await response.json();
             if (data.notifications && data.notifications.length > 0) {
-                console.log(`📨 ${data.notifications.length} notificações recebidas`);
-                // Processar notificações...
+                console.log('[SW] ' + data.notifications.length + ' notificacoes recebidas');
+                // Processar notificacoes...
             }
         }
     } catch (error) {
-        console.log('📴 Offline ou erro na sincronização:', error);
+        console.log('[SW] Offline ou erro na sincronizacao:', error);
     }
 }
 
 // ============================================
 // 9. MENSAGENS DO APP
 // ============================================
-self.addEventListener('message', (event) => {
-    console.log('📨 Mensagem recebida no Service Worker:', event.data);
+self.addEventListener('message', function(event) {
+    console.log('[SW] Mensagem recebida no Service Worker:', event.data);
     
     switch(event.data.type) {
         case 'GET_SUBSCRIPTION':
             self.registration.pushManager.getSubscription()
-                .then(subscription => {
+                .then(function(subscription) {
                     event.ports[0].postMessage({
                         type: 'SUBSCRIPTION_INFO',
                         subscription: subscription ? subscription.toJSON() : null
@@ -278,8 +279,8 @@ self.addEventListener('message', (event) => {
             break;
             
         case 'SEND_TEST_NOTIFICATION':
-            self.registration.showNotification('🔔 Teste de Notificação', {
-                body: 'Esta é uma notificação de teste do sistema',
+            self.registration.showNotification('Teste de Notificacao', {
+                body: 'Esta e uma notificacao de teste do sistema',
                 icon: APP_PATH + 'public/icons/192x192.png',
                 badge: APP_PATH + 'public/icons/96x96.png',
                 vibrate: [200, 100, 200],
@@ -293,7 +294,7 @@ self.addEventListener('message', (event) => {
         case 'SEND_CUSTOM_NOTIFICATION':
             if (event.data.data) {
                 self.registration.showNotification(event.data.data.title || 'Sistema de Demandas', {
-                    body: event.data.data.body || 'Nova atualização',
+                    body: event.data.data.body || 'Nova atualizacao',
                     icon: event.data.data.icon || APP_PATH + 'public/icons/192x192.png',
                     badge: APP_PATH + 'public/icons/96x96.png',
                     data: {
@@ -308,4 +309,4 @@ self.addEventListener('message', (event) => {
     }
 });
 
-console.log('✅ Service Worker de notificações carregado com sucesso!');
+console.log('[SW] Service Worker de notificacoes carregado com sucesso!');
