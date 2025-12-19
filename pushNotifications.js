@@ -5,7 +5,7 @@ const PushNotificationSystem = {
     // Configurações ATUALIZADAS
     config: {
         // Chave pública VAPID (a mesma que você já tem)
-        vapidPublicKey: 'BKFl5Hc4UKk6gNm4t7wcCLnRIzYmW9TF8yOxqM0obajhIG_H0RRetGt2bT1qZoTIerYa4IVQE6Jb0D4hNRIM-Vs',
+        vapidPublicKey: 'BKYmA5_HGRoYckulvip4sBqmWdTUSyer7LJh4EE1jVajz5WHfN3yWANavQEjuvi0fdbXYGCCZu-ETLYAqUDOR7g',
         
         // URL do seu Google Apps Script
         googleScriptUrl: 'https://script.google.com/macros/s/AKfycbzipAeNlapZ3ks_YkU4nT5dRtMBbMhvDqZbuQIMefrJpz0lswmaOhehBsz4YKEfGYs90A/exec',
