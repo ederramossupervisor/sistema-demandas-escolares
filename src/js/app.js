@@ -623,76 +623,107 @@ function renderizarDemandas() {
 }
 /**
  * FUNÇÃO NOVA: Renderiza demandas na LISTA (não nos cards)
- * Esta função vai substituir os exemplos fixos pelos dados reais
  */
 function renderizarDemandasNaLista() {
-    console.log("🎯 Renderizando demandas na LISTA...");
+    console.log("🎯 Tentando mostrar as demandas na lista...");
     
-    // 1. Encontrar o container da lista (AGORA COM ID)
-    const listaContainer = document.getElementById('demandas-lista-container') || 
-                          document.querySelector('.demandas-lista-container');
+    // 1. PRIMEIRO: Procurar onde vamos colocar as demandas
+    // Vamos procurar por vários nomes possíveis
+    let listaContainer = null;
     
+    // Tentativa 1: Procurar pelo ID exato
+    listaContainer = document.getElementById('demandas-lista-container');
+    
+    // Tentativa 2: Se não achou, procura por classe
     if (!listaContainer) {
-        console.error("❌ Container da lista não encontrado!");
-        
-        // Tentar criar dinamicamente
-        const mainContent = document.querySelector('.main-content');
-        if (mainContent) {
-            const novoContainer = document.createElement('div');
-            novoContainer.className = 'demandas-lista-container';
-            novoContainer.id = 'demandas-lista-container';
-            mainContent.appendChild(novoContainer);
-            
-            console.log("✅ Container criado dinamicamente");
-            return renderizarDemandasNaLista(); // Tentar novamente
-        }
-        
-        return;
+        listaContainer = document.querySelector('.demandas-lista-container');
     }
     
-    // 2. Limpar conteúdo (exceto o cabeçalho se existir)
-    const cabecalho = listaContainer.querySelector('.demanda-linha.cabecalho');
+    // Tentativa 3: Se ainda não achou, procura qualquer div que possa servir
+    if (!listaContainer) {
+        listaContainer = document.querySelector('.lista-container, .lista-demandas, .demandas-container');
+    }
+    
+    // 2. SE NÃO ACHOU, vamos criar uma "prateleira" nova
+    if (!listaContainer) {
+        console.log("⚠️ Não encontrei onde mostrar as demandas. Vou criar um lugar...");
+        
+        // Achar o "quarto principal" do site (onde colocar a prateleira)
+        const mainContent = document.querySelector('.main-content') || 
+                           document.querySelector('main') || 
+                           document.querySelector('.container') ||
+                           document.body;
+        
+        // Criar uma nova "prateleira" (div)
+        const novaPrateleira = document.createElement('div');
+        novaPrateleira.className = 'demandas-lista-container';
+        novaPrateleira.id = 'demandas-lista-container';
+        
+        // Dar um visual bonito para a prateleira
+        novaPrateleira.style.cssText = `
+            width: 100%;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            font-family: Arial, sans-serif;
+        `;
+        
+        // Colocar a prateleira no "quarto"
+        mainContent.appendChild(novaPrateleira);
+        listaContainer = novaPrateleira;
+        
+        console.log("✅ Pronto! Criei um novo lugar para mostrar as demandas.");
+    }
+    
+    // 3. AGORA vamos limpar a prateleira para colocar coisas novas
     listaContainer.innerHTML = '';
     
-    if (cabecalho) {
-        listaContainer.appendChild(cabecalho);
-    } else {
-        // Criar cabeçalho se não existir
-        const cabecalhoHTML = `
-            <div class="demanda-linha cabecalho">
-                <div>Título</div>
-                <div>Escola</div>
-                <div>Departamento</div>
-                <div>Responsável</div>
-                <div>Prazo</div>
-                <div>Status</div>
-            </div>
-        `;
-        listaContainer.innerHTML = cabecalhoHTML;
-    }    
-    if (cabecalho) {
-        listaContainer.appendChild(cabecalho);
-    }
-    
-    // 3. Verificar se temos demandas
+    // 4. Verificar se temos demandas para mostrar
     if (!state.demandas || state.demandas.length === 0) {
         console.log("📭 Nenhuma demanda para mostrar");
         
-        // Mostrar mensagem "vazia"
-        const vazioHTML = `
-            <div class="lista-vazia">
-                <i class="fas fa-clipboard-list fa-3x"></i>
-                <h3>Nenhuma demanda encontrada</h3>
-                <p>Não há demandas cadastradas no momento</p>
+        // Mostrar mensagem "Está vazio aqui"
+        const mensagemVazio = `
+            <div style="text-align: center; padding: 50px 20px; color: #666;">
+                <div style="font-size: 48px; margin-bottom: 20px;">📋</div>
+                <h3 style="color: #333; margin-bottom: 10px;">Nenhuma demanda encontrada</h3>
+                <p style="color: #777;">Não há demandas cadastradas no momento</p>
+                <button onclick="mostrarModalNovaDemanda()" 
+                        style="margin-top: 20px; padding: 10px 20px; 
+                               background: #3498db; color: white; 
+                               border: none; border-radius: 5px; 
+                               cursor: pointer;">
+                    + Criar Primeira Demanda
+                </button>
             </div>
         `;
-        listaContainer.insertAdjacentHTML('beforeend', vazioHTML);
+        
+        listaContainer.innerHTML = mensagemVazio;
         return;
     }
     
-    console.log(`📊 Mostrando ${state.demandas.length} demandas na lista`);
+    console.log(`📊 Mostrando ${state.demandas.length} demandas`);
     
-    // 4. Para CADA demanda real, criar uma linha na lista
+    // 5. Criar o CABEÇALHO da tabela (títulos das colunas)
+    const cabecalhoHTML = `
+        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr; 
+                    gap: 10px; padding: 15px; background: #f8f9fa; 
+                    border-bottom: 2px solid #dee2e6; font-weight: bold; color: #495057;">
+            <div>Título</div>
+            <div>Escola</div>
+            <div>Departamento</div>
+            <div>Responsável</div>
+            <div>Prazo</div>
+            <div>Status</div>
+        </div>
+    `;
+    
+    listaContainer.innerHTML = cabecalhoHTML;
+    
+    // 6. Para CADA demanda, criar uma LINHA na lista
     state.demandas.forEach((demanda, index) => {
         // Formatar a data do prazo
         let dataPrazo = "Não definido";
@@ -708,48 +739,39 @@ function renderizarDemandasNaLista() {
         }
         
         // Determinar cor do status
-        let statusClass = '';
-        let statusIcon = '';
+        let statusCor = '#95a5a6'; // Cinza padrão
+        let statusTexto = demanda.status || 'Pendente';
         
-        switch(demanda.status) {
-            case 'Pendente':
-                statusClass = 'status-pendente';
-                statusIcon = '⏰';
-                break;
-            case 'Em andamento':
-                statusClass = 'status-andamento';
-                statusIcon = '▶️';
-                break;
-            case 'Concluída':
-                statusClass = 'status-concluida';
-                statusIcon = '✅';
-                break;
-            default:
-                statusClass = 'status-pendente';
-                statusIcon = '📝';
-        }
+        if (statusTexto === 'Pendente') statusCor = '#e74c3c'; // Vermelho
+        if (statusTexto === 'Em andamento') statusCor = '#f39c12'; // Laranja
+        if (statusTexto === 'Concluída') statusCor = '#27ae60'; // Verde
         
-        // Criar HTML da linha
+        // Criar HTML da linha (cada linha é um item da lista)
         const linhaHTML = `
-            <div class="demanda-linha" onclick="mostrarDetalhesDemanda(${demanda.id})" style="cursor: pointer;">
-                <div class="demanda-titulo">
-                    <i class="fas fa-file-alt"></i>
-                    ${demanda.titulo || 'Sem título'}
+            <div onclick="mostrarDetalhesDemanda(${demanda.id})" 
+                 style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+                        gap: 10px; padding: 15px; border-bottom: 1px solid #eee;
+                        cursor: pointer; transition: background 0.3s;
+                        &:hover { background: #f8f9fa; }">
+                <div style="font-weight: 500; color: #2c3e50;">
+                    📋 ${demanda.titulo || 'Sem título'}
                 </div>
-                <div class="demanda-escola" title="${demanda.escolas || ''}">
-                    ${escolasTexto}
+                <div style="color: #34495e;">
+                    🏫 ${escolasTexto}
                 </div>
-                <div class="demanda-departamento">
-                    ${demanda.departamento || 'Não definido'}
+                <div style="color: #7f8c8d;">
+                    🏢 ${demanda.departamento || 'Não definido'}
                 </div>
-                <div class="demanda-responsavel">
-                    ${demanda.responsavel || 'Não definido'}
+                <div style="color: #2c3e50;">
+                    👤 ${demanda.responsavel || 'Não definido'}
                 </div>
-                <div class="demanda-prazo">
-                    ${dataPrazo}
+                <div style="color: #2c3e50;">
+                    📅 ${dataPrazo}
                 </div>
-                <div class="demanda-status ${statusClass}">
-                    ${statusIcon} ${demanda.status || 'Pendente'}
+                <div style="color: white; background: ${statusCor}; 
+                            padding: 5px 10px; border-radius: 20px; 
+                            text-align: center; font-size: 0.9em;">
+                    ${statusTexto}
                 </div>
             </div>
         `;
@@ -758,8 +780,9 @@ function renderizarDemandasNaLista() {
         listaContainer.insertAdjacentHTML('beforeend', linhaHTML);
     });
     
-    console.log("✅ Lista renderizada com sucesso!");
+    console.log("✅ Lista de demandas criada com sucesso!");
 }
+
 /**
  * Filtra as demandas com base nos filtros ativos
  */
