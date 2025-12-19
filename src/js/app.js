@@ -2149,7 +2149,7 @@ function mostrarDetalhesDemanda(idDemanda) {
                                            display: flex; align-items: center; justify-content: center;
                                            gap: 8px; font-size: 14px;">
                                 <i class="fas fa-trash"></i>
-                                ${isMobile ? 'Excluir Demanda Permanentemente' : 'Excluir Demanda'}
+                                ${isMobile ? 'Excluir Demanda' : 'Excluir Demanda'}
                             </button>
                         `;
                         
