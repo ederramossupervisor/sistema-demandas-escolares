@@ -77,7 +77,7 @@ const PushNotificationSystem = {
     async registerServiceWorker() {
         try {
             const registration = await navigator.serviceWorker.register(this.config.swPath, {
-                scope: this.config.appPath
+                scope: '/sistema-demandas-escolares/public/'
             });
             
             console.log('✅ Service Worker registrado:', registration.scope);
