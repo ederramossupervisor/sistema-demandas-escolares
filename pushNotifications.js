@@ -8,7 +8,7 @@ const PushNotificationSystem = {
         vapidPublicKey: 'BKYmA5_HGRoYckulvip4sBqmWdTUSyer7LJh4EE1jVajz5WHfN3yWANavQEjuvi0fdbXYGCCZu-ETLYAqUDOR7g',
         
         // URL do seu Google Apps Script
-        googleScriptUrl: 'https://script.google.com/macros/s/AKfycbwmMINu8y8i17bsMXCeVuW35p6WW_9Dx8gpCHiUQYgnC4f8JaZasZTANAeOpj-c7cNWGw/exec',
+        googleScriptUrl: 'https://script.google.com/macros/s/AKfycbyDIgMxkwXcsOvEy68MblMq9MESAvkAu23u39J04ILefk3E3SuxWtJPOHz-94vhJtrNfA/exec',
         
         // Caminhos para GitHub Pages
         appPath: '/sistema-demandas-escolares/',
