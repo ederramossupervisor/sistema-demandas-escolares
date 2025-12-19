@@ -377,115 +377,78 @@ function esconderLoading() {
         elementos.mainContainer.style.pointerEvents = 'auto';
     }
 }
-/**
- * Atualiza o bloco "Demandas" com números reais
- */
-/**
- * Atualiza o bloco "Demandas" com números reais
- */
 function atualizarBlocoEstatisticas(demandas) {
-    console.log("📈 Tentando atualizar os números das estatísticas...");
+    console.log("📈 Tentando atualizar estatísticas...");
     
-    // Contar por status
-    const total = demandas.length;
-    const pendentes = demandas.filter(d => d.status === 'Pendente').length;
-    const emAndamento = demandas.filter(d => d.status === 'Em andamento').length;
-    const concluidas = demandas.filter(d => d.status === 'Concluída').length;
-    
-    // Calcular atrasadas (pendentes ou em andamento com prazo vencido)
-    const hoje = new Date();
-    const atrasadas = demandas.filter(d => {
-        if (d.status === 'Concluída') return false;
-        if (!d.prazo) return false;
+    try {
+        // Contar por status
+        const total = demandas.length;
+        const pendentes = demandas.filter(d => d.status === 'Pendente').length;
+        const emAndamento = demandas.filter(d => d.status === 'Em andamento').length;
+        const concluidas = demandas.filter(d => d.status === 'Concluída').length;
         
-        const prazo = new Date(d.prazo);
-        return prazo < hoje;
-    }).length;
-    
-    console.log("📊 Contagem das demandas:", {
-        total: total,
-        pendentes: pendentes,
-        emAndamento: emAndamento,
-        concluidas: concluidas,
-        atrasadas: atrasadas
-    });
-    
-    // 1. PRIMEIRO: Verificar quais elementos realmente existem
-    const elementosParaAtualizar = [
-        { id: 'total-demandas-info', valor: total },
-        { id: 'pendentes-info', valor: pendentes },
-        { id: 'em-andamento-info', valor: emAndamento },
-        { id: 'concluidas-info', valor: concluidas },
-        { id: 'atrasadas-info', valor: atrasadas }
-    ];
-    
-    console.log("🔍 Procurando onde colocar os números...");
-    
-    let elementosEncontrados = 0;
-    
-    elementosParaAtualizar.forEach(function(item) {
-        const elemento = document.getElementById(item.id);
+        // Calcular atrasadas
+        const hoje = new Date();
+        const atrasadas = demandas.filter(d => {
+            if (d.status === 'Concluída') return false;
+            if (!d.prazo) return false;
+            const prazo = new Date(d.prazo);
+            return prazo < hoje;
+        }).length;
         
-        if (elemento) {
-            // Encontrou! Vamos atualizar
-            elemento.textContent = item.valor;
-            elementosEncontrados++;
-            console.log("✅ Atualizei " + item.id + ": " + item.valor);
-        } else {
-            // Não encontrou este elemento
-            console.log("⚠️ Não encontrei o elemento: " + item.id);
-            
-            // Vamos procurar por nomes parecidos
-            const primeiraParte = item.id.split('-')[0];
-            const elementosSimilares = document.querySelectorAll('[id*="' + primeiraParte + '"]');
-            if (elementosSimilares.length > 0) {
-                console.log("   Mas encontrei " + elementosSimilares.length + " elementos similares");
+        console.log("📊 Estatísticas calculadas:", { total, pendentes, emAndamento, concluidas, atrasadas });
+        
+        // 1. Tentar atualizar elementos PRINCIPAIS (os que estavam dando erro)
+        const elementos = {
+            'total-demandas-info': total,
+            'pendentes-info': pendentes,
+            'em-andamento-info': emAndamento,
+            'concluidas-info': concluidas,
+            'atrasadas-info': atrasadas
+        };
+        
+        // Tentar atualizar cada elemento, mas não parar se falhar
+        for (const [id, valor] of Object.entries(elementos)) {
+            try {
+                const elemento = document.getElementById(id);
+                if (elemento) {
+                    elemento.textContent = valor;
+                    console.log("✅ Atualizado: " + id + " = " + valor);
+                } else {
+                    console.log("⚠️ Elemento não encontrado: " + id);
+                }
+            } catch (erro) {
+                console.log("⚠️ Erro ao atualizar " + id + ": " + erro.message);
+                // Continua mesmo com erro
             }
         }
-    });
-    
-    // 2. SE NÃO ENCONTRAR NENHUM, criar um bloco simples
-    if (elementosEncontrados === 0) {
-        console.log("😮 Nenhum bloco de estatísticas encontrado! Vou criar um...");
         
-        // Encontrar onde colocar as estatísticas
-        let localParaEstatisticas = document.querySelector('.dashboard-stats');
-        if (!localParaEstatisticas) localParaEstatisticas = document.querySelector('.stats-container');
-        if (!localParaEstatisticas) localParaEstatisticas = document.querySelector('.main-header');
-        if (!localParaEstatisticas) localParaEstatisticas = document.querySelector('header');
-        if (!localParaEstatisticas) localParaEstatisticas = document.body;
+        // 2. Também atualizar elementos ALTERNATIVOS (se existirem)
+        const elementosAlt = {
+            'total-demandas': total,
+            'pendentes': pendentes,
+            'atrasadas': atrasadas,
+            'em-andamento': emAndamento,
+            'concluidas': concluidas
+        };
         
-        // Criar um bloco simples de estatísticas
-        const blocoEstatisticas = document.createElement('div');
-        blocoEstatisticas.className = 'estatisticas-simples';
-        blocoEstatisticas.innerHTML = '<div style="display: flex; gap: 10px; padding: 15px; background: white; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin: 10px 0;">' +
-            '<div style="flex: 1; text-align: center; padding: 10px; border-right: 1px solid #eee;">' +
-            '<div style="font-size: 24px; font-weight: bold; color: #3498db;">' + total + '</div>' +
-            '<div style="font-size: 12px; color: #7f8c8d;">Total</div>' +
-            '</div>' +
-            '<div style="flex: 1; text-align: center; padding: 10px; border-right: 1px solid #eee;">' +
-            '<div style="font-size: 24px; font-weight: bold; color: #e74c3c;">' + pendentes + '</div>' +
-            '<div style="font-size: 12px; color: #7f8c8d;">Pendentes</div>' +
-            '</div>' +
-            '<div style="flex: 1; text-align: center; padding: 10px; border-right: 1px solid #eee;">' +
-            '<div style="font-size: 24px; font-weight: bold; color: #f39c12;">' + emAndamento + '</div>' +
-            '<div style="font-size: 12px; color: #7f8c8d;">Andamento</div>' +
-            '</div>' +
-            '<div style="flex: 1; text-align: center; padding: 10px;">' +
-            '<div style="font-size: 24px; font-weight: bold; color: #27ae60;">' + concluidas + '</div>' +
-            '<div style="font-size: 12px; color: #7f8c8d;">Concluídas</div>' +
-            '</div>' +
-            '</div>';
-        
-        // Colocar no início da página
-        if (localParaEstatisticas) {
-            localParaEstatisticas.insertBefore(blocoEstatisticas, localParaEstatisticas.firstChild);
-            console.log("✅ Bloco de estatísticas criado!");
+        for (const [id, valor] of Object.entries(elementosAlt)) {
+            try {
+                const elemento = document.getElementById(id);
+                if (elemento) {
+                    elemento.textContent = valor;
+                }
+            } catch (erro) {
+                // Ignora erro
+            }
         }
-    } else {
-        console.log("✅ Atualizados " + elementosEncontrados + " contadores de estatísticas");
+        
+    } catch (erro) {
+        console.warn("⚠️ Erro geral em atualizarBlocoEstatisticas:", erro.message);
+        // Não faz nada - deixa o sistema continuar
     }
 }
+
 /**
  * Carrega as demandas do servidor
  */
@@ -511,12 +474,13 @@ async function carregarDemandas() {
         // 5. Atualizar o bloco "Demandas" com números reais
         // Usamos try-catch para não parar se der erro nas estatísticas
         try {
-            atualizarBlocoEstatisticas(demandas);
-        } catch (erro) {
-            console.warn("⚠️ Problema ao atualizar estatísticas (não crítico):", erro.message);
-            // Continua funcionando mesmo com erro nas estatísticas
-        }
-            console.warn("⚠️ Problema ao atualizar estatísticas (não crítico):", erro.message);
+            setTimeout(function() {
+    try {
+        atualizarBlocoEstatisticas(demandas);
+    } catch (erro) {
+        console.log("⚠️ Erro não crítico nas estatísticas: " + erro.message);
+    }
+}, 100);
         // 6. Se não houver demandas, mostrar mensagem
         if (demandas.length === 0) {
             mostrarToast('Info', 'Nenhuma demanda cadastrada ainda.', 'info');
@@ -2841,7 +2805,37 @@ async function sincronizarNotificacoesPendentes() {
         console.error('❌ Erro na sincronização de notificações:', error);
     }
 }
+// DEBUG TEMPORÁRIO - REMOVER DEPOIS
+console.log("=== DEBUG MODE ===");
+console.log("URL atual: " + window.location.href);
+console.log("Estou na página de login ou demandas?");
 
+// Verificar se estamos na página certa
+if (window.location.href.includes('login')) {
+    console.log("📱 Estamos na página de LOGIN");
+    // Não tentar carregar demandas aqui
+} else {
+    console.log("📊 Estamos na página de DEMANDAS");
+}
+
+// Verificar elementos básicos
+setTimeout(function() {
+    console.log("🔍 Verificando elementos importantes:");
+    
+    // Elementos do login
+    const loginElements = ['login-container', 'login-form', 'username', 'password'];
+    loginElements.forEach(function(id) {
+        const el = document.getElementById(id);
+        console.log(id + ": " + (el ? "✅" : "❌"));
+    });
+    
+    // Elementos das demandas
+    const demandaElements = ['main-container', 'demandas-container', 'btn-nova-demanda'];
+    demandaElements.forEach(function(id) {
+        const el = document.getElementById(id);
+        console.log(id + ": " + (el ? "✅" : "❌"));
+    });
+}, 2000);
 /**
  * Obtém ID do usuário logado
  */
