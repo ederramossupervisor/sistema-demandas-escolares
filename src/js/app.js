@@ -2486,8 +2486,243 @@ async function testarTodasNotificacoes() {
         mostrarLoading(false);
     }
 }
+// ============================================
+// INTEGRAÇÃO COM NOTIFICAÇÕES PUSH NO app.js
+// ============================================
 
-// Exportar para uso global
+/**
+ * Inicializa sistema de notificações
+ */
+async function inicializarSistemaNotificacoes() {
+    console.log('🔔 Inicializando sistema de notificações...');
+    
+    try {
+        // Verificar se o sistema de push está disponível
+        if (typeof window.PushNotificationSystem !== 'undefined') {
+            const success = await window.PushNotificationSystem.initialize();
+            
+            if (success) {
+                console.log('✅ Sistema de notificações push inicializado');
+                
+                // Configurar botões da interface
+                configurarBotoesNotificacoes();
+                
+                // Verificar configurações salvas do usuário
+                await carregarConfiguracoesNotificacoes();
+                
+                // Sincronizar notificações pendentes
+                setTimeout(sincronizarNotificacoesPendentes, 5000);
+            }
+        } else {
+            console.warn('⚠️ Sistema de notificações push não carregado');
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao inicializar notificações:', error);
+    }
+}
+
+/**
+ * Configura botões de notificações na interface
+ */
+function configurarBotoesNotificacoes() {
+    // Botão para ativar/desativar notificações
+    const togglePush = document.getElementById('toggle-push');
+    const btnAtivarPush = document.getElementById('btn-activate-push');
+    const btnTestarPush = document.getElementById('btn-testar-push');
+    
+    if (togglePush) {
+        togglePush.addEventListener('change', async function() {
+            if (this.checked) {
+                await ativarNotificacoesPush();
+            } else {
+                await desativarNotificacoesPush();
+            }
+        });
+    }
+    
+    if (btnAtivarPush) {
+        btnAtivarPush.addEventListener('click', async function() {
+            await ativarNotificacoesPush();
+        });
+    }
+    
+    if (btnTestarPush) {
+        btnTestarPush.addEventListener('click', async function() {
+            await testarNotificacaoPush();
+        });
+    }
+}
+
+/**
+ * Ativa notificações push
+ */
+async function ativarNotificacoesPush() {
+    try {
+        if (window.PushNotificationSystem) {
+            const info = window.PushNotificationSystem.getInfo();
+            
+            if (!info.supported) {
+                mostrarToast('Erro', 'Seu navegador não suporta notificações push', 'error');
+                return;
+            }
+            
+            if (info.permission === 'denied') {
+                mostrarToast('Permissão Negada', 
+                    'Você bloqueou as notificações. Ative nas configurações do navegador.',
+                    'warning');
+                return;
+            }
+            
+            if (info.permission === 'default') {
+                // Solicitar permissão
+                const permission = await window.PushNotificationSystem.requestPermission();
+                
+                if (permission === 'granted') {
+                    mostrarToast('Sucesso', 'Notificações ativadas!', 'success');
+                    // Subscription será feita automaticamente pelo sistema
+                }
+            } else if (info.permission === 'granted' && !info.subscribed) {
+                // Já tem permissão, mas não está inscrito
+                await window.PushNotificationSystem.subscribeToPush();
+            }
+        }
+    } catch (error) {
+        console.error('❌ Erro ao ativar notificações:', error);
+        mostrarToast('Erro', 'Não foi possível ativar notificações', 'error');
+    }
+}
+
+/**
+ * Desativa notificações push
+ */
+async function desativarNotificacoesPush() {
+    try {
+        if (window.PushNotificationSystem && confirm('Desativar notificações push?')) {
+            await window.PushNotificationSystem.unsubscribeFromPush();
+        }
+    } catch (error) {
+        console.error('❌ Erro ao desativar notificações:', error);
+    }
+}
+
+/**
+ * Testa notificação push
+ */
+async function testarNotificacaoPush() {
+    try {
+        if (window.PushNotificationSystem) {
+            const info = window.PushNotificationSystem.getInfo();
+            
+            if (!info.subscribed) {
+                mostrarToast('Atenção', 'Ative as notificações primeiro', 'warning');
+                return;
+            }
+            
+            await window.PushNotificationSystem.sendTestNotification();
+        }
+    } catch (error) {
+        console.error('❌ Erro ao testar notificação:', error);
+        mostrarToast('Erro', 'Falha no teste de notificação', 'error');
+    }
+}
+
+/**
+ * Envia notificação para nova demanda
+ */
+async function enviarNotificacaoNovaDemanda(demanda) {
+    try {
+        if (window.PushNotificationSystem) {
+            const info = window.PushNotificationSystem.getInfo();
+            
+            if (!info.subscribed) {
+                console.log('⚠️ Usuário não inscrito para notificações push');
+                return;
+            }
+            
+            // Criar notificação personalizada
+            const notificacaoData = {
+                titulo: `📋 Nova Demanda: ${demanda.titulo}`,
+                mensagem: `Departamento: ${demanda.departamento || 'Não definido'}`,
+                demandaId: demanda.id,
+                url: `${window.location.origin}/sistema-demandas-escolares/?demanda=${demanda.id}`,
+                importante: true,
+                tag: `demanda-${demanda.id}`,
+                acoes: [
+                    {
+                        action: 'ver',
+                        title: '👁️ Ver Demanda'
+                    }
+                ]
+            };
+            
+            await window.PushNotificationSystem.sendCustomNotification(notificacaoData);
+            console.log('📤 Notificação push enviada para nova demanda');
+        }
+    } catch (error) {
+        console.error('❌ Erro ao enviar notificação de demanda:', error);
+        // Não mostrar erro ao usuário (não é crítico)
+    }
+}
+
+/**
+ * Sincroniza notificações pendentes
+ */
+async function sincronizarNotificacoesPendentes() {
+    try {
+        // Buscar notificações não vistas do servidor
+        const resultado = await enviarParaGoogleAppsScript({
+            acao: 'obterNotificacoesPendentes',
+            usuarioId: obterUsuarioId(),
+            ultimaSincronizacao: localStorage.getItem('ultima_sincronizacao_notificacoes') || 0
+        });
+        
+        if (resultado && resultado.notificacoes && resultado.notificacoes.length > 0) {
+            console.log(`📨 ${resultado.notificacoes.length} notificações pendentes`);
+            
+            // Mostrar cada notificação
+            for (const notif of resultado.notificacoes) {
+                if (window.PushNotificationSystem) {
+                    await window.PushNotificationSystem.sendCustomNotification(notif);
+                }
+            }
+            
+            // Atualizar timestamp da última sincronização
+            localStorage.setItem('ultima_sincronizacao_notificacoes', Date.now());
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro na sincronização de notificações:', error);
+    }
+}
+
+/**
+ * Obtém ID do usuário logado
+ */
+function obterUsuarioId() {
+    try {
+        const usuarioSalvo = localStorage.getItem('usuario_demandas');
+        if (usuarioSalvo) {
+            const usuario = JSON.parse(usuarioSalvo);
+            return usuario.email || usuario.id;
+        }
+    } catch (e) {
+        console.error('Erro ao obter usuário:', e);
+    }
+    return null;
+}
+
+// Chamar inicialização após carregar a página
+document.addEventListener('DOMContentLoaded', () => {
+    // Inicializar após 3 segundos (dar tempo para o app carregar)
+    setTimeout(() => {
+        inicializarSistemaNotificacoes();
+    }, 3000);
+});
+
+// Exportar funções para uso global
+window.inicializarSistemaNotificacoes = inicializarSistemaNotificacoes;
+window.enviarNotificacaoNovaDemanda = enviarNotificacaoNovaDemanda;
 window.mostrarSecao = mostrarSecao;
 window.carregarLogsNotificacoes = carregarLogsNotificacoes;
 window.testarNotificacao = testarNotificacao;
