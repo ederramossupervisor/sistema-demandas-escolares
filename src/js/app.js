@@ -3725,41 +3725,71 @@ async function getFCMToken() {
  * 💾 SALVA TOKEN FCM NO SERVIDOR
  */
 async function salvarTokenFCMNoServidor(token) {
+  console.log("🔄 Salvando token usando método seguro...");
+  
   try {
-    console.log(`💾 Salvando token FCM via JSONP...`);
+    // 1. Obter dados do usuário logado
+    const usuario = obterUsuarioLogado();
     
-    // Usar a mesma função JSONP que já funciona
-    await new Promise((resolve, reject) => {
-      window.salvarTokenCallback = function(resposta) {
+    // 2. Criar uma função de callback ÚNICA
+    const callbackName = 'tokenSalvo_' + Date.now();
+    
+    return new Promise((resolve, reject) => {
+      // 3. Criar função temporária
+      window[callbackName] = function(resposta) {
+        console.log("📨 Resposta do servidor para token:", resposta);
+        
+        // Limpar função temporária
+        delete window[callbackName];
+        
         if (resposta && resposta.sucesso) {
-          console.log("✅ Token salvo no servidor via JSONP");
+          console.log("✅ Token salvo no servidor!");
           resolve();
         } else {
-          console.error("❌ Erro ao salvar token via JSONP");
+          console.error("❌ Falha ao salvar token:", resposta);
           reject(new Error('Falha ao salvar token'));
         }
       };
       
-      // Criar script JSONP
+      // 4. Montar URL do JEITO CERTO para JSONP
+      const url = `https://script.google.com/macros/s/AKfycbwPHLUnKJO-LWPcw4uSBbDXJz5ej2SyUcGkJtARQfPUDOPVQDVLM60Mqqu5U5xRS8OiqA/exec?callback=${callbackName}&acao=salvarSubscription&fcmToken=${encodeURIComponent(token)}&tipo=firebase&usuario=${encodeURIComponent(JSON.stringify(usuario))}`;
+      
+      console.log("📡 Enviando token via JSONP...");
+      
+      // 5. Criar script JSONP (funciona SEM CORS)
       const script = document.createElement('script');
-      const usuario = obterUsuarioLogado();
-      const url = `https://script.google.com/macros/s/AKfycbwPHLUnKJO-LWPcw4uSBbDXJz5ej2SyUcGkJtARQfPUDOPVQDVLM60Mqqu5U5xRS8OiqA/exec?callback=salvarTokenCallback&acao=salvarTokenFCM&token=${encodeURIComponent(token)}&usuario=${encodeURIComponent(usuario.nome)}&tipo=${encodeURIComponent(usuario.tipo)}&escola=${encodeURIComponent(usuario.escola)}`;
-      
       script.src = url;
-      document.head.appendChild(script);
       
-      // Limpar após 10 segundos
-      setTimeout(() => {
-        document.head.removeChild(script);
-        delete window.salvarTokenCallback;
+      // 6. Remover script após 10 segundos (timeout)
+      const timeout = setTimeout(() => {
+        if (script.parentNode) {
+          document.head.removeChild(script);
+        }
+        if (window[callbackName]) {
+          delete window[callbackName];
+          console.warn("⚠️ Timeout - servidor não respondeu em 10 segundos");
+          // Não rejeita, apenas loga (não é crítico)
+          resolve();
+        }
       }, 10000);
+      
+            // 7. Sucesso - limpar timeout
+      const sucessoOriginal = window[callbackName];
+      window[callbackName] = function(resposta) {
+        if (timeout) clearTimeout(timeout);
+        sucessoOriginal(resposta);
+      };
+        
+      // 8. Adicionar script à página
+      document.head.appendChild(script);
     });
     
-  } catch (error) {
-    console.warn("⚠️ Não foi possível salvar token via JSONP:", error);
-    // Não é crítico se falhar, o sistema ainda funciona
+  } catch (erro) {
+    console.warn("⚠️ Não foi possível salvar token (não crítico):", erro);
+    // Não lança erro - apenas loga
   }
 }
+
 /**
  * 🔄 OBTÉM TOKEN WEB PUSH (FALLBACK)
  */
@@ -3846,10 +3876,7 @@ async function configurarListenersFCM(messaging) {
     
     // Verificar se o método existe antes de chamar
     if (messaging.onTokenRefresh) {
-      messaging.onTokenRefresh(async () => {
-        console.log("🔄 Token FCM atualizado automaticamente");
-        await getFCMToken(messaging);
-      });
+     console.log("ℹ️ Token refresh monitorado internamente pelo Firebase"); 
     } else {
       console.log("ℹ️ onTokenRefresh não disponível, usando alternativa");
       // Alternativa: monitorar periodicamente
