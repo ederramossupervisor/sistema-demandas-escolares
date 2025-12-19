@@ -352,6 +352,37 @@
         transform: rotate(360deg);
     }
 }
+/* 🔥 CORREÇÃO PARA DROPDOWN NO CELULAR */
+@media (max-width: 768px) {
+    .filter-group {
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+    
+    .filter-group select.search-box {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-right: 0 !important;
+    }
+    
+    /* Garantir que os dropdowns não ultrapassem a tela */
+    select.search-box {
+        max-width: calc(100vw - 40px) !important;
+        box-sizing: border-box !important;
+    }
+    
+    /* Correção específica para os dropdowns de filtro */
+    #filter-tipo, #filter-departamento {
+        font-size: 14px !important;
+        padding: 10px 12px !important;
+        height: 44px !important;
+    }
+    
+    /* Ajustar o container de filtros */
+    .search-filter {
+        padding: 0 5px !important;
+    }
+}
     </style>
 </head>
 <body>
