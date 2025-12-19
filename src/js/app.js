@@ -674,87 +674,77 @@ function renderizarDemandas() {
     container.innerHTML = html;
 }
 /**
- * FUNÇÃO NOVA: Renderiza demandas na LISTA (não nos cards) - VERSÃO MELHORADA
+ * FUNÇÃO RESPONSIVA: Renderiza demandas na LISTA para celular e computador
  */
 function renderizarDemandasNaLista() {
-    console.log("🎯 Renderizando demandas na lista...");
+    console.log("🎯 Renderizando demandas responsivamente...");
     
     // 1. Procurar onde vamos colocar as demandas
     let listaContainer = document.getElementById('demandas-lista-container');
     
-    // Se não achou, procura por classe
     if (!listaContainer) {
-        listaContainer = document.querySelector('.demandas-lista-container');
+        listaContainer = document.querySelector('.demandas-lista-container') ||
+                        document.querySelector('.lista-container') ||
+                        document.querySelector('.demandas-container');
     }
     
-    // Se ainda não achou, procura qualquer div que possa servir
+    // 2. SE NÃO ACHOU, criar um container responsivo
     if (!listaContainer) {
-        listaContainer = document.querySelector('.lista-container, .lista-demandas, .demandas-container');
-    }
-    
-    // 2. SE NÃO ACHOU, vamos criar um container bonito
-    if (!listaContainer) {
-        console.log("⚠️ Criando container para a lista...");
+        console.log("⚠️ Criando container responsivo...");
         
-        // Achar o conteúdo principal
         const mainContent = document.querySelector('.main-content') || 
                            document.querySelector('main') || 
                            document.querySelector('.container') ||
                            document.body;
         
-        // Criar um container bonito
         const novoContainer = document.createElement('div');
-        novoContainer.className = 'lista-demandas-container';
+        novoContainer.className = 'demandas-lista-container responsivo';
         novoContainer.id = 'demandas-lista-container';
         
-        // Estilo bonito para o container
+        // Estilo responsivo
         novoContainer.style.cssText = `
             width: 100%;
-            max-width: 1200px;
-            margin: 20px auto;
+            margin: 0 auto;
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            border-radius: 0;
+            box-shadow: none;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         `;
         
         mainContent.appendChild(novoContainer);
         listaContainer = novoContainer;
-        
-        console.log("✅ Container criado com sucesso!");
     }
     
     // 3. Limpar container
     listaContainer.innerHTML = '';
     
-    // 4. Verificar se temos demandas para mostrar
+    // 4. Verificar se temos demandas
     if (!state.demandas || state.demandas.length === 0) {
         console.log("📭 Nenhuma demanda para mostrar");
         
-        // Mensagem bonita de "vazio"
+        // Mensagem responsiva de "vazio"
         const mensagemVazio = `
-            <div style="text-align: center; padding: 60px 20px; color: #6c757d;">
-                <div style="font-size: 64px; margin-bottom: 20px; color: #dee2e6;">
+            <div style="text-align: center; padding: 40px 20px; color: #6c757d;">
+                <div style="font-size: 48px; margin-bottom: 16px; color: #dee2e6;">
                     📋
                 </div>
-                <h3 style="color: #495057; margin-bottom: 10px; font-weight: 500;">
+                <h3 style="color: #495057; margin-bottom: 8px; font-weight: 500; font-size: 18px;">
                     Nenhuma demanda encontrada
                 </h3>
-                <p style="color: #adb5bd; margin-bottom: 30px;">
+                <p style="color: #adb5bd; margin-bottom: 24px; font-size: 14px;">
                     Não há demandas cadastradas no momento
                 </p>
                 <button onclick="mostrarModalNovaDemanda()" 
-                        style="padding: 12px 28px; 
-                               background: linear-gradient(135deg, #3498db, #2980b9); 
+                        style="padding: 14px 28px; 
+                               background: #3498db; 
                                color: white; 
                                border: none; 
                                border-radius: 8px; 
                                cursor: pointer;
                                font-weight: 600;
-                               font-size: 14px;
-                               transition: all 0.3s ease;
-                               box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);">
+                               font-size: 15px;
+                               width: 100%;
+                               max-width: 300px;">
                     <i class="fas fa-plus" style="margin-right: 8px;"></i>
                     Criar Primeira Demanda
                 </button>
@@ -767,18 +757,169 @@ function renderizarDemandasNaLista() {
     
     console.log(`📊 Mostrando ${state.demandas.length} demandas`);
     
-    // 5. Criar cabeçalho BONITO da tabela
+    // 5. VERIFICAR SE É CELULAR OU COMPUTADOR
+    const isMobile = window.innerWidth <= 768;
+    console.log(`📱 Dispositivo: ${isMobile ? 'CELULAR' : 'COMPUTADOR'}`);
+    
+    if (isMobile) {
+        // ============================================
+        // 🔥 LAYOUT PARA CELULAR (Cards)
+        // ============================================
+        renderizarParaCelular(listaContainer);
+    } else {
+        // ============================================
+        // 💻 LAYOUT PARA COMPUTADOR (Tabela)
+        // ============================================
+        renderizarParaComputador(listaContainer);
+    }
+    
+    console.log("✅ Lista renderizada de forma responsiva!");
+}
+
+/**
+ * LAYOUT PARA CELULAR - Cards simples
+ */
+function renderizarParaCelular(container) {
+    console.log("📱 Criando layout mobile...");
+    
+    let html = '';
+    
+    state.demandas.forEach((demanda, index) => {
+        // Formatar data
+        const dataPrazo = demanda.prazo ? 
+            new Date(demanda.prazo).toLocaleDateString('pt-BR') : 
+            "Não definido";
+        
+        // Cor do status
+        let statusColor = '';
+        let statusText = demanda.status || 'Pendente';
+        
+        switch(statusText) {
+            case 'Pendente': statusColor = '#e74c3c'; break;
+            case 'Em andamento': statusColor = '#f39c12'; break;
+            case 'Concluída': statusColor = '#27ae60'; break;
+            default: statusColor = '#95a5a6';
+        }
+        
+        // Verificar prazo
+        let prazoStatus = '';
+        let prazoIcon = '📅';
+        if (demanda.prazo) {
+            const hoje = new Date();
+            const prazo = new Date(demanda.prazo);
+            const dias = Math.ceil((prazo - hoje) / (1000 * 60 * 60 * 24));
+            
+            if (dias < 0) {
+                prazoStatus = 'color: #e74c3c; font-weight: bold;';
+                prazoIcon = '⏰';
+            } else if (dias <= 3) {
+                prazoStatus = 'color: #f39c12;';
+                prazoIcon = '⚠️';
+            }
+        }
+        
+        // Escolas (resumir)
+        let escolasTexto = demanda.escolas || "Não definida";
+        if (escolasTexto.includes(',')) {
+            escolasTexto = escolasTexto.split(',')[0].trim() + " + mais";
+        }
+        
+        // Card mobile
+        html += `
+            <div onclick="mostrarDetalhesDemanda(${demanda.id})" 
+                 style="margin: 12px 16px; 
+                        padding: 16px; 
+                        background: white;
+                        border-radius: 12px;
+                        border: 1px solid #e0e0e0;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+                        cursor: pointer;
+                        transition: all 0.2s;">
+                
+                <!-- Cabeçalho do card -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                    <div>
+                        <div style="font-weight: 600; color: #2c3e50; font-size: 16px; margin-bottom: 4px;">
+                            ${demanda.titulo || 'Sem título'}
+                        </div>
+                        <div style="font-size: 12px; color: #7f8c8d;">
+                            ID: #${demanda.id || index + 1}
+                        </div>
+                    </div>
+                    <div style="background: ${statusColor}; 
+                                color: white; 
+                                padding: 4px 10px; 
+                                border-radius: 20px; 
+                                font-size: 12px; 
+                                font-weight: 600;">
+                        ${statusText}
+                    </div>
+                </div>
+                
+                <!-- Informações principais -->
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size: 14px; color: #555; margin-bottom: 8px; display: flex; align-items: center;">
+                        <i class="fas fa-school" style="color: #3498db; margin-right: 8px; width: 16px;"></i>
+                        ${escolasTexto}
+                    </div>
+                    <div style="font-size: 14px; color: #555; margin-bottom: 8px; display: flex; align-items: center;">
+                        <i class="fas fa-building" style="color: #9b59b6; margin-right: 8px; width: 16px;"></i>
+                        ${demanda.departamento || 'Não definido'}
+                    </div>
+                    <div style="font-size: 14px; color: #555; display: flex; align-items: center;">
+                        <i class="fas fa-user-tag" style="color: #e74c3c; margin-right: 8px; width: 16px;"></i>
+                        ${demanda.responsavel || 'Não definido'}
+                    </div>
+                </div>
+                
+                <!-- Rodapé do card -->
+                <div style="display: flex; justify-content: space-between; align-items: center; 
+                            padding-top: 12px; border-top: 1px solid #f0f0f0; font-size: 13px;">
+                    <div style="color: #7f8c8d; display: flex; align-items: center;">
+                        ${prazoIcon}
+                        <span style="margin-left: 6px; ${prazoStatus}">
+                            ${dataPrazo}
+                        </span>
+                    </div>
+                    <div style="color: #3498db; font-weight: 500;">
+                        <i class="fas fa-chevron-right" style="font-size: 12px;"></i>
+                        Ver detalhes
+                    </div>
+                </div>
+                
+            </div>
+        `;
+    });
+    
+    // Adicionar cabeçalho mobile
+    const cabecalhoMobile = `
+        <div style="padding: 16px; background: #2c3e50; color: white;">
+            <h2 style="margin: 0; font-size: 18px; display: flex; align-items: center;">
+                <i class="fas fa-list" style="margin-right: 10px;"></i>
+                Demandas (${state.demandas.length})
+            </h2>
+        </div>
+    `;
+    
+    container.innerHTML = cabecalhoMobile + html;
+}
+
+/**
+ * LAYOUT PARA COMPUTADOR - Tabela completa
+ */
+function renderizarParaComputador(container) {
+    console.log("💻 Criando layout desktop...");
+    
+    // Cabeçalho da tabela
     const cabecalhoHTML = `
-        <div style="background: linear-gradient(135deg, #2c3e50, #34495e); 
+        <div style="background: #2c3e50; 
                     color: white; 
-                    padding: 18px 24px;
+                    padding: 16px 24px;
                     display: grid; 
                     grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr; 
                     gap: 16px; 
                     font-weight: 600;
-                    font-size: 14px;
-                    letter-spacing: 0.3px;
-                    border-bottom: 2px solid #3498db;">
+                    font-size: 14px;">
             <div><i class="fas fa-heading" style="margin-right: 8px;"></i>Título</div>
             <div><i class="fas fa-school" style="margin-right: 8px;"></i>Escola</div>
             <div><i class="fas fa-building" style="margin-right: 8px;"></i>Departamento</div>
@@ -788,133 +929,107 @@ function renderizarDemandasNaLista() {
         </div>
     `;
     
-    listaContainer.innerHTML = cabecalhoHTML;
+    container.innerHTML = cabecalhoHTML;
     
-    // 6. Para CADA demanda, criar uma LINHA BONITA
+    // Linhas da tabela
     state.demandas.forEach((demanda, index) => {
-        // Formatar a data do prazo
+        // Formatar data
         let dataPrazo = "Não definido";
         let prazoColor = "#95a5a6";
         if (demanda.prazo) {
             const data = new Date(demanda.prazo);
             dataPrazo = data.toLocaleDateString('pt-BR');
             
-            // Verificar se está atrasado
             const hoje = new Date();
             const prazoData = new Date(demanda.prazo);
             const diasRestantes = Math.ceil((prazoData - hoje) / (1000 * 60 * 60 * 24));
             
-            if (diasRestantes < 0) {
-                prazoColor = "#e74c3c"; // Vermelho para atrasado
-            } else if (diasRestantes <= 3) {
-                prazoColor = "#f39c12"; // Laranja para próximo
-            } else {
-                prazoColor = "#27ae60"; // Verde para no prazo
-            }
+            if (diasRestantes < 0) prazoColor = "#e74c3c";
+            else if (diasRestantes <= 3) prazoColor = "#f39c12";
+            else prazoColor = "#27ae60";
         }
         
-        // Formatar escolas (pegar só a primeira se tiver muitas)
+        // Formatar escolas
         let escolasTexto = demanda.escolas || "Não definida";
-        let escolasTooltip = escolasTexto;
         if (escolasTexto.includes(',')) {
-            const escolasArray = escolasTexto.split(',');
-            escolasTexto = escolasArray[0].trim() + " +" + (escolasArray.length - 1);
+            escolasTexto = escolasTexto.split(',')[0].trim() + " + mais";
         }
         
-        // Determinar estilo do status
+        // Status
         let statusStyle = '';
         let statusIcon = '';
         
         switch(demanda.status) {
             case 'Pendente':
-                statusStyle = 'background: #e74c3c; color: white;';
+                statusStyle = 'background: #e74c3c;';
                 statusIcon = '⏰';
                 break;
             case 'Em andamento':
-                statusStyle = 'background: #f39c12; color: white;';
+                statusStyle = 'background: #f39c12;';
                 statusIcon = '▶️';
                 break;
             case 'Concluída':
-                statusStyle = 'background: #27ae60; color: white;';
+                statusStyle = 'background: #27ae60;';
                 statusIcon = '✅';
                 break;
             default:
-                statusStyle = 'background: #95a5a6; color: white;';
+                statusStyle = 'background: #95a5a6;';
                 statusIcon = '📝';
         }
         
-        // Cor de fundo alternada para linhas
+        // Cor de fundo alternada
         const rowBgColor = index % 2 === 0 ? '#ffffff' : '#f8f9fa';
         
-        // Criar HTML da linha COM ESTILO BONITO
+        // Linha da tabela
         const linhaHTML = `
             <div onclick="mostrarDetalhesDemanda(${demanda.id})" 
                  style="display: grid; 
                         grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
                         gap: 16px; 
-                        padding: 18px 24px;
+                        padding: 14px 24px;
                         background: ${rowBgColor};
                         border-bottom: 1px solid #e9ecef;
                         cursor: pointer; 
-                        transition: all 0.2s ease;
-                        &:hover { 
-                            background: #e3f2fd; 
-                            transform: translateY(-1px);
-                            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-                        }">
+                        transition: background 0.2s;
+                        &:hover { background: #e3f2fd; }">
                 
                 <!-- Título -->
-                <div style="font-weight: 500; color: #2c3e50; display: flex; align-items: center;">
-                    <div style="width: 32px; height: 32px; 
-                                background: #3498db; 
-                                color: white; 
-                                border-radius: 6px; 
-                                display: flex; 
-                                align-items: center; 
-                                justify-content: center;
-                                margin-right: 12px;
-                                font-weight: bold;
-                                font-size: 12px;">
-                        #${demanda.id || index + 1}
+                <div style="font-weight: 500; color: #2c3e50;">
+                    <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">
+                        ${demanda.titulo || 'Sem título'}
                     </div>
-                    <div style="flex: 1; line-height: 1.4;">
-                        <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">
-                            ${demanda.titulo || 'Sem título'}
-                        </div>
-                        <div style="font-size: 12px; color: #7f8c8d;">
-                            ${demanda.descricao ? (demanda.descricao.substring(0, 40) + (demanda.descricao.length > 40 ? '...' : '')) : 'Sem descrição'}
-                        </div>
+                    <div style="font-size: 12px; color: #7f8c8d;">
+                        ${demanda.descricao ? (demanda.descricao.substring(0, 50) + '...') : 'Sem descrição'}
                     </div>
                 </div>
                 
                 <!-- Escola -->
-                <div style="color: #34495e; display: flex; align-items: center; font-size: 13px;"
-                     title="${escolasTooltip}">
-                    <i class="fas fa-school" style="margin-right: 8px; color: #3498db;"></i>
+                <div style="color: #34495e; font-size: 13px; display: flex; align-items: center;">
+                    <i class="fas fa-school" style="color: #3498db; margin-right: 8px;"></i>
                     ${escolasTexto}
                 </div>
                 
                 <!-- Departamento -->
-                <div style="color: #7f8c8d; display: flex; align-items: center; font-size: 13px;">
-                    <i class="fas fa-building" style="margin-right: 8px; color: #9b59b6;"></i>
+                <div style="color: #7f8c8d; font-size: 13px; display: flex; align-items: center;">
+                    <i class="fas fa-building" style="color: #9b59b6; margin-right: 8px;"></i>
                     ${demanda.departamento || 'Não definido'}
                 </div>
                 
                 <!-- Responsável -->
-                <div style="color: #2c3e50; display: flex; align-items: center; font-size: 13px;">
-                    <i class="fas fa-user-tag" style="margin-right: 8px; 
-                       color: ${demanda.responsavel === 'Supervisor' ? '#e74c3c' : '#3498db'};"></i>
+                <div style="color: #2c3e50; font-size: 13px; display: flex; align-items: center;">
+                    <i class="fas fa-user-tag" style="color: ${demanda.responsavel === 'Supervisor' ? '#e74c3c' : '#3498db'}; margin-right: 8px;"></i>
                     ${demanda.responsavel || 'Não definido'}
                 </div>
                 
                 <!-- Prazo -->
-                <div style="color: ${prazoColor}; display: flex; align-items: center; font-size: 13px; font-weight: 500;">
+                <div style="color: ${prazoColor}; font-size: 13px; font-weight: 500; display: flex; align-items: center;">
                     <i class="fas fa-calendar-alt" style="margin-right: 8px;"></i>
                     ${dataPrazo}
                 </div>
                 
                 <!-- Status -->
                 <div style="${statusStyle} 
+                            color: white;
                             padding: 6px 12px; 
                             border-radius: 20px; 
                             text-align: center; 
@@ -922,55 +1037,57 @@ function renderizarDemandasNaLista() {
                             font-weight: 600;
                             display: flex; 
                             align-items: center; 
-                            justify-content: center;
-                            width: fit-content;
-                            min-width: 100px;
-                            margin: 0 auto;">
+                            justify-content: center;">
                     ${statusIcon} ${demanda.status || 'Pendente'}
                 </div>
             </div>
         `;
         
-        // Adicionar a linha ao container
-        listaContainer.insertAdjacentHTML('beforeend', linhaHTML);
+        container.insertAdjacentHTML('beforeend', linhaHTML);
     });
     
-    // 7. Adicionar rodapé com informações
+    // Rodapé
     const rodapeHTML = `
         <div style="background: #f8f9fa; 
-                    padding: 16px 24px; 
+                    padding: 12px 24px; 
                     color: #6c757d; 
                     font-size: 13px;
-                    border-top: 1px solid #e9ecef;
                     display: flex; 
-                    justify-content: space-between;
-                    align-items: center;">
+                    justify-content: space-between;">
             <div>
                 <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
-                Total de ${state.demandas.length} demandas
+                Total: ${state.demandas.length} demandas
             </div>
-            <div style="display: flex; gap: 8px;">
-                <div style="display: flex; align-items: center; gap: 4px;">
-                    <div style="width: 12px; height: 12px; background: #27ae60; border-radius: 2px;"></div>
-                    <span>Concluídas</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 4px;">
-                    <div style="width: 12px; height: 12px; background: #f39c12; border-radius: 2px;"></div>
-                    <span>Em andamento</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 4px;">
-                    <div style="width: 12px; height: 12px; background: #e74c3c; border-radius: 2px;"></div>
-                    <span>Pendentes</span>
-                </div>
+            <div>
+                <span style="color: #27ae60;">●</span> Concluídas
+                <span style="margin-left: 12px; color: #f39c12;">●</span> Em andamento
+                <span style="margin-left: 12px; color: #e74c3c;">●</span> Pendentes
             </div>
         </div>
     `;
     
-    listaContainer.insertAdjacentHTML('beforeend', rodapeHTML);
-    
-    console.log("✅ Lista renderizada com layout profissional!");
+    container.insertAdjacentHTML('beforeend', rodapeHTML);
 }
+
 /**
+ * Função para redimensionamento da tela
+ */
+function configurarResponsividade() {
+    // Redesenhar quando a tela mudar de tamanho
+    let timeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(timeout);
+        timeout = setTimeout(function() {
+            console.log("🔄 Redimensionando tela...");
+            if (state.demandas.length > 0) {
+                renderizarDemandasNaLista();
+            }
+        }, 250);
+    });
+}
+
+// Configurar responsividade quando o sistema iniciar
+setTimeout(configurarResponsividade, 1000);/**
  * Filtra as demandas com base nos filtros ativos
  */
 function filtrarDemandas(demandas) {
