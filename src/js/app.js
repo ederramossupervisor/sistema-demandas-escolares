@@ -380,6 +380,9 @@ function esconderLoading() {
 /**
  * Atualiza o bloco "Demandas" com números reais
  */
+/**
+ * Atualiza o bloco "Demandas" com números reais
+ */
 function atualizarBlocoEstatisticas(demandas) {
     console.log("📈 Tentando atualizar os números das estatísticas...");
     
@@ -400,11 +403,11 @@ function atualizarBlocoEstatisticas(demandas) {
     }).length;
     
     console.log("📊 Contagem das demandas:", {
-        total,
-        pendentes,
-        emAndamento,
-        concluidas,
-        atrasadas
+        total: total,
+        pendentes: pendentes,
+        emAndamento: emAndamento,
+        concluidas: concluidas,
+        atrasadas: atrasadas
     });
     
     // 1. PRIMEIRO: Verificar quais elementos realmente existem
@@ -420,22 +423,23 @@ function atualizarBlocoEstatisticas(demandas) {
     
     let elementosEncontrados = 0;
     
-    elementosParaAtualizar.forEach(item => {
+    elementosParaAtualizar.forEach(function(item) {
         const elemento = document.getElementById(item.id);
         
         if (elemento) {
             // Encontrou! Vamos atualizar
             elemento.textContent = item.valor;
             elementosEncontrados++;
-            console.log(`✅ Atualizei ${item.id}: ${item.valor}`);
+            console.log("✅ Atualizei " + item.id + ": " + item.valor);
         } else {
             // Não encontrou este elemento
-            console.log(`⚠️ Não encontrei o elemento: ${item.id}`);
+            console.log("⚠️ Não encontrei o elemento: " + item.id);
             
             // Vamos procurar por nomes parecidos
-            const elementosSimilares = document.querySelectorAll(`[id*="${item.id.split('-')[0]}"]`);
+            const primeiraParte = item.id.split('-')[0];
+            const elementosSimilares = document.querySelectorAll('[id*="' + primeiraParte + '"]');
             if (elementosSimilares.length > 0) {
-                console.log(`   Mas encontrei ${elementosSimilares.length} elementos similares`);
+                console.log("   Mas encontrei " + elementosSimilares.length + " elementos similares");
             }
         }
     });
@@ -445,41 +449,33 @@ function atualizarBlocoEstatisticas(demandas) {
         console.log("😮 Nenhum bloco de estatísticas encontrado! Vou criar um...");
         
         // Encontrar onde colocar as estatísticas
-        const localParaEstatisticas = document.querySelector('.dashboard-stats') ||
-                                     document.querySelector('.stats-container') ||
-                                     document.querySelector('.main-header') ||
-                                     document.querySelector('header') ||
-                                     document.body;
+        let localParaEstatisticas = document.querySelector('.dashboard-stats');
+        if (!localParaEstatisticas) localParaEstatisticas = document.querySelector('.stats-container');
+        if (!localParaEstatisticas) localParaEstatisticas = document.querySelector('.main-header');
+        if (!localParaEstatisticas) localParaEstatisticas = document.querySelector('header');
+        if (!localParaEstatisticas) localParaEstatisticas = document.body;
         
         // Criar um bloco simples de estatísticas
         const blocoEstatisticas = document.createElement('div');
         blocoEstatisticas.className = 'estatisticas-simples';
-        blocoEstatisticas.innerHTML = `
-            <div style="display: flex; gap: 10px; padding: 15px; 
-                       background: white; border-radius: 10px; 
-                       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-                       margin: 10px 0;">
-                <div style="flex: 1; text-align: center; padding: 10px; 
-                           border-right: 1px solid #eee;">
-                    <div style="font-size: 24px; font-weight: bold; color: #3498db;">${total}</div>
-                    <div style="font-size: 12px; color: #7f8c8d;">Total</div>
-                </div>
-                <div style="flex: 1; text-align: center; padding: 10px; 
-                           border-right: 1px solid #eee;">
-                    <div style="font-size: 24px; font-weight: bold; color: #e74c3c;">${pendentes}</div>
-                    <div style="font-size: 12px; color: #7f8c8d;">Pendentes</div>
-                </div>
-                <div style="flex: 1; text-align: center; padding: 10px; 
-                           border-right: 1px solid #eee;">
-                    <div style="font-size: 24px; font-weight: bold; color: #f39c12;">${emAndamento}</div>
-                    <div style="font-size: 12px; color: #7f8c8d;">Andamento</div>
-                </div>
-                <div style="flex: 1; text-align: center; padding: 10px;">
-                    <div style="font-size: 24px; font-weight: bold; color: #27ae60;">${concluidas}</div>
-                    <div style="font-size: 12px; color: #7f8c8d;">Concluídas</div>
-                </div>
-            </div>
-        `;
+        blocoEstatisticas.innerHTML = '<div style="display: flex; gap: 10px; padding: 15px; background: white; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin: 10px 0;">' +
+            '<div style="flex: 1; text-align: center; padding: 10px; border-right: 1px solid #eee;">' +
+            '<div style="font-size: 24px; font-weight: bold; color: #3498db;">' + total + '</div>' +
+            '<div style="font-size: 12px; color: #7f8c8d;">Total</div>' +
+            '</div>' +
+            '<div style="flex: 1; text-align: center; padding: 10px; border-right: 1px solid #eee;">' +
+            '<div style="font-size: 24px; font-weight: bold; color: #e74c3c;">' + pendentes + '</div>' +
+            '<div style="font-size: 12px; color: #7f8c8d;">Pendentes</div>' +
+            '</div>' +
+            '<div style="flex: 1; text-align: center; padding: 10px; border-right: 1px solid #eee;">' +
+            '<div style="font-size: 24px; font-weight: bold; color: #f39c12;">' + emAndamento + '</div>' +
+            '<div style="font-size: 12px; color: #7f8c8d;">Andamento</div>' +
+            '</div>' +
+            '<div style="flex: 1; text-align: center; padding: 10px;">' +
+            '<div style="font-size: 24px; font-weight: bold; color: #27ae60;">' + concluidas + '</div>' +
+            '<div style="font-size: 12px; color: #7f8c8d;">Concluídas</div>' +
+            '</div>' +
+            '</div>';
         
         // Colocar no início da página
         if (localParaEstatisticas) {
@@ -487,10 +483,9 @@ function atualizarBlocoEstatisticas(demandas) {
             console.log("✅ Bloco de estatísticas criado!");
         }
     } else {
-        console.log(`✅ Atualizados ${elementosEncontrados} contadores de estatísticas`);
+        console.log("✅ Atualizados " + elementosEncontrados + " contadores de estatísticas");
     }
 }
-
 /**
  * Carrega as demandas do servidor
  */
@@ -514,9 +509,13 @@ async function carregarDemandas() {
         atualizarEstatisticas();
         
         // 5. Atualizar o bloco "Demandas" com números reais
+        // Usamos try-catch para não parar se der erro nas estatísticas
         try {
-        atualizarBlocoEstatisticas(demandas);
+            atualizarBlocoEstatisticas(demandas);
         } catch (erro) {
+            console.warn("⚠️ Problema ao atualizar estatísticas (não crítico):", erro.message);
+            // Continua funcionando mesmo com erro nas estatísticas
+        }
             console.warn("⚠️ Problema ao atualizar estatísticas (não crítico):", erro.message);
         // 6. Se não houver demandas, mostrar mensagem
         if (demandas.length === 0) {
