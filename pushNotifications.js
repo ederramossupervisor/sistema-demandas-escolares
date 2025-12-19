@@ -667,7 +667,42 @@ const PushNotificationSystem = {
             }, 3000);
         }
     },
+    /**
+ * Salva o token FCM no servidor quando o usuário faz login
+ * @param {string} fcmToken - Token FCM gerado
+ * @param {Object} usuario - Dados do usuário logado
+ */
+async function salvarTokenNoServidor(fcmToken, usuario) {
+  try {
+    console.log("💾 Salvando token FCM no servidor para:", usuario.email);
     
+    const dados = {
+      acao: "salvarSubscription",
+      tipo: "firebase",
+      fcmToken: fcmToken,
+      usuario: {
+        email: usuario.email,
+        nome: usuario.nome,
+        departamento: usuario.departamento
+      }
+    };
+    
+    // Usar a mesma função de chamada ao servidor que você já tem
+    const resposta = await fazerRequisicaoServidor(dados);
+    
+    if (resposta.sucesso) {
+      console.log("✅ Token salvo no servidor com sucesso!");
+      return true;
+    } else {
+      console.warn("⚠️ Não foi possível salvar token:", resposta.erro);
+      return false;
+    }
+    
+  } catch (erro) {
+    console.error("❌ Erro ao salvar token no servidor:", erro);
+    return false;
+  }
+},
     /**
      * Mostra botão para ativar notificações
      */
