@@ -1706,7 +1706,31 @@ async function salvarDemanda(e) {
         // 3. Salvar demanda no servidor
         mostrarToast('Salvando', 'Salvando demanda...', 'info');
         const resultadoSalvar = await salvarDemandaNoServidor(dadosDemanda);
-        
+        // Enviar notificação Firebase se configurado
+setTimeout(async () => {
+    try {
+        const usuarioSalvo = localStorage.getItem('usuario_demandas');
+        if (usuarioSalvo) {
+            const usuario = JSON.parse(usuarioSalvo);
+            
+            // Verificar se usuário quer notificações push
+            if (usuario.notificacoesPush !== false) {
+                const notificacaoData = {
+                    titulo: dadosDemanda.titulo,
+                    mensagem: `Nova demanda criada: ${dadosDemanda.titulo}`,
+                    demandaId: resultadoSalvar.id,
+                    departamento: dadosDemanda.departamento,
+                    escolas: dadosDemanda.escolas.join(', '),
+                    importante: true
+                };
+                
+                await enviarNotificacaoFirebase(notificacaoData);
+            }
+        }
+    } catch (notifErro) {
+        console.warn('⚠️ Erro na notificação Firebase (não crítico):', notifErro);
+    }
+}, 1000);
         if (!resultadoSalvar || !resultadoSalvar.id) {
             throw new Error('Erro ao salvar demanda: ID não retornado');
         }
@@ -3306,42 +3330,6 @@ async function enviarNotificacaoFirebase(dados) {
         return { sucesso: false, erro: erro.message };
     }
 }
-
-// ============================================
-// INTEGRAÇÃO COM O SALVAR DEMANDA
-// ============================================
-
-// MODIFIQUE a função `salvarDemanda` (linha ~480)
-// Adicione esta linha após salvar a demanda (depois da linha que salva no servidor):
-
-// Após a linha: const resultadoSalvar = await salvarDemandaNoServidor(dadosDemanda);
-// Adicione:
-
-// Enviar notificação Firebase se configurado
-setTimeout(async () => {
-    try {
-        const usuarioSalvo = localStorage.getItem('usuario_demandas');
-        if (usuarioSalvo) {
-            const usuario = JSON.parse(usuarioSalvo);
-            
-            // Verificar se usuário quer notificações push
-            if (usuario.notificacoesPush !== false) {
-                const notificacaoData = {
-                    titulo: dadosDemanda.titulo,
-                    mensagem: `Nova demanda criada: ${dadosDemanda.titulo}`,
-                    demandaId: resultadoSalvar.id,
-                    departamento: dadosDemanda.departamento,
-                    escolas: dadosDemanda.escolas.join(', '),
-                    importante: true
-                };
-                
-                await enviarNotificacaoFirebase(notificacaoData);
-            }
-        }
-    } catch (notifErro) {
-        console.warn('⚠️ Erro na notificação Firebase (não crítico):', notifErro);
-    }
-}, 1000);
 /**
  * Ajusta o modal para telas pequenas
  */
