@@ -3804,7 +3804,7 @@ async function salvarTokenFCMNoServidor(token) {
             };
             
             // Montar URL com TODOS os parâmetros
-            const url = `https://script.google.com/macros/s/AKfycbzqO5qtOKSbpZ92mRL4UmMRvGE0ZQMhqtS7K5PGW5MU12Z4g1d7sBaDOMg0xrWaLWiLoQ/exec?callback=${callbackName}&acao=salvarSubscription&fcmToken=${encodeURIComponent(token)}&tipo=firebase&email=${encodeURIComponent(userEmail)}`;
+            const url = `https://script.google.com/macros/s/AKfycbwUOIb2a7sVBrHk30HaxgBxyWLIa5T2H5jJcKoQ2EeP373XJCUEBYqioHRza2z3cjdRQA/exec?callback=${callbackName}&acao=salvarSubscription&fcmToken=${encodeURIComponent(token)}&tipo=firebase&email=${encodeURIComponent(userEmail)}`;
             
             console.log("📡 Enviando para servidor:", url.substring(0, 100) + "...");
             
