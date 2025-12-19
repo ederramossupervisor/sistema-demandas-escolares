@@ -674,81 +674,89 @@ function renderizarDemandas() {
     container.innerHTML = html;
 }
 /**
- * FUNÇÃO NOVA: Renderiza demandas na LISTA (não nos cards)
+ * FUNÇÃO NOVA: Renderiza demandas na LISTA (não nos cards) - VERSÃO MELHORADA
  */
 function renderizarDemandasNaLista() {
-    console.log("🎯 Tentando mostrar as demandas na lista...");
+    console.log("🎯 Renderizando demandas na lista...");
     
-    // 1. PRIMEIRO: Procurar onde vamos colocar as demandas
-    // Vamos procurar por vários nomes possíveis
-    let listaContainer = null;
+    // 1. Procurar onde vamos colocar as demandas
+    let listaContainer = document.getElementById('demandas-lista-container');
     
-    // Tentativa 1: Procurar pelo ID exato
-    listaContainer = document.getElementById('demandas-lista-container');
-    
-    // Tentativa 2: Se não achou, procura por classe
+    // Se não achou, procura por classe
     if (!listaContainer) {
         listaContainer = document.querySelector('.demandas-lista-container');
     }
     
-    // Tentativa 3: Se ainda não achou, procura qualquer div que possa servir
+    // Se ainda não achou, procura qualquer div que possa servir
     if (!listaContainer) {
         listaContainer = document.querySelector('.lista-container, .lista-demandas, .demandas-container');
     }
     
-    // 2. SE NÃO ACHOU, vamos criar uma "prateleira" nova
+    // 2. SE NÃO ACHOU, vamos criar um container bonito
     if (!listaContainer) {
-        console.log("⚠️ Não encontrei onde mostrar as demandas. Vou criar um lugar...");
+        console.log("⚠️ Criando container para a lista...");
         
-        // Achar o "quarto principal" do site (onde colocar a prateleira)
+        // Achar o conteúdo principal
         const mainContent = document.querySelector('.main-content') || 
                            document.querySelector('main') || 
                            document.querySelector('.container') ||
                            document.body;
         
-        // Criar uma nova "prateleira" (div)
-        const novaPrateleira = document.createElement('div');
-        novaPrateleira.className = 'demandas-lista-container';
-        novaPrateleira.id = 'demandas-lista-container';
+        // Criar um container bonito
+        const novoContainer = document.createElement('div');
+        novoContainer.className = 'lista-demandas-container';
+        novoContainer.id = 'demandas-lista-container';
         
-        // Dar um visual bonito para a prateleira
-        novaPrateleira.style.cssText = `
+        // Estilo bonito para o container
+        novoContainer.style.cssText = `
             width: 100%;
             max-width: 1200px;
             margin: 20px auto;
-            padding: 20px;
             background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            font-family: Arial, sans-serif;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         `;
         
-        // Colocar a prateleira no "quarto"
-        mainContent.appendChild(novaPrateleira);
-        listaContainer = novaPrateleira;
+        mainContent.appendChild(novoContainer);
+        listaContainer = novoContainer;
         
-        console.log("✅ Pronto! Criei um novo lugar para mostrar as demandas.");
+        console.log("✅ Container criado com sucesso!");
     }
     
-    // 3. AGORA vamos limpar a prateleira para colocar coisas novas
+    // 3. Limpar container
     listaContainer.innerHTML = '';
     
     // 4. Verificar se temos demandas para mostrar
     if (!state.demandas || state.demandas.length === 0) {
         console.log("📭 Nenhuma demanda para mostrar");
         
-        // Mostrar mensagem "Está vazio aqui"
+        // Mensagem bonita de "vazio"
         const mensagemVazio = `
-            <div style="text-align: center; padding: 50px 20px; color: #666;">
-                <div style="font-size: 48px; margin-bottom: 20px;">📋</div>
-                <h3 style="color: #333; margin-bottom: 10px;">Nenhuma demanda encontrada</h3>
-                <p style="color: #777;">Não há demandas cadastradas no momento</p>
+            <div style="text-align: center; padding: 60px 20px; color: #6c757d;">
+                <div style="font-size: 64px; margin-bottom: 20px; color: #dee2e6;">
+                    📋
+                </div>
+                <h3 style="color: #495057; margin-bottom: 10px; font-weight: 500;">
+                    Nenhuma demanda encontrada
+                </h3>
+                <p style="color: #adb5bd; margin-bottom: 30px;">
+                    Não há demandas cadastradas no momento
+                </p>
                 <button onclick="mostrarModalNovaDemanda()" 
-                        style="margin-top: 20px; padding: 10px 20px; 
-                               background: #3498db; color: white; 
-                               border: none; border-radius: 5px; 
-                               cursor: pointer;">
-                    + Criar Primeira Demanda
+                        style="padding: 12px 28px; 
+                               background: linear-gradient(135deg, #3498db, #2980b9); 
+                               color: white; 
+                               border: none; 
+                               border-radius: 8px; 
+                               cursor: pointer;
+                               font-weight: 600;
+                               font-size: 14px;
+                               transition: all 0.3s ease;
+                               box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);">
+                    <i class="fas fa-plus" style="margin-right: 8px;"></i>
+                    Criar Primeira Demanda
                 </button>
             </div>
         `;
@@ -759,71 +767,166 @@ function renderizarDemandasNaLista() {
     
     console.log(`📊 Mostrando ${state.demandas.length} demandas`);
     
-    // 5. Criar o CABEÇALHO da tabela (títulos das colunas)
+    // 5. Criar cabeçalho BONITO da tabela
     const cabecalhoHTML = `
-        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr; 
-                    gap: 10px; padding: 15px; background: #f8f9fa; 
-                    border-bottom: 2px solid #dee2e6; font-weight: bold; color: #495057;">
-            <div>Título</div>
-            <div>Escola</div>
-            <div>Departamento</div>
-            <div>Responsável</div>
-            <div>Prazo</div>
-            <div>Status</div>
+        <div style="background: linear-gradient(135deg, #2c3e50, #34495e); 
+                    color: white; 
+                    padding: 18px 24px;
+                    display: grid; 
+                    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr; 
+                    gap: 16px; 
+                    font-weight: 600;
+                    font-size: 14px;
+                    letter-spacing: 0.3px;
+                    border-bottom: 2px solid #3498db;">
+            <div><i class="fas fa-heading" style="margin-right: 8px;"></i>Título</div>
+            <div><i class="fas fa-school" style="margin-right: 8px;"></i>Escola</div>
+            <div><i class="fas fa-building" style="margin-right: 8px;"></i>Departamento</div>
+            <div><i class="fas fa-user-tag" style="margin-right: 8px;"></i>Responsável</div>
+            <div><i class="fas fa-calendar-alt" style="margin-right: 8px;"></i>Prazo</div>
+            <div><i class="fas fa-tasks" style="margin-right: 8px;"></i>Status</div>
         </div>
     `;
     
     listaContainer.innerHTML = cabecalhoHTML;
     
-    // 6. Para CADA demanda, criar uma LINHA na lista
+    // 6. Para CADA demanda, criar uma LINHA BONITA
     state.demandas.forEach((demanda, index) => {
         // Formatar a data do prazo
         let dataPrazo = "Não definido";
+        let prazoColor = "#95a5a6";
         if (demanda.prazo) {
             const data = new Date(demanda.prazo);
             dataPrazo = data.toLocaleDateString('pt-BR');
+            
+            // Verificar se está atrasado
+            const hoje = new Date();
+            const prazoData = new Date(demanda.prazo);
+            const diasRestantes = Math.ceil((prazoData - hoje) / (1000 * 60 * 60 * 24));
+            
+            if (diasRestantes < 0) {
+                prazoColor = "#e74c3c"; // Vermelho para atrasado
+            } else if (diasRestantes <= 3) {
+                prazoColor = "#f39c12"; // Laranja para próximo
+            } else {
+                prazoColor = "#27ae60"; // Verde para no prazo
+            }
         }
         
         // Formatar escolas (pegar só a primeira se tiver muitas)
         let escolasTexto = demanda.escolas || "Não definida";
+        let escolasTooltip = escolasTexto;
         if (escolasTexto.includes(',')) {
-            escolasTexto = escolasTexto.split(',')[0].trim() + " + mais";
+            const escolasArray = escolasTexto.split(',');
+            escolasTexto = escolasArray[0].trim() + " +" + (escolasArray.length - 1);
         }
         
-        // Determinar cor do status
-        let statusCor = '#95a5a6'; // Cinza padrão
-        let statusTexto = demanda.status || 'Pendente';
+        // Determinar estilo do status
+        let statusStyle = '';
+        let statusIcon = '';
         
-        if (statusTexto === 'Pendente') statusCor = '#e74c3c'; // Vermelho
-        if (statusTexto === 'Em andamento') statusCor = '#f39c12'; // Laranja
-        if (statusTexto === 'Concluída') statusCor = '#27ae60'; // Verde
+        switch(demanda.status) {
+            case 'Pendente':
+                statusStyle = 'background: #e74c3c; color: white;';
+                statusIcon = '⏰';
+                break;
+            case 'Em andamento':
+                statusStyle = 'background: #f39c12; color: white;';
+                statusIcon = '▶️';
+                break;
+            case 'Concluída':
+                statusStyle = 'background: #27ae60; color: white;';
+                statusIcon = '✅';
+                break;
+            default:
+                statusStyle = 'background: #95a5a6; color: white;';
+                statusIcon = '📝';
+        }
         
-        // Criar HTML da linha (cada linha é um item da lista)
+        // Cor de fundo alternada para linhas
+        const rowBgColor = index % 2 === 0 ? '#ffffff' : '#f8f9fa';
+        
+        // Criar HTML da linha COM ESTILO BONITO
         const linhaHTML = `
             <div onclick="mostrarDetalhesDemanda(${demanda.id})" 
-                 style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
-                        gap: 10px; padding: 15px; border-bottom: 1px solid #eee;
-                        cursor: pointer; transition: background 0.3s;
-                        &:hover { background: #f8f9fa; }">
-                <div style="font-weight: 500; color: #2c3e50;">
-                    📋 ${demanda.titulo || 'Sem título'}
+                 style="display: grid; 
+                        grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+                        gap: 16px; 
+                        padding: 18px 24px;
+                        background: ${rowBgColor};
+                        border-bottom: 1px solid #e9ecef;
+                        cursor: pointer; 
+                        transition: all 0.2s ease;
+                        &:hover { 
+                            background: #e3f2fd; 
+                            transform: translateY(-1px);
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                        }">
+                
+                <!-- Título -->
+                <div style="font-weight: 500; color: #2c3e50; display: flex; align-items: center;">
+                    <div style="width: 32px; height: 32px; 
+                                background: #3498db; 
+                                color: white; 
+                                border-radius: 6px; 
+                                display: flex; 
+                                align-items: center; 
+                                justify-content: center;
+                                margin-right: 12px;
+                                font-weight: bold;
+                                font-size: 12px;">
+                        #${demanda.id || index + 1}
+                    </div>
+                    <div style="flex: 1; line-height: 1.4;">
+                        <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">
+                            ${demanda.titulo || 'Sem título'}
+                        </div>
+                        <div style="font-size: 12px; color: #7f8c8d;">
+                            ${demanda.descricao ? (demanda.descricao.substring(0, 40) + (demanda.descricao.length > 40 ? '...' : '')) : 'Sem descrição'}
+                        </div>
+                    </div>
                 </div>
-                <div style="color: #34495e;">
-                    🏫 ${escolasTexto}
+                
+                <!-- Escola -->
+                <div style="color: #34495e; display: flex; align-items: center; font-size: 13px;"
+                     title="${escolasTooltip}">
+                    <i class="fas fa-school" style="margin-right: 8px; color: #3498db;"></i>
+                    ${escolasTexto}
                 </div>
-                <div style="color: #7f8c8d;">
-                    🏢 ${demanda.departamento || 'Não definido'}
+                
+                <!-- Departamento -->
+                <div style="color: #7f8c8d; display: flex; align-items: center; font-size: 13px;">
+                    <i class="fas fa-building" style="margin-right: 8px; color: #9b59b6;"></i>
+                    ${demanda.departamento || 'Não definido'}
                 </div>
-                <div style="color: #2c3e50;">
-                    👤 ${demanda.responsavel || 'Não definido'}
+                
+                <!-- Responsável -->
+                <div style="color: #2c3e50; display: flex; align-items: center; font-size: 13px;">
+                    <i class="fas fa-user-tag" style="margin-right: 8px; 
+                       color: ${demanda.responsavel === 'Supervisor' ? '#e74c3c' : '#3498db'};"></i>
+                    ${demanda.responsavel || 'Não definido'}
                 </div>
-                <div style="color: #2c3e50;">
-                    📅 ${dataPrazo}
+                
+                <!-- Prazo -->
+                <div style="color: ${prazoColor}; display: flex; align-items: center; font-size: 13px; font-weight: 500;">
+                    <i class="fas fa-calendar-alt" style="margin-right: 8px;"></i>
+                    ${dataPrazo}
                 </div>
-                <div style="color: white; background: ${statusCor}; 
-                            padding: 5px 10px; border-radius: 20px; 
-                            text-align: center; font-size: 0.9em;">
-                    ${statusTexto}
+                
+                <!-- Status -->
+                <div style="${statusStyle} 
+                            padding: 6px 12px; 
+                            border-radius: 20px; 
+                            text-align: center; 
+                            font-size: 12px; 
+                            font-weight: 600;
+                            display: flex; 
+                            align-items: center; 
+                            justify-content: center;
+                            width: fit-content;
+                            min-width: 100px;
+                            margin: 0 auto;">
+                    ${statusIcon} ${demanda.status || 'Pendente'}
                 </div>
             </div>
         `;
@@ -832,9 +935,41 @@ function renderizarDemandasNaLista() {
         listaContainer.insertAdjacentHTML('beforeend', linhaHTML);
     });
     
-    console.log("✅ Lista de demandas criada com sucesso!");
+    // 7. Adicionar rodapé com informações
+    const rodapeHTML = `
+        <div style="background: #f8f9fa; 
+                    padding: 16px 24px; 
+                    color: #6c757d; 
+                    font-size: 13px;
+                    border-top: 1px solid #e9ecef;
+                    display: flex; 
+                    justify-content: space-between;
+                    align-items: center;">
+            <div>
+                <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
+                Total de ${state.demandas.length} demandas
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <div style="width: 12px; height: 12px; background: #27ae60; border-radius: 2px;"></div>
+                    <span>Concluídas</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <div style="width: 12px; height: 12px; background: #f39c12; border-radius: 2px;"></div>
+                    <span>Em andamento</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <div style="width: 12px; height: 12px; background: #e74c3c; border-radius: 2px;"></div>
+                    <span>Pendentes</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    listaContainer.insertAdjacentHTML('beforeend', rodapeHTML);
+    
+    console.log("✅ Lista renderizada com layout profissional!");
 }
-
 /**
  * Filtra as demandas com base nos filtros ativos
  */
