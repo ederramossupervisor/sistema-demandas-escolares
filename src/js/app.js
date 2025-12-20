@@ -1694,8 +1694,6 @@ function formatarTamanhoArquivo(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-// REMOVA a função salvarDemanda original (aproximadamente linha 480-610)
-// E substitua pelo novo código abaixo:
 
 /**
  * Salva uma nova demanda COM NOTIFICAÇÕES
@@ -1709,7 +1707,9 @@ async function salvarDemanda(e) {
     }
     
     mostrarLoading();
+    let idDemanda = null;
     
+        
     try {
         // 1. Preparar dados básicos
         const escolasSelecionadas = [];
@@ -1824,6 +1824,7 @@ async function salvarDemanda(e) {
         // 3. Salvar demanda no servidor
         mostrarToast('Salvando', 'Salvando demanda...', 'info');
         const resultadoSalvar = await salvarDemandaNoServidor(dadosDemanda);
+        
         // Enviar notificação Firebase se configurado
 setTimeout(async () => {
     try {
@@ -1853,50 +1854,31 @@ setTimeout(async () => {
             throw new Error('Erro ao salvar demanda: ID não retornado');
         }
         
-        const idDemanda = resultadoSalvar.id;
+        idDemanda = resultadoSalvar.id;
         console.log(`✅ Demanda salva com ID: ${idDemanda}`);
         
-        // 4. DISPARAR NOTIFICAÇÕES INTELIGENTES
+        // 🔴 🔔 NOVO: DISPARAR NOTIFICAÇÃO FIREBASE
         if (idDemanda) {
             setTimeout(async () => {
                 try {
-                    console.log('🔔 Iniciando notificações inteligentes...');
-                    const resultadoNotificacoes = await dispararNotificacoesNovaDemanda(dadosDemanda, idDemanda);
+                    console.log('🔔 Disparando notificação Firebase...');
+                    const notificacaoEnviada = await enviarNotificacaoDemandaCriada(dadosDemanda, idDemanda);
                     
-                    if (resultadoNotificacoes && !resultadoNotificacoes.erro) {
-                        console.log(`📢 Notificações enviadas para ${resultadoNotificacoes.usuariosNotificados?.length || 0} usuários`);
-                        
-                        // Mostrar feedback se foram enviadas notificações
-                        if (resultadoNotificacoes.usuariosNotificados && resultadoNotificacoes.usuariosNotificados.length > 0) {
-                            mostrarToast('Notificações', 
-                                `Enviadas para ${resultadoNotificacoes.usuariosNotificados.length} usuários`, 
-                                'success');
-                        }
+                    if (notificacaoEnviada) {
+                        console.log('✅ Notificação Firebase enviada com sucesso!');
+                        // Feedback opcional
+                        mostrarToast('Notificação', 'Usuários notificados sobre nova demanda', 'info');
+                    } else {
+                        console.log('ℹ️ Notificação não enviada (pode ser normal se não houver tokens)');
                     }
                 } catch (erroNotif) {
-                    console.error('⚠️ Erro nas notificações (não crítico):', erroNotif);
+                    console.warn('⚠️ Erro na notificação (não crítico):', erroNotif);
+                    // NÃO mostra erro ao usuário - demanda já foi salva
                 }
-            }, 1500);
+            }, 1000); // Aguarda 1 segundo
         }
         
-        // 5. Enviar e-mail se solicitado
-        if (dadosDemanda.enviarEmail && escolasSelecionadas.length > 0) {
-            try {
-                mostrarToast('E-mail', 'Enviando e-mail...', 'info');
-                
-                const dadosEmail = {
-                    ...dadosDemanda,
-                    idDemanda: idDemanda
-                };
-                
-                await enviarEmailDemanda(dadosEmail);
-                
-            } catch (erroEmail) {
-                console.error('Erro ao enviar e-mail:', erroEmail);
-                mostrarToast('Atenção', 'Demanda salva, mas e-mail não foi enviado.', 'warning');
-            }
-        }
-        
+                    
         // 6. Sucesso!
         mostrarToast('Sucesso', 'Demanda salva com sucesso!', 'success');
         
@@ -3247,7 +3229,6 @@ function atualizarStatusNotificacoes(info) {
 // ============================================
 
 // Adicione estas exportações
-window.dispararNotificacoesNovaDemanda = dispararNotificacoesNovaDemanda;
 window.inicializarSistemaNotificacoes = inicializarSistemaNotificacoes;
 window.carregarConfiguracoesUsuario = carregarConfiguracoesUsuario;
 window.salvarConfiguracoesUsuario = salvarConfiguracoesUsuario;
@@ -3531,38 +3512,89 @@ async function testarNotificacaoPush() {
 /**
  * Envia notificação para nova demanda
  */
-async function enviarNotificacaoNovaDemanda(demanda) {
+/**
+ * 🔔 ENVIA NOTIFICAÇÃO PARA USUÁRIOS QUANDO UMA DEMANDA É CRIADA
+ * - Versão simplificada para o SEU sistema
+ */
+async function enviarNotificacaoDemandaCriada(dadosDemanda, idDemanda) {
+    console.log('📢 Enviando notificação sobre nova demanda...');
+    
     try {
-        if (window.PushNotificationSystem) {
-            const info = window.PushNotificationSystem.getInfo();
+        // 1. Obter dados do usuário logado (quem criou)
+        const usuarioSalvo = localStorage.getItem('usuario_demandas');
+        let usuario = null;
+        
+        if (usuarioSalvo) {
+            try {
+                usuario = JSON.parse(usuarioSalvo);
+            } catch (e) {
+                console.error('❌ Erro ao ler usuário:', e);
+            }
+        }
+        
+        // 2. Preparar dados para enviar ao Google Apps Script
+        const dados = {
+            acao: 'notificarNovaDemanda',
+            demanda: {
+                id: idDemanda,
+                titulo: dadosDemanda.titulo,
+                descricao: dadosDemanda.descricao || 'Sem descrição',
+                departamento: dadosDemanda.departamento || 'Não definido',
+                escolas: Array.isArray(dadosDemanda.escolas) ? dadosDemanda.escolas : [],
+                responsavel: dadosDemanda.responsavel || 'Não definido',
+                prazo: dadosDemanda.prazo || 'Não definido',
+                criador: usuario ? usuario.nome : 'Sistema'
+            },
+            usuarioCriador: usuario,
+            timestamp: new Date().toISOString()
+        };
+        
+        console.log('📤 Dados da notificação:', dados);
+        
+        // 3. Enviar usando a função JÁ EXISTENTE no seu sistema
+        const resposta = await enviarParaGoogleAppsScript(dados);
+        
+        if (resposta && resposta.sucesso) {
+            console.log('✅ Notificação enviada com sucesso!');
             
-            if (!info.subscribed) {
-                console.log('⚠️ Usuário não inscrito para notificações push');
-                return;
+            // 4. Mostrar notificação LOCAL também (feedback imediato)
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('📋 Nova Demanda Criada', {
+                    body: `${dadosDemanda.titulo} - ${dadosDemanda.departamento || ''}`,
+                    icon: '/sistema-demandas-escolares/public/icons/192x192.png',
+                    badge: '/sistema-demandas-escolares/public/icons/96x96.png',
+                    tag: `demanda-${idDemanda}`,
+                    data: { demandaId: idDemanda }
+                });
             }
             
-            // Criar notificação personalizada
-            const notificacaoData = {
-                titulo: `📋 Nova Demanda: ${demanda.titulo}`,
-                mensagem: `Departamento: ${demanda.departamento || 'Não definido'}`,
-                demandaId: demanda.id,
-                url: `${window.location.origin}/sistema-demandas-escolares/?demanda=${demanda.id}`,
-                importante: true,
-                tag: `demanda-${demanda.id}`,
-                acoes: [
-                    {
-                        action: 'ver',
-                        title: '👁️ Ver Demanda'
-                    }
-                ]
-            };
+            return true;
+        } else {
+            console.warn('⚠️ Notificação não foi enviada:', resposta?.erro);
             
-            await window.PushNotificationSystem.sendCustomNotification(notificacaoData);
-            console.log('📤 Notificação push enviada para nova demanda');
+            // Fallback: Notificação local mesmo se falhar no servidor
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('📋 Demanda Salva', {
+                    body: `Sua demanda "${dadosDemanda.titulo}" foi salva!`,
+                    icon: '/sistema-demandas-escolares/public/icons/192x192.png'
+                });
+            }
+            
+            return false;
         }
+        
     } catch (error) {
-        console.error('❌ Erro ao enviar notificação de demanda:', error);
-        // Não mostrar erro ao usuário (não é crítico)
+        console.error('❌ Erro ao enviar notificação:', error);
+        
+        // Notificação local de erro
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('📋 Demanda Salva', {
+                body: `Demanda criada com sucesso!`,
+                icon: '/sistema-demandas-escolares/public/icons/192x192.png'
+            });
+        }
+        
+        return false;
     }
 }
 
