@@ -144,10 +144,14 @@ const PushNotificationSystem = {
 
             // 5. Salvar no servidor
             await this.saveTokenToServer(token);
-
+            
+            // 5.1 Tornar o token acessível globalmente (fonte única)
+            this.state.token = token;
+            window.FCM_TOKEN = token;
+            
             // 6. Configurar listener para mensagens
             this.setupMessageListener(messaging);
-
+            
             return token;
 
         } catch (error) {
