@@ -3961,7 +3961,20 @@ async function configurarListenersFCM(messaging) {
       // Alternativa: monitorar periodicamente
       setInterval(async () => {
         try {
-          const token = await messaging.getToken({ vapidKey: 'SEU_VAPID_KEY_AQUI' });
+          console.log("🔧 Usando método Web Push simplificado...");
+
+// FORÇAR Web Push simples, não Firebase Admin SDK
+const token = await messaging.getToken({ 
+    vapidKey: "BMQIERFqdSFhiX319L_Wfa176UU8nzop-9-SB4pPxowM6yBo9gIrnU5-PtsENsc_XWXZJTQHCgMeYtiztUE9C3Q",
+    serviceWorkerRegistration: await navigator.serviceWorker.ready
+});
+
+// Verificar se é um token Web Push (começa com https://fcm.googleapis.com/fcm/send/)
+if (token && token.startsWith('https://fcm.googleapis.com/fcm/send/')) {
+    console.log("✅ Token Web Push obtido:", token.substring(0, 50) + "...");
+} else {
+    console.log("✅ Token FCM obtido:", token ? token.substring(0, 50) + "..." : "null");
+}
           console.log("🔄 Token verificado periodicamente");
         } catch (error) {
           console.error("❌ Erro ao verificar token:", error);
