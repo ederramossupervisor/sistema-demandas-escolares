@@ -1862,7 +1862,7 @@ setTimeout(async () => {
             setTimeout(async () => {
                 try {
                     console.log('🔔 Disparando notificação Firebase...');
-                    const notificacaoEnviada = await enviarNotificacaoDemandaCriada(dadosDemanda, idDemanda);
+                    const notificacaoEnviada = await enviarNotificacaoNovaDemanda(dadosDemanda, idDemanda);
                     
                     if (notificacaoEnviada) {
                         console.log('✅ Notificação Firebase enviada com sucesso!');
@@ -4633,6 +4633,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Exportar funções para uso global
+window.enviarNotificacaoNovaDemanda = enviarNotificacaoNovaDemanda;
 window.inicializarSistemaNotificacoes = inicializarSistemaNotificacoes;
 window.enviarNotificacaoNovaDemanda = enviarNotificacaoNovaDemanda;
 window.mostrarSecao = mostrarSecao;
