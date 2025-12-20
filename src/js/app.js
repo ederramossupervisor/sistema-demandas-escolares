@@ -13,25 +13,95 @@ const APP_CONFIG = {
     supervisorEmail: "ecramos@sedu.es.gov.br",
     supervisorName: "Supervisão Escolar"
 };
-// 🔥 ADICIONE ESTAS 15 LINHAS LOGO ABAIXO 🔥
 // ============================================
-// CONFIGURAÇÃO FIREBASE
+// CONFIGURAÇÃO FIREBASE - CARREGAMENTO DINÂMICO
 // ============================================
-const firebaseConfig = {
-    apiKey: "AIzaSyA4FdLA3O1EDDpVtvlr9OTW1_D0J1zDV_g",
-    authDomain: "sistema-de-demandas-escolares.firebaseapp.com",
-    projectId: "sistema-de-demandas-escolares",
-    storageBucket: "sistema-de-demandas-escolares.firebasestorage.app",
-    messagingSenderId: "655714446030",
-    appId: "1:655714446030:web:5e7ecb83df5d7c21c2fe9f"
-};
 
-// Inicializar Firebase se não estiver
-if (typeof firebase !== 'undefined' && !firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-    console.log("🔥 Firebase configurado no app.js");
+// Verificar se o Firebase já está carregado
+if (typeof firebase === 'undefined') {
+    console.log('📦 Carregando Firebase dinamicamente...');
+    
+    // URLs dos scripts do Firebase
+    const firebaseScripts = [
+        'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js',
+        'https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js'
+    ];
+    
+    let scriptsLoaded = 0;
+    
+    // Carregar cada script dinamicamente
+    firebaseScripts.forEach(src => {
+        const script = document.createElement('script');
+        script.src = src;
+        
+        // Quando cada script carregar
+        script.onload = () => {
+            scriptsLoaded++;
+            console.log(`✅ Script carregado: ${src}`);
+            
+            // Quando todos os scripts carregarem
+            if (scriptsLoaded === firebaseScripts.length) {
+                console.log('✅ Todos os scripts do Firebase carregados!');
+                inicializarFirebaseAposCarregamento();
+            }
+        };
+        
+        // Adicionar à página
+        document.head.appendChild(script);
+    });
+    
+    // Função para inicializar o Firebase após carregamento
+    function inicializarFirebaseAposCarregamento() {
+        console.log('⚙️ Inicializando Firebase...');
+        
+        // Aguardar um pouco para garantir que o Firebase está disponível
+        setTimeout(() => {
+            if (typeof firebase !== 'undefined') {
+                // Configuração do Firebase (MESMA DO SEU CÓDIGO ORIGINAL)
+                const firebaseConfig = {
+                    apiKey: "AIzaSyA4FdLA3O1EDDpVtvlr9OTW1_D0J1zDV_g",
+                    authDomain: "sistema-de-demandas-escolares.firebaseapp.com",
+                    projectId: "sistema-de-demandas-escolares",
+                    storageBucket: "sistema-de-demandas-escolares.firebasestorage.app",
+                    messagingSenderId: "655714446030",
+                    appId: "1:655714446030:web:5e7ecb83df5d7c21c2fe9f"
+                };
+                
+                // Verificar se já não foi inicializado
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                    console.log('🔥 Firebase configurado dinamicamente!');
+                } else {
+                    console.log('ℹ️ Firebase já estava inicializado');
+                }
+            } else {
+                console.error('❌ Firebase ainda não disponível após carregamento');
+            }
+        }, 1000); // Aguardar 1 segundo
+    }
+} else {
+    // Se o Firebase já estiver carregado (de outro lugar)
+    console.log('✅ Firebase já está carregado');
+    
+    // Configuração normal
+    const firebaseConfig = {
+        apiKey: "AIzaSyA4FdLA3O1EDDpVtvlr9OTW1_D0J1zDV_g",
+        authDomain: "sistema-de-demandas-escolares.firebaseapp.com",
+        projectId: "sistema-de-demandas-escolares",
+        storageBucket: "sistema-de-demandas-escolares.firebasestorage.app",
+        messagingSenderId: "655714446030",
+        appId: "1:655714446030:web:5e7ecb83df5d7c21c2fe9f"
+    };
+    
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+        console.log("🔥 Firebase configurado no app.js");
+    }
 }
+
+// ============================================
 // ESTADO DA APLICAÇÃO
+// ============================================
 let state = {
     demandas: [],
     filtros: {
@@ -45,6 +115,7 @@ let state = {
     splashScreenActive: true
 };
 
+// ... O RESTO DO SEU CÓDIGO CONTINUA AQUI ...
 // ELEMENTOS DO DOM
 let elementos = {};
 
