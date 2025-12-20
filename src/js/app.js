@@ -595,10 +595,10 @@ async function carregarDemandas() {
         }
         
         // 6. Se não houver demandas, mostrar mensagem
-        if (demandas.length === 0) {
-            // 🚫 Bloquear toast na tela de login
-        if (!document.body.classList.contains('login-page')) {
-            mostrarToast('Info', 'Nenhuma demanda cadastrada ainda.', 'info');
+                if (demandas.length === 0) {
+                    // 🚫 Bloquear toast na tela de login
+                if (!document.body.classList.contains('login-page')) {
+                    mostrarToast('Info', 'Nenhuma demanda cadastrada ainda.', 'info');
         }
         
     } catch (erro) {
