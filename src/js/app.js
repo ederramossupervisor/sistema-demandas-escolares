@@ -13,7 +13,24 @@ const APP_CONFIG = {
     supervisorEmail: "ecramos@sedu.es.gov.br",
     supervisorName: "Supervisão Escolar"
 };
+// 🔥 ADICIONE ESTAS 15 LINHAS LOGO ABAIXO 🔥
+// ============================================
+// CONFIGURAÇÃO FIREBASE
+// ============================================
+const firebaseConfig = {
+    apiKey: "AIzaSyA4FdLA3O1EDDpVtvlr9OTW1_D0J1zDV_g",
+    authDomain: "sistema-de-demandas-escolares.firebaseapp.com",
+    projectId: "sistema-de-demandas-escolares",
+    storageBucket: "sistema-de-demandas-escolares.firebasestorage.app",
+    messagingSenderId: "655714446030",
+    appId: "1:655714446030:web:5e7ecb83df5d7c21c2fe9f"
+};
 
+// Inicializar Firebase se não estiver
+if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+    console.log("🔥 Firebase configurado no app.js");
+}
 // ESTADO DA APLICAÇÃO
 let state = {
     demandas: [],
