@@ -12,17 +12,16 @@ const APP_PATH = '/sistema-demandas-escolares/';
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
-// Configuração do Firebase (USE SEUS DADOS REAIS)
-// Configuração do Firebase
-// Passe o objeto diretamente sem atribuir a uma variável
-firebase.initializeApp({
+const firebaseConfigSW = {  // ⬅️ Mude para firebaseConfigSW
     apiKey: "AIzaSyA4FdLA3O1EDDpVtvlr9OTW1_D0J1zDV_g",
     authDomain: "sistema-de-demandas-escolares.firebaseapp.com",
     projectId: "sistema-de-demandas-escolares",
     storageBucket: "sistema-de-demandas-escolares.firebasestorage.app",
     messagingSenderId: "655714446030",
     appId: "1:655714446030:web:5e7ecb83df5d7c21c2fe9f"
-});
+};
+
+firebase.initializeApp(firebaseConfigSW);
 
 const messaging = firebase.messaging();
 
