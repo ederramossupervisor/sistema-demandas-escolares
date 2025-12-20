@@ -1,15 +1,15 @@
-// pushNotifications.js - VERSÃO FINAL COMPLETA
-// Compatível com Firebase FCM v10+ e seu sistema atual
+// pushNotifications.js - SISTEMA DE NOTIFICAÇÕES COMPLETO
+// Versão simplificada e funcional
 
-class PushNotificationSystem {
-    constructor() {
-        console.log('🔔 PushNotificationSystem inicializado');
-        this.token = null;
-        this.permission = Notification.permission;
-        this.isInitialized = false;
-        this.isSubscribed = false;
-        this.serviceWorker = null;
-    }
+const PushNotificationSystem = {
+    // Estado do sistema
+    state: {
+        isSupported: false,
+        permission: 'default',
+        token: null,
+        isSubscribed: false,
+        isInitialized: false
+    },
 
     // ============================================
     // MÉTODOS DE VERIFICAÇÃO
@@ -18,22 +18,23 @@ class PushNotificationSystem {
     /**
      * Verifica suporte do navegador
      */
-    checkSupport() {
+    checkSupport: function() {
         const supported = 'Notification' in window &&
                          'serviceWorker' in navigator &&
-                         typeof firebase !== 'undefined' &&
-                         firebase.messaging !== undefined;
+                         'PushManager' in window;
         
+        this.state.isSupported = supported;
         console.log('📱 Suporte verificado:', supported);
         return supported;
-    }
+    },
 
     /**
      * Verifica permissão atual
      */
-    checkPermission() {
-        return Notification.permission;
-    }
+    checkPermission: function() {
+        this.state.permission = Notification.permission;
+        return this.state.permission;
+    },
 
     // ============================================
     // MÉTODOS PRINCIPAIS
@@ -42,56 +43,56 @@ class PushNotificationSystem {
     /**
      * Inicializa o sistema de notificações
      */
-    async initialize() {
+    initialize: async function() {
         console.log('🔔 Inicializando sistema de notificações...');
         
         try {
             // Verificar suporte
             const suportado = this.checkSupport();
             if (!suportado) {
-                console.warn('⚠️ Navegador não suporta notificações Firebase');
+                console.warn('⚠️ Navegador não suporta notificações push');
                 return false;
             }
 
             // Verificar permissão atual
-            this.permission = this.checkPermission();
-            console.log('📋 Permissão atual:', this.permission);
+            this.checkPermission();
+            console.log('📋 Permissão atual:', this.state.permission);
 
-            // Se a permissão já foi concedida, obter token
-            if (this.permission === 'granted') {
-                const token = await this.getFCMToken();
-                if (token) {
-                    this.isSubscribed = true;
-                    this.token = token;
-                    this.isInitialized = true;
-                    return true;
-                }
+            // Se já tem permissão, tentar obter token
+            if (this.state.permission === 'granted') {
+                await this.getFCMToken();
             }
 
-            this.isInitialized = true;
+            this.state.isInitialized = true;
+            console.log('✅ Sistema de notificações inicializado');
             return true;
 
         } catch (error) {
             console.error('❌ Erro ao inicializar notificações:', error);
             return false;
         }
-    }
+    },
 
     /**
      * 🔥 OBTÉM TOKEN FCM DO FIREBASE
      */
-    async getFCMToken() {
+    getFCMToken: async function() {
         console.log('🔥 Tentando obter token FCM...');
 
         try {
-            // 1. Obter instância do messaging
+            // 1. Verificar se Firebase está disponível
+            if (typeof firebase === 'undefined' || !firebase.messaging) {
+                console.warn('⚠️ Firebase não está disponível');
+                return null;
+            }
+
             const messaging = firebase.messaging();
 
-            // 2. Verificar/obter permissão
-            if (this.permission !== 'granted') {
+            // 2. Verificar permissão
+            if (this.state.permission !== 'granted') {
                 console.log('🔔 Solicitando permissão...');
                 const permission = await Notification.requestPermission();
-                this.permission = permission;
+                this.state.permission = permission;
 
                 if (permission !== 'granted') {
                     console.warn('❌ Usuário não concedeu permissão');
@@ -100,22 +101,33 @@ class PushNotificationSystem {
             }
 
             // 3. Registrar Service Worker
-            await this.registerServiceWorker();
-
-            if (!this.serviceWorker) {
-                console.warn('⚠️ Service Worker não registrado');
+            console.log('👷 Registrando Service Worker...');
+            
+            let registration;
+            try {
+                registration = await navigator.serviceWorker.register(
+                    '/sistema-demandas-escolares/sw-notificacoes.js',
+                    {
+                        scope: '/sistema-demandas-escolares/'
+                    }
+                );
+                console.log('✅ Service Worker registrado:', registration.scope);
+            } catch (error) {
+                console.error('❌ Erro no Service Worker:', error);
                 return null;
             }
+
+            // Aguardar ativação
+            await navigator.serviceWorker.ready;
 
             // 4. Obter token FCM
             console.log('🔐 Gerando token FCM...');
             
-            // VAPID KEY - SUA CHAVE CORRETA
             const vapidKey = "BMQIERFqdSFhiX319L_Wfa176UU8nzop-9-SB4pPxowM6yBo9gIrnU5-PtsENsc_XWXZJTQHCgMeYtiztUE9C3Q";
             
             const token = await messaging.getToken({
                 vapidKey: vapidKey,
-                serviceWorkerRegistration: this.serviceWorker
+                serviceWorkerRegistration: registration
             });
 
             if (!token) {
@@ -123,16 +135,18 @@ class PushNotificationSystem {
                 return null;
             }
 
-            // 5. Salvar token
             console.log('✅ TOKEN FCM OBTIDO COM SUCESSO!');
             console.log('📋 Token:', token.substring(0, 30) + '...');
             console.log('📏 Comprimento:', token.length, 'caracteres');
 
-            this.token = token;
-            this.isSubscribed = true;
+            this.state.token = token;
+            this.state.isSubscribed = true;
 
-            // 6. Salvar no servidor
+            // 5. Salvar no servidor
             await this.saveTokenToServer(token);
+
+            // 6. Configurar listener para mensagens
+            this.setupMessageListener(messaging);
 
             return token;
 
@@ -140,84 +154,108 @@ class PushNotificationSystem {
             console.error('❌ Erro ao obter token FCM:', error);
             return null;
         }
-    }
+    },
 
     /**
-     * Registra Service Worker
+     * Configura listener para mensagens Firebase
      */
-    async registerServiceWorker() {
+    setupMessageListener: function(messaging) {
         try {
-            console.log('👷 Registrando Service Worker...');
-            
-            const registration = await navigator.serviceWorker.register(
-                '/sistema-demandas-escolares/sw-notificacoes.js',
-                {
-                    scope: '/sistema-demandas-escolares/'
+            messaging.onMessage((payload) => {
+                console.log('📨 Mensagem recebida em foreground:', payload);
+                
+                // Mostrar notificação local
+                if (payload.notification) {
+                    this.showLocalNotification(
+                        payload.notification.title,
+                        payload.notification.body,
+                        payload.data
+                    );
                 }
-            );
-
-            console.log('✅ Service Worker registrado:', registration.scope);
+            });
             
-            // Aguardar ativação
-            await navigator.serviceWorker.ready;
-            this.serviceWorker = registration;
-
-            return registration;
-
+            console.log('✅ Listener configurado para mensagens Firebase');
         } catch (error) {
-            console.error('❌ Erro ao registrar Service Worker:', error);
-            
-            // Tentar caminho alternativo
-            try {
-                const fallbackRegistration = await navigator.serviceWorker.register(
-                    'sw-notificacoes.js'
-                );
-                console.log('✅ Service Worker (fallback) registrado');
-                this.serviceWorker = fallbackRegistration;
-                return fallbackRegistration;
-            } catch (fallbackError) {
-                console.error('❌ Fallback também falhou:', fallbackError);
-                return null;
-            }
+            console.error('❌ Erro ao configurar listener:', error);
         }
-    }
+    },
+
+    /**
+     * Mostra notificação local
+     */
+    showLocalNotification: function(title, body, data) {
+        if (!('Notification' in window)) return;
+        
+        if (Notification.permission === 'granted') {
+            const notification = new Notification(title, {
+                body: body,
+                icon: '/sistema-demandas-escolares/public/icons/192x192.png',
+                badge: '/sistema-demandas-escolares/public/icons/96x96.png',
+                data: data || {}
+            });
+
+            notification.onclick = function() {
+                if (this.data && this.data.demandaId) {
+                    // Abrir detalhes da demanda
+                    if (typeof window.mostrarDetalhesDemanda === 'function') {
+                        window.mostrarDetalhesDemanda(this.data.demandaId);
+                    }
+                }
+                this.close();
+            };
+        }
+    },
 
     /**
      * 💾 SALVA TOKEN NO SERVIDOR
      */
-    async saveTokenToServer(token) {
+    saveTokenToServer: async function(token) {
         try {
             console.log('💾 Salvando token no servidor...');
 
-            // Obter dados do usuário logado
-            const usuarioLogado = this.getUserData();
-
-            if (!usuarioLogado || !usuarioLogado.email) {
-                console.warn('⚠️ Usuário não logado, token não será salvo');
-                return false;
+            // Obter dados do usuário
+            let usuario = null;
+            try {
+                const usuarioSalvo = localStorage.getItem('usuario_demandas');
+                if (usuarioSalvo) {
+                    usuario = JSON.parse(usuarioSalvo);
+                }
+            } catch (e) {
+                console.error('❌ Erro ao ler usuário:', e);
             }
 
-            // Preparar dados para envio
             const dados = {
                 acao: 'salvarSubscription',
                 tipo: 'firebase',
                 fcmToken: token,
-                usuario: {
-                    email: usuarioLogado.email,
-                    nome: usuarioLogado.nome || 'Usuário',
-                    departamento: usuarioLogado.departamento || 'Não definido'
-                },
+                usuario: usuario ? {
+                    email: usuario.email,
+                    nome: usuario.nome,
+                    departamento: usuario.departamento
+                } : null,
                 timestamp: new Date().toISOString()
             };
 
-            // Enviar para servidor
-            const resposta = await this.sendToServer(dados);
+            // Usar função global do app.js
+            if (typeof window.enviarParaGoogleAppsScript === 'function') {
+                const resultado = await window.enviarParaGoogleAppsScript(dados);
+                if (resultado && resultado.sucesso) {
+                    console.log('✅ Token salvo no servidor!');
+                    return true;
+                }
+            }
 
-            if (resposta && resposta.sucesso) {
-                console.log('✅ Token salvo no servidor com sucesso!');
+            // Fallback: JSONP
+            const resultado = await this.jsonpRequest(
+                'https://script.google.com/macros/s/AKfycbwUOIb2a7sVBrHk30HaxgBxyWLIa5T2H5jJcKoQ2EeP373XJCUEBYqioHRza2z3cjdRQA/exec',
+                dados
+            );
+
+            if (resultado && resultado.sucesso) {
+                console.log('✅ Token salvo no servidor!');
                 return true;
             } else {
-                console.warn('⚠️ Não foi possível salvar token:', resposta?.erro || 'Erro desconhecido');
+                console.warn('⚠️ Não foi possível salvar token');
                 return false;
             }
 
@@ -225,60 +263,12 @@ class PushNotificationSystem {
             console.error('❌ Erro ao salvar token:', error);
             return false;
         }
-    }
-
-    /**
-     * 👤 OBTÉM DADOS DO USUÁRIO LOGADO
-     */
-    getUserData() {
-        try {
-            // Tentar obter do localStorage
-            const usuarioSalvo = localStorage.getItem('usuario_demandas');
-            if (usuarioSalvo) {
-                const usuario = JSON.parse(usuarioSalvo);
-                console.log('👤 Usuário do localStorage:', usuario);
-                return usuario;
-            }
-
-            // Tentar obter de variável global
-            if (window.usuarioAtual) {
-                return window.usuarioAtual;
-            }
-
-            // Retornar dados padrão se não encontrar
-            return {
-                email: 'usuario@exemplo.com',
-                nome: 'Usuário',
-                departamento: 'Não definido'
-            };
-
-        } catch (error) {
-            console.error('❌ Erro ao obter dados do usuário:', error);
-            return null;
-        }
-    }
-
-    /**
-     * 📡 ENVIA DADOS PARA O SERVIDOR
-     */
-    async sendToServer(dados) {
-        try {
-            // URL do seu Google Apps Script
-            const url = 'https://script.google.com/macros/s/AKfycbwUOIb2a7sVBrHk30HaxgBxyWLIa5T2H5jJcKoQ2EeP373XJCUEBYqioHRza2z3cjdRQA/exec';
-
-            // Usar JSONP para contornar CORS
-            return await this.jsonpRequest(url, dados);
-
-        } catch (error) {
-            console.error('❌ Erro ao enviar para servidor:', error);
-            return { sucesso: false, erro: error.message };
-        }
-    }
+    },
 
     /**
      * 🔄 REQUISIÇÃO JSONP
      */
-    jsonpRequest(url, dados) {
+    jsonpRequest: function(url, dados) {
         return new Promise((resolve, reject) => {
             const callbackName = 'callback_' + Date.now();
 
@@ -289,7 +279,6 @@ class PushNotificationSystem {
                 if (script.parentNode) {
                     script.parentNode.removeChild(script);
                 }
-
                 resolve(response);
             };
 
@@ -309,7 +298,7 @@ class PushNotificationSystem {
                 if (script.parentNode) {
                     script.parentNode.removeChild(script);
                 }
-                reject(new Error('Timeout na requisição JSONP'));
+                reject(new Error('Timeout na requisição'));
             }, 10000);
 
             // Tratar erro
@@ -321,108 +310,93 @@ class PushNotificationSystem {
             // Adicionar ao documento
             document.head.appendChild(script);
         });
-    }
+    },
 
     /**
      * 🔔 PEDE PERMISSÃO PARA NOTIFICAÇÕES
      */
-    async requestPermission() {
+    requestPermission: async function() {
         try {
             console.log('🔔 Solicitando permissão para notificações...');
 
             const permission = await Notification.requestPermission();
-            this.permission = permission;
+            this.state.permission = permission;
 
             if (permission === 'granted') {
                 console.log('✅ Permissão concedida!');
                 const token = await this.getFCMToken();
-                return { success: true, permission: permission, token: token };
+                return { 
+                    success: true, 
+                    permission: permission, 
+                    token: token 
+                };
             } else {
                 console.warn('⚠️ Permissão negada:', permission);
-                return { success: false, permission: permission };
+                return { 
+                    success: false, 
+                    permission: permission 
+                };
             }
 
         } catch (error) {
             console.error('❌ Erro ao solicitar permissão:', error);
-            return { success: false, error: error.message };
+            return { 
+                success: false, 
+                error: error.message 
+            };
         }
-    }
-
-    /**
-     * 🔕 DESATIVA NOTIFICAÇÕES
-     */
-    async unsubscribe() {
-        try {
-            console.log('🔕 Desativando notificações...');
-
-            // Se tiver token, tentar deletar do Firebase
-            if (this.token && firebase && firebase.messaging) {
-                try {
-                    const messaging = firebase.messaging();
-                    await messaging.deleteToken();
-                    console.log('✅ Token removido do Firebase');
-                } catch (firebaseError) {
-                    console.warn('⚠️ Não foi possível remover token do Firebase:', firebaseError);
-                }
-            }
-
-            // Resetar estado
-            this.token = null;
-            this.isSubscribed = false;
-
-            // Remover do localStorage
-            localStorage.removeItem('fcm_token');
-
-            console.log('✅ Notificações desativadas');
-            return true;
-
-        } catch (error) {
-            console.error('❌ Erro ao desativar notificações:', error);
-            return false;
-        }
-    }
+    },
 
     /**
      * 📊 OBTÉM STATUS DO SISTEMA
      */
-    getInfo() {
+    getInfo: function() {
         return {
-            suportado: this.checkSupport(),
-            permissao: this.permission,
-            inscrito: this.isSubscribed,
-            token: this.token ? this.token.substring(0, 20) + '...' : null,
-            inicializado: this.isInitialized
+            suportado: this.state.isSupported,
+            permissao: this.state.permission,
+            inscrito: this.state.isSubscribed,
+            token: this.state.token ? this.state.token.substring(0, 20) + '...' : null,
+            inicializado: this.state.isInitialized
         };
-    }
+    },
 
     /**
      * 🧪 ENVIA NOTIFICAÇÃO DE TESTE
      */
-    async sendTest() {
+    sendTest: async function() {
         try {
             console.log('🧪 Enviando notificação de teste...');
 
-            if (!this.token) {
+            if (!this.state.token) {
                 console.warn('⚠️ Não há token FCM para enviar teste');
                 return false;
             }
 
-            // Dados para notificação de teste
             const dados = {
                 acao: 'enviarNotificacaoTeste',
-                token: this.token,
-                titulo: 'Teste de Notificação',
-                mensagem: 'Esta é uma notificação de teste do sistema!',
-                usuario: this.getUserData()
+                token: this.state.token,
+                titulo: '🔔 Teste do Sistema',
+                mensagem: 'Esta é uma notificação de teste do sistema de demandas!',
+                timestamp: new Date().toISOString()
             };
 
-            const resposta = await this.sendToServer(dados);
+            const resultado = await this.jsonpRequest(
+                'https://script.google.com/macros/s/AKfycbwUOIb2a7sVBrHk30HaxgBxyWLIa5T2H5jJcKoQ2EeP373XJCUEBYqioHRza2z3cjdRQA/exec',
+                dados
+            );
 
-            if (resposta && resposta.sucesso) {
+            if (resultado && resultado.sucesso) {
                 console.log('✅ Teste enviado com sucesso!');
+                
+                // Mostrar notificação local também
+                this.showLocalNotification(
+                    'Teste do Sistema',
+                    'Notificação de teste enviada com sucesso!'
+                );
+                
                 return true;
             } else {
-                console.warn('⚠️ Falha ao enviar teste:', resposta?.erro);
+                console.warn('⚠️ Falha ao enviar teste:', resultado?.erro);
                 return false;
             }
 
@@ -430,12 +404,12 @@ class PushNotificationSystem {
             console.error('❌ Erro ao enviar teste:', error);
             return false;
         }
-    }
+    },
 
     /**
      * 🚀 TESTA O SISTEMA COMPLETO
      */
-    async testSystem() {
+    testSystem: async function() {
         console.log('🚀 Iniciando teste completo do sistema...');
 
         const results = {
@@ -461,28 +435,40 @@ class PushNotificationSystem {
                     setTimeout(async () => {
                         const dados = {
                             acao: 'verificarToken',
-                            token: this.token
+                            token: this.state.token
                         };
 
-                        const resposta = await this.sendToServer(dados);
+                        const resposta = await this.jsonpRequest(
+                            'https://script.google.com/macros/s/AKfycbwUOIb2a7sVBrHk30HaxgBxyWLIa5T2H5jJcKoQ2EeP373XJCUEBYqioHRza2z3cjdRQA/exec',
+                            dados
+                        );
+                        
                         results.saved = resposta && resposta.sucesso;
 
                         console.log('📋 RESULTADO FINAL DO TESTE:', results);
 
-                        // Mostrar resultado
-                        alert(`
-                        🧪 TESTE COMPLETO:
+                        // Mostrar resultado em um alerta amigável
+                        const mensagem = `
+                        🧪 TESTE COMPLETO DO SISTEMA:
 
-                        ✅ Suporte a notificações: ${results.suporte ? 'Sim' : 'Não'}
-                        ✅ Firebase disponível: ${results.firebase ? 'Sim' : 'Não'}
-                        ✅ Firebase Messaging: ${results.messaging ? 'Sim' : 'Não'}
-                        ✅ Service Worker: ${results.serviceWorker ? 'Sim' : 'Não'}
-                        ✅ Permissão: ${results.permission}
+                        ✅ Suporte a notificações: ${results.suporte ? 'SIM' : 'NÃO'}
+                        ✅ Firebase disponível: ${results.firebase ? 'SIM' : 'NÃO'}
+                        ✅ Firebase Messaging: ${results.messaging ? 'SIM' : 'NÃO'}
+                        ✅ Service Worker: ${results.serviceWorker ? 'SIM' : 'NÃO'}
+                        ✅ Permissão concedida: ${results.permission}
                         ✅ Token obtido: ${results.token}
-                        ✅ Token salvo no servidor: ${results.saved ? 'Sim' : 'Não'}
+                        ✅ Token salvo no servidor: ${results.saved ? 'SIM' : 'NÃO'}
 
-                        ${results.saved ? '🎉 TUDO FUNCIONANDO!' : '⚠️ ALGO DEU ERRADO!'}
-                        `);
+                        ${results.saved ? '🎉 TUDO FUNCIONANDO PERFEITAMENTE!' : '⚠️ ALGUM PROBLEMA FOI DETECTADO!'}
+                        `;
+
+                        alert(mensagem);
+
+                        // Se tudo funcionou, mostrar confirmação na interface
+                        if (results.saved && typeof window.mostrarToast === 'function') {
+                            window.mostrarToast('Teste', 'Sistema de notificações funcionando!', 'success');
+                        }
+
                     }, 2000);
                 }
             }
@@ -492,16 +478,40 @@ class PushNotificationSystem {
 
         return results;
     }
-}
+};
 
 // Exportar para uso global
-window.PushNotificationSystem = new PushNotificationSystem();
+window.PushNotificationSystem = PushNotificationSystem;
 
-console.log('✅ PushNotificationSystem carregado (versão final)!');
+console.log('✅ PushNotificationSystem carregado com sucesso!');
 
 // Inicializar automaticamente quando o documento estiver pronto
 document.addEventListener('DOMContentLoaded', function() {
+    // Aguardar um pouco para o app carregar completamente
     setTimeout(() => {
-        window.PushNotificationSystem.initialize();
+        if (window.PushNotificationSystem) {
+            window.PushNotificationSystem.initialize().then(success => {
+                if (success) {
+                    console.log('🎉 Sistema de notificações pronto para uso!');
+                    
+                    // Se usuário está logado e não tem permissão, mostrar aviso
+                    const usuario = localStorage.getItem('usuario_demandas');
+                    const info = window.PushNotificationSystem.getInfo();
+                    
+                    if (usuario && info.permission === 'default') {
+                        // Mostrar aviso amigável após 3 segundos
+                        setTimeout(() => {
+                            if (typeof window.mostrarToast === 'function') {
+                                window.mostrarToast(
+                                    'Notificações', 
+                                    'Ative as notificações para receber alertas de novas demandas!', 
+                                    'info'
+                                );
+                            }
+                        }, 3000);
+                    }
+                }
+            });
+        }
     }, 3000);
 });
