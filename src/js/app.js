@@ -1934,7 +1934,7 @@ setTimeout(async () => {
                     importante: true
                 };
                 
-                await enviarNotificacaoFirebase(notificacaoData);
+                //await enviarNotificacaoFirebase(notificacaoData);//
             }
         }
     } catch (notifErro) {
