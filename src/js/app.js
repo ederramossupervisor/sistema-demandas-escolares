@@ -566,55 +566,48 @@ async function carregarDemandas() {
     mostrarLoading();
     
     try {
-        // 1. Buscar demandas REAIS do Google Sheets
-        const demandas = await listarDemandasDoServidor();
-        
-        console.log(`✅ Recebidas ${demandas.length} demandas reais do servidor`);
-        
-        // 2. Salvar no estado da aplicação
-        state.demandas = demandas;
-        
-        // 3. ATUALIZAÇÃO IMPORTANTE: Renderizar na LISTA NOVA
-        renderizarDemandasNaLista();  // ← CHAMAR A FUNÇÃO NOVA!
-        
-        // 4. Atualizar estatísticas
-        atualizarEstatisticas();
-        
-                // 5. Atualizar o bloco "Demandas" com números reais
+    // 1. Buscar demandas REAIS do Google Sheets
+    const demandas = await listarDemandasDoServidor();
+    
+    console.log(`✅ Recebidas ${demandas.length} demandas reais do servidor`);
+    
+    // 2. Salvar no estado da aplicação
+    state.demandas = demandas;
+    
+    // 3. Renderizar na lista
+    renderizarDemandasNaLista();
+    
+    // 4. Atualizar estatísticas
+    atualizarEstatisticas();
+    
+    // 5. Atualizar bloco de estatísticas com setTimeout
+    setTimeout(function() {
         try {
-            // Usamos setTimeout para não interferir no carregamento principal
-            setTimeout(function() {
-                try {
-                    atualizarBlocoEstatisticas(demandas);
-                } catch (erro) {
-                    console.log("⚠️ Erro não crítico nas estatísticas: " + erro.message);
-                }
-            }, 100);
+            atualizarBlocoEstatisticas(demandas);
         } catch (erro) {
-            console.log("⚠️ Erro externo nas estatísticas: " + erro.message);
+            console.log("⚠️ Erro não crítico nas estatísticas: " + erro.message);
         }
-        
-        // 6. Se não houver demandas, mostrar mensagem
-                if (demandas.length === 0) {
-                    // 🚫 Bloquear toast na tela de login
-                if (!document.body.classList.contains('login-page')) {
-                    mostrarToast('Info', 'Nenhuma demanda cadastrada ainda.', 'info');
-        }
-        
-    } catch (erro) {
-        console.error('❌ Erro ao carregar demandas:', erro);
-        
-        // Modo de contingência (usar exemplos se servidor falhar)
-        state.demandas = obterDadosDemonstracao();
-        renderizarDemandasNaLista();  // ← Mesmo no modo contingência
-        atualizarEstatisticas();
-        
-        mostrarToast('Atenção', 
-            'Usando dados locais. Verifique sua conexão.', 
-            'warning');
-    } finally {
-        esconderLoading();
+    }, 100);
+    
+    // 6. Se não houver demandas, mostrar mensagem (exceto na tela de login)
+    if (demandas.length === 0 && !document.body.classList.contains('login-page')) {
+        mostrarToast('Info', 'Nenhuma demanda cadastrada ainda.', 'info');
     }
+
+} catch (erro) {
+    console.error('❌ Erro ao carregar demandas:', erro);
+    
+    // Modo de contingência
+    state.demandas = obterDadosDemonstracao();
+    renderizarDemandasNaLista();
+    atualizarEstatisticas();
+    
+    if (!document.body.classList.contains('login-page')) {
+        mostrarToast('Atenção', 'Usando dados locais. Verifique sua conexão.', 'warning');
+    }
+} finally {
+    esconderLoading();
+}
 }
 
 /**
