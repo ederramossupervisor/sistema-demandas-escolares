@@ -3938,8 +3938,8 @@ async function getFCMToken() {
         }
         
         console.log("✅ TOKEN FCM OBTIDO COM SUCESSO!");
-        console.log("📋 Token (primeiros 50 chars):", fcmToken.substring(0, 50) + "...");
-        console.log("📏 Comprimento total:", fcmToken.length, "caracteres");
+        // console.log("✅ Token FCM obtido"); // Comentado para não aparecer
+        //console.log("📏 Comprimento total:", fcmToken.length, "caracteres");//
         
         // 6. ✅ SALVAR TOKEN NO SERVIDOR (APÓS OBTENÇÃO BEM-SUCEDIDA)
         await salvarTokenFCMNoServidor(fcmToken);
@@ -4379,7 +4379,7 @@ async function inicializarSistemaNotificacoesCompleto() {
         
         if (token) {
             console.log("🎉 Sistema de notificações inicializado!");
-            console.log("📊 Token ativo:", token.substring(0, 30) + "...");
+            //console.log("📊 Token ativo:", token.substring(0, 30) + "...");//
             
             // Atualizar interface
             atualizarInterfaceNotificacoes(true);
@@ -4602,11 +4602,11 @@ async function testarTokenFCMDireto() {
         
         if (token) {
             console.log("✅ TOKEN OBTIDO COM SUCESSO!");
-            console.log("Token (primeiros 30):", token.substring(0, 30) + "...");
+            // console.log("✅ Token de teste obtido"); // Comentado
             console.log("Comprimento:", token.length);
             
             // Mostrar toast de sucesso
-            mostrarToast('Token FCM', 'Token obtido com sucesso!', 'success');
+            // mostrarToast('Token FCM', 'Token obtido com sucesso!', 'success'); // Comentado
             
             // Armazenar para uso posterior
             localStorage.setItem('fcm_token_simples', token);
