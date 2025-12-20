@@ -21,6 +21,37 @@
     
     <!-- Fonte -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Adicione este CSS no login.html -->
+<style>
+    /* ============================================
+       REMOVER COMPLETAMENTE O BOTÃO DE CRIAR DEMANDA NA TELA DE LOGIN
+       ============================================ */
+    
+    /* Ocultar TUDO relacionado a botões flutuantes */
+    .btn-floating,
+    #btn-nova-demanda {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+    
+    /* Garantir que não há botões flutuantes em nenhum lugar */
+    .login-container .btn-floating,
+    .login-form-container .btn-floating,
+    .login-card .btn-floating {
+        display: none !important;
+    }
+    
+    /* Esconder qualquer elemento com posição fixa que possa ser o botão */
+    .login-container [style*="fixed"],
+    .login-container [style*="position: fixed"],
+    .login-container [style*="position:fixed"] {
+        bottom: auto !important;
+        right: auto !important;
+        display: none !important;
+    }
+</style>
 </head>
 <body>
     <!-- SPLASH SCREEN -->
@@ -660,5 +691,66 @@ console.log('✅ Sistema de login 3.0 carregado com sucesso!');
         console.log('✅ Sistema de login configurado!');
     });
     </script>
+    <script>
+    // Remover completamente o botão flutuante na tela de login
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 Removendo botões flutuantes do login...');
+        
+        // Função para remover botões flutuantes
+        function removerBotoesFlutuantes() {
+            // 1. Remover botões flutuantes existentes
+            const botoesFlutuantes = document.querySelectorAll('.btn-floating, #btn-nova-demanda');
+            botoesFlutuantes.forEach(botao => {
+                console.log('🗑️ Removendo botão:', botao.className || botao.id);
+                botao.style.display = 'none';
+                botao.remove();
+            });
+            
+            // 2. Remover estilos inline que possam estar mostrando o botão
+            const elementosComPosicaoFixa = document.querySelectorAll('*');
+            elementosComPosicaoFixa.forEach(el => {
+                if (window.getComputedStyle(el).position === 'fixed' && 
+                    window.getComputedStyle(el).bottom === '30px' && 
+                    window.getComputedStyle(el).right === '30px') {
+                    console.log('🗑️ Removendo elemento fixo:', el.className || el.id);
+                    el.style.display = 'none';
+                    el.remove();
+                }
+            });
+        }
+        
+        // Executar imediatamente
+        removerBotoesFlutuantes();
+        
+        // Executar novamente após um pequeno delay
+        setTimeout(removerBotoesFlutuantes, 500);
+        
+        // Observar mutações no DOM para prevenir que seja adicionado novamente
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.addedNodes.length) {
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1) { // Element node
+                            if (node.classList && 
+                                (node.classList.contains('btn-floating') || 
+                                 node.id === 'btn-nova-demanda')) {
+                                console.log('🚫 Impedindo criação de botão flutuante');
+                                node.style.display = 'none';
+                                node.remove();
+                            }
+                        }
+                    });
+                }
+            });
+        });
+        
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+        
+        console.log('✅ Botões flutuantes removidos com sucesso!');
+    });
+</script>
 </body>
 </html>
