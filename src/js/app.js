@@ -88,12 +88,7 @@ if (typeof firebase === 'undefined') {
                     if (typeof firebase.messaging !== 'undefined') {
                         console.log('✅ Firebase Messaging carregado!');
                         
-                        // Iniciar notificações 5 segundos depois
-                        setTimeout(() => {
-                            if (typeof inicializarSistemaNotificacoesCompleto === 'function') {
-                                inicializarSistemaNotificacoesCompleto();
-                            }
-                        }, 5000);
+                        
                     } else {
                         console.warn('⚠️ Firebase Messaging não está disponível');
                     }
@@ -3802,13 +3797,13 @@ async function getFCMToken() {
         }
         
         // 5. OBTER TOKEN FCM COM VAPID KEY
-        console.log("🔐 Gerando token FCM...");
-                
+        console.log("🔐 Gerando token FCM...");     
+             
+        const vapidKey = "BMQIERFqdSFhiX319L_Wfa176UU8nzop-9-SB4pPxowM6yBo9gIrnU5-PtsENsc_XWXZJTQHCgMeYtiztUE9C3Q";
+        
         if (!vapidKey || vapidKey.length < 10) {
             throw new Error("VAPID Key inválida ou não configurada");
         }
-        
-        const vapidKey = "BMQIERFqdSFhiX319L_Wfa176UU8nzop-9-SB4pPxowM6yBo9gIrnU5-PtsENsc_XWXZJTQHCgMeYtiztUE9C3Q";
 
         const fcmToken = await messaging.getToken({
     vapidKey: vapidKey,
@@ -4187,26 +4182,42 @@ async function salvarWebPushNoServidor(subscription) {
  * 📡 FAZ REQUISIÇÃO AO SERVIDOR GOOGLE APPS SCRIPT
  */
 async function fazerRequisicaoServidor(dados) {
-    // Use sua função existente que chama o backend
-    // Esta é uma implementação genérica
-    const url = "https://script.google.com/macros/s/AKfycbwPHLUnKJO-LWPcw4uSBbDXJz5ej2SyUcGkJtARQfPUDOPVQDVLM60Mqqu5U5xRS8OiqA/exec";
+    // ✅ CORREÇÃO: Use o MESMO servidor das outras funções (que já usa JSONP)
+    const url = "https://script.google.com/macros/s/AKfycbwUOIb2a7sVBrHk30HaxgBxyWLIa5T2H5jJcKoQ2EeP373XJCUEBYqioHRza2z3cjdRQA/exec";
+    const callbackName = 'resposta_jsonp_' + Date.now();
     
-    try {
-        const resposta = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(dados)
-        });
+    return new Promise((resolve) => {
+        window[callbackName] = function(resposta) {
+            delete window[callbackName];
+            resolve(resposta);
+        };
         
-        return await resposta.json();
-    } catch (erro) {
-        console.error("❌ Erro na requisição ao servidor:", erro);
-        return { sucesso: false, erro: erro.message };
-    }
+        // Criar URL com JSONP (evita CORS)
+        let params = new URLSearchParams();
+        params.append('callback', callbackName);
+        params.append('acao', dados.acao || '');
+        
+        // Adicionar outros parâmetros conforme necessário
+        if (dados.tipo) params.append('tipo', dados.tipo);
+        if (dados.subscription) params.append('subscription', JSON.stringify(dados.subscription));
+        if (dados.usuario) params.append('usuario', JSON.stringify(dados.usuario));
+        if (dados.token) params.append('token', dados.token);
+        
+        const script = document.createElement('script');
+        script.src = `${url}?${params.toString()}`;
+        
+        // Timeout para evitar espera infinita
+        setTimeout(() => {
+            if (script.parentNode) document.head.removeChild(script);
+            if (window[callbackName]) {
+                delete window[callbackName];
+                resolve({ sucesso: false, erro: "timeout", mensagem: "Servidor não respondeu" });
+            }
+        }, 10000);
+        
+        document.head.appendChild(script);
+    });
 }
-
 // ============================================
 // INICIALIZAÇÃO DO SISTEMA DE NOTIFICAÇÕES
 // ============================================
