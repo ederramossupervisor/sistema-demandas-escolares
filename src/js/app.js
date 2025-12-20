@@ -4520,6 +4520,27 @@ function verificarEstadoFinal() {
     console.log("6. Token armazenado:", localStorage.getItem('fcm_token') ? 'Sim' : 'Não');
     console.log("7. Usuário logado:", localStorage.getItem('usuario_demandas') ? 'Sim' : 'Não');
 }
+/**
+ * 🔄 SALVA TOKEN FCM NO SERVIDOR (chamado pelo pushNotifications.js)
+ */
+async function enviarTokenParaServidor(token, usuario) {
+    try {
+        console.log('💾 Salvando token FCM no servidor...');
+        
+        const dados = {
+            acao: 'salvarSubscription',
+            tipo: 'firebase',
+            fcmToken: token,
+            usuario: usuario,
+            timestamp: new Date().toISOString()
+        };
+        
+        return await enviarParaGoogleAppsScript(dados);
+    } catch (error) {
+        console.error('❌ Erro ao salvar token:', error);
+        return { sucesso: false, erro: error.message };
+    }
+}
 
 setTimeout(verificarEstadoFinal, 12000);
 /**
@@ -4594,5 +4615,6 @@ window.excluirDemanda = excluirDemanda;
 window.getFCMToken = getFCMToken;
 window.testarNotificacoesCompletas = testarNotificacoesCompletas;
 window.inicializarSistemaNotificacoesCompleto = inicializarSistemaNotificacoesCompleto;
+window.enviarTokenParaServidor = enviarTokenParaServidor;
 
 console.log("✅ app.js carregado com sucesso!");
