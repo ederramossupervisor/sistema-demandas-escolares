@@ -822,14 +822,18 @@ function renderizarDemandasNaLista() {
         listaContainer = novoContainer;
     }
     
-    // 3. Limpar container
-    listaContainer.innerHTML = '';
-    
-    // 🚫 BLOQUEIO NA TELA DE LOGIN
+    // 🚫 BLOQUEIO DEFINITIVO NA TELA DE LOGIN
     if (document.body.classList.contains('login-page')) {
-        console.log("🚫 Tela de login detectada - não renderizando mensagens de demanda");
-        return;
+        console.log("🚫 Tela de login detectada - container de demandas oculto");
+        if (listaContainer) {
+            listaContainer.innerHTML = '';      // Limpa qualquer conteúdo
+            listaContainer.style.display = 'none'; // Oculta o container
+        }
+        return; // Sai da função
     }
+    
+    // 3. Limpar container (apenas para outras páginas)
+    listaContainer.innerHTML = '';
     
     // 4. Verificar se temos demandas
     if (!state.demandas || state.demandas.length === 0) {
