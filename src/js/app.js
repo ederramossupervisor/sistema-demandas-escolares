@@ -220,8 +220,8 @@ function iniciarAplicacao() {
     
     // 4. TESTE APENAS UMA VEZ, após notificações carregarem
         setTimeout(() => {
-            console.log('🔔 TESTE ÚNICO DE NOTIFICAÇÕES');
-            executarTesteNotificacoes();
+            //console.log('🔔 TESTE ÚNICO DE NOTIFICAÇÕES');//
+            //executarTesteNotificacoes();//
         }, 2000);
     
     // 5. Verificar se é PWA
