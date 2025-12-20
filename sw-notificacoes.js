@@ -13,6 +13,8 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
 // Configuração do Firebase (USE SEUS DADOS REAIS)
+// Configuração do Firebase
+// Passe o objeto diretamente sem atribuir a uma variável
 firebase.initializeApp({
     apiKey: "AIzaSyA4FdLA3O1EDDpVtvlr9OTW1_D0J1zDV_g",
     authDomain: "sistema-de-demandas-escolares.firebaseapp.com",
