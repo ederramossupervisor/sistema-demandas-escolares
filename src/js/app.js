@@ -4410,9 +4410,118 @@ function mostrarNotificacao(payload) {
     }
 }
 // ============================================
-// FUNÇÕES PARA TESTE E DEBUG
+// FIX PARA PushNotificationSystem NÃO CARREGAR
 // ============================================
 
+// Verificar se o arquivo pushNotifications.js está carregado
+function verificarPushNotificationSystem() {
+    console.log("🔍 Verificando PushNotificationSystem...");
+    
+    if (typeof PushNotificationSystem === 'undefined') {
+        console.warn("⚠️ PushNotificationSystem não está carregado");
+        
+        // Tentar carregar o arquivo dinamicamente
+        console.log("📦 Tentando carregar pushNotifications.js dinamicamente...");
+        
+        const script = document.createElement('script');
+        script.src = '/sistema-demandas-escolares/pushNotifications.js';
+        script.onload = function() {
+            console.log("✅ pushNotifications.js carregado dinamicamente!");
+            
+            // Verificar se agora está disponível
+            setTimeout(() => {
+                if (typeof PushNotificationSystem !== 'undefined') {
+                    console.log("✅ PushNotificationSystem agora disponível!");
+                    
+                    // Inicializar agora que está carregado
+                    if (typeof inicializarSistemaNotificacoesPrincipal === 'function') {
+                        setTimeout(() => {
+                            inicializarSistemaNotificacoesPrincipal();
+                        }, 1000);
+                    }
+                } else {
+                    console.error("❌ PushNotificationSystem ainda não disponível após carregar");
+                }
+            }, 1000);
+        };
+        
+        script.onerror = function() {
+            console.error("❌ Falha ao carregar pushNotifications.js");
+        };
+        
+        document.head.appendChild(script);
+    } else {
+        console.log("✅ PushNotificationSystem já está carregado!");
+    }
+}
+
+// Verificar após 3 segundos
+setTimeout(verificarPushNotificationSystem, 3000);
+
+// ============================================
+// TESTE DE TOKEN FCM SIMPLIFICADO
+// ============================================
+
+async function testarTokenFCMDireto() {
+    console.log("🧪 Testando token FCM diretamente...");
+    
+    try {
+        if (typeof firebase === 'undefined' || typeof firebase.messaging === 'undefined') {
+            console.error("❌ Firebase não disponível");
+            return;
+        }
+        
+        const messaging = firebase.messaging();
+        const vapidKey = "BMQIERFqdSFhiX319L_Wfa176UU8nzop-9-SB4pPxowM6yBo9gIrnU5-PtsENsc_XWXZJTQHCgMeYtiztUE9C3Q";
+        
+        // Obter token de forma simples
+        const token = await messaging.getToken({ vapidKey: vapidKey });
+        
+        if (token) {
+            console.log("✅ TOKEN OBTIDO COM SUCESSO!");
+            console.log("Token (primeiros 30):", token.substring(0, 30) + "...");
+            console.log("Comprimento:", token.length);
+            
+            // Mostrar toast de sucesso
+            mostrarToast('Token FCM', 'Token obtido com sucesso!', 'success');
+            
+            // Armazenar para uso posterior
+            localStorage.setItem('fcm_token_simples', token);
+            
+            return token;
+        } else {
+            console.error("❌ Token não retornado");
+            return null;
+        }
+        
+    } catch (erro) {
+        console.error("❌ Erro ao obter token:", erro);
+        mostrarToast('Erro Token', erro.message, 'error');
+        return null;
+    }
+}
+
+// Testar token após 8 segundos
+setTimeout(() => {
+    testarTokenFCMDireto();
+}, 8000);
+
+// ============================================
+// VERIFICAÇÃO DE ESTADO FINAL
+// ============================================
+
+function verificarEstadoFinal() {
+    console.log("📊 VERIFICAÇÃO FINAL DO SISTEMA:");
+    console.log("1. Firebase carregado:", typeof firebase !== 'undefined');
+    console.log("2. Firebase.messaging:", typeof firebase.messaging);
+    console.log("3. Permissão notificações:", Notification.permission);
+    console.log("4. Service Worker:", 'serviceWorker' in navigator);
+    console.log("5. PushNotificationSystem:", typeof PushNotificationSystem);
+    console.log("6. Token armazenado:", localStorage.getItem('fcm_token') ? 'Sim' : 'Não');
+    console.log("7. Usuário logado:", localStorage.getItem('usuario_demandas') ? 'Sim' : 'Não');
+}
+
+setTimeout(verificarEstadoFinal, 12000);
 /**
  * 🧪 TESTA O SISTEMA DE NOTIFICAÇÕES
  */
