@@ -297,68 +297,7 @@
             }
         }
     </style>
-    <!-- Firebase para notificações -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
 
-<!-- Configuração Firebase REAL -->
-<script>
-// Configuração REAL do Firebase (OBTER NO CONSOLE)
-const firebaseConfig = {
-  apiKey: "AIzaSyA4FdLA3O1EDDpVtvlr9OTW1_D0J1zDV_g",
-  authDomain: "sistema-de-demandas-escolares.firebaseapp.com",
-  projectId: "sistema-de-demandas-escolares",
-  storageBucket: "sistema-de-demandas-escolares.firebasestorage.app",
-  messagingSenderId: "655714446030",
-  appId: "1:655714446030:web:e8d57d50c48b9be9c2fe9f"
-};
-
-// Inicializar Firebase se os scripts carregarem
-if (typeof firebase !== 'undefined') {
-    try {
-        if (!firebase.apps.length) {
-            const app = firebase.initializeApp(firebaseConfig);
-            console.log('✅ Firebase inicializado:', app.name);
-        }
-    } catch (error) {
-        console.error('❌ Erro ao inicializar Firebase:', error);
-    }
-} else {
-    console.warn('⚠️ Firebase não carregado');
-}
-
-// Função para obter token FCM
-async function obterTokenFCM() {
-    try {
-        if (typeof firebase === 'undefined' || !firebase.messaging) {
-            throw new Error('Firebase não carregado');
-        }
-        
-        const messaging = firebase.messaging();
-        
-        // Solicitar permissão se necessário
-        if (Notification.permission === 'default') {
-            const permission = await Notification.requestPermission();
-            console.log('Permissão:', permission);
-        }
-        
-        // Obter token
-        const token = await messaging.getToken({
-            vapidKey: 'BKFl5Hc4UKk6gNm4t7wcCLnRIzYmW9TF8yOxqM0obajhIG_H0RRetGt2bT1qZoTIerYa4IVQE6Jb0D4hNRIM-Vs'
-        });
-        
-        console.log('Token FCM:', token);
-        return token;
-        
-    } catch (error) {
-        console.error('Erro ao obter token FCM:', error);
-        return null;
-    }
-}
-
-// Testar token
-window.obterTokenFCM = obterTokenFCM;
-</script>
 </head>
 <body>
     <!-- SPLASH SCREEN (logo após o body) -->
