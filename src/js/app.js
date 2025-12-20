@@ -3685,15 +3685,17 @@ async function getFCMToken() {
         
         // 5. OBTER TOKEN FCM COM VAPID KEY
         console.log("🔐 Gerando token FCM...");
-        
-        // VAPID KEY do seu projeto Firebase
-        const vapidKey = "BEOHDwWjTbmMFmT8RQl6T6CF4GPC9EjrEVuVkSaCgfgWg4cI68s6LRlIL196LCRjEWr6AEMMHhrjW4OXtrKwUsw";
-        
+                
         if (!vapidKey || vapidKey.length < 10) {
             throw new Error("VAPID Key inválida ou não configurada");
         }
         
+        const vapidKey = "BMQIERFqdSFhiX319L_Wfa176UU8nzop-9-SB4pPxowM6yBo9gIrnU5-PtsENsc_XWXZJTQHCgMeYtiztUE9C3Q";
+
         const fcmToken = await messaging.getToken({
+            vapidKey: vapidKey,
+            serviceWorkerRegistration: registration
+    });
             vapidKey: vapidKey,
             serviceWorkerRegistration: registration
         });
