@@ -3704,14 +3704,32 @@ async function getFCMToken() {
     console.log("🔥 Iniciando obtenção de token FCM...");
     
     try {
-        // 1. VERIFICAR SE O FIREBASE ESTÁ DISPONÍVEL
-        if (typeof firebase === 'undefined' || !firebase.messaging) {
-            console.warn("⚠️ Firebase Messaging não disponível no navegador");
-            throw new Error("Firebase não carregado");
+        // ✅ CORREÇÃO: Verificar de forma mais segura
+        if (typeof firebase === 'undefined' || typeof firebase.app === 'undefined') {
+            console.warn("⚠️ Firebase App não carregado");
+            throw new Error("Firebase App não carregado");
         }
         
-        // 2. OBTER INSTÂNCIA DO MESSAGING
-        const messaging = firebase.messaging();
+        // ✅ CORREÇÃO: Verificar messaging separadamente
+        if (typeof firebase.messaging === 'undefined') {
+            console.warn("⚠️ Firebase Messaging não disponível");
+            
+            // Tentar carregar novamente
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            if (typeof firebase.messaging === 'undefined') {
+                throw new Error("Firebase Messaging não carregou após espera");
+            }
+        }
+        
+        // ✅ CORREÇÃO: Criar instância de forma segura
+        let messaging;
+        try {
+            messaging = firebase.messaging();
+        } catch (err) {
+            console.error("❌ Erro ao criar instância messaging:", err);
+            throw new Error("Não foi possível inicializar Firebase Messaging");
+        }
         
         // 3. VERIFICAR PERMISSÃO PARA NOTIFICAÇÕES
         const permissaoAtual = Notification.permission;
