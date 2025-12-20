@@ -204,6 +204,13 @@ function iniciarSplashScreen() {
  * INICIALIZAR APLICAÇÃO PRINCIPAL COM NOTIFICAÇÕES
  */
 function iniciarAplicacao() {
+    // 🔥 VERIFICAÇÃO: Não iniciar se estiver na página de login
+    if (window.location.pathname.includes('login.html') || 
+        document.body.classList.contains('login-page') ||
+        document.querySelector('.login-container')) {
+        console.log("🚫 Bloqueando inicialização do app.js na tela de login");
+        return; // Para aqui se for a tela de login
+    }    
     console.log("📱 Iniciando aplicação principal com notificações...");
     
     // 1. Esconder splash screen
