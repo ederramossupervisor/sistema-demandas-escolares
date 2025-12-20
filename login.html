@@ -51,9 +51,22 @@
         right: auto !important;
         display: none !important;
     }
+    /* ============================================
+   REMOVER COMPLETAMENTE O BOTÃO DE CRIAR DEMANDA NA TELA DE LOGIN
+   ============================================ */
+
+/* Se o body tem a classe login-page, ocultar TUDO */
+body.login-page .btn-floating,
+body.login-page #btn-nova-demanda {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
 </style>
 </head>
 <body>
+    <body class="login-page">
     <!-- SPLASH SCREEN -->
     <div id="splash-screen" class="splash-screen">
         <div class="splash-content">
