@@ -1693,7 +1693,98 @@ function formatarTamanhoArquivo(bytes) {
     
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
-
+/**
+ * 🔔 ENVIA NOTIFICAÇÃO PARA USUÁRIOS QUANDO UMA DEMANDA É CRIADA
+ */
+async function enviarNotificacaoNovaDemanda(dadosDemanda, idDemanda) {
+    console.log('📢 Enviando notificação sobre nova demanda...');
+    
+    try {
+        // 1. Obter dados do usuário logado (quem criou)
+        const usuarioSalvo = localStorage.getItem('usuario_demandas');
+        let usuario = null;
+        
+        if (usuarioSalvo) {
+            try {
+                usuario = JSON.parse(usuarioSalvo);
+            } catch (e) {
+                console.error('❌ Erro ao ler usuário:', e);
+            }
+        }
+        
+        // 2. Preparar dados para enviar ao Google Apps Script
+        const dados = {
+            acao: 'notificarNovaDemanda',
+            demanda: {
+                id: idDemanda,
+                titulo: dadosDemanda.titulo,
+                descricao: dadosDemanda.descricao || 'Sem descrição',
+                departamento: dadosDemanda.departamento || 'Não definido',
+                escolas: Array.isArray(dadosDemanda.escolas) ? dadosDemanda.escolas : [],
+                responsavel: dadosDemanda.responsavel || 'Não definido',
+                prazo: dadosDemanda.prazo || 'Não definido',
+                criador: usuario ? usuario.nome : 'Sistema'
+            },
+            usuarioCriador: usuario,
+            timestamp: new Date().toISOString()
+        };
+        
+        console.log('📤 Dados da notificação:', dados);
+        
+        // 3. Enviar usando a função JÁ EXISTENTE no seu sistema
+        const resposta = await enviarParaGoogleAppsScript(dados);
+        
+        if (resposta && resposta.sucesso) {
+            console.log('✅ Notificação enviada com sucesso!');
+            
+            // 4. Mostrar notificação LOCAL também (feedback imediato)
+            if ('Notification' in window && Notification.permission === 'granted') {
+                const notificacao = new Notification('📋 Nova Demanda Criada', {
+                    body: `${dadosDemanda.titulo} - ${dadosDemanda.departamento || ''}`,
+                    icon: '/sistema-demandas-escolares/public/icons/192x192.png',
+                    badge: '/sistema-demandas-escolares/public/icons/96x96.png',
+                    tag: `demanda-${idDemanda}`,
+                    data: { demandaId: idDemanda }
+                });
+                
+                // Quando clicar na notificação
+                notificacao.onclick = function() {
+                    if (typeof mostrarDetalhesDemanda === 'function') {
+                        mostrarDetalhesDemanda(idDemanda);
+                    }
+                    this.close();
+                };
+            }
+            
+            return true;
+        } else {
+            console.warn('⚠️ Notificação não foi enviada:', resposta?.erro);
+            
+            // Fallback: Notificação local mesmo se falhar no servidor
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('📋 Demanda Salva', {
+                    body: `Sua demanda "${dadosDemanda.titulo}" foi salva!`,
+                    icon: '/sistema-demandas-escolares/public/icons/192x192.png'
+                });
+            }
+            
+            return false;
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao enviar notificação:', error);
+        
+        // Notificação local de erro
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('📋 Demanda Salva', {
+                body: `Demanda criada com sucesso!`,
+                icon: '/sistema-demandas-escolares/public/icons/192x192.png'
+            });
+        }
+        
+        return false;
+    }
+}
 
 /**
  * Salva uma nova demanda COM NOTIFICAÇÕES
