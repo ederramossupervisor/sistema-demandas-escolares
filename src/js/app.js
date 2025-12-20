@@ -4724,7 +4724,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Exportar funções para uso global
-window.enviarNotificacaoNovaDemanda = enviarNotificacaoNovaDemanda;
 window.inicializarSistemaNotificacoes = inicializarSistemaNotificacoes;
 window.enviarNotificacaoNovaDemanda = enviarNotificacaoNovaDemanda;
 window.mostrarSecao = mostrarSecao;
