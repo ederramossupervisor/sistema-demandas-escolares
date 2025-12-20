@@ -54,33 +54,60 @@ if (typeof firebase === 'undefined') {
     
     // Função para inicializar o Firebase após carregamento
     function inicializarFirebaseAposCarregamento() {
-        console.log('⚙️ Inicializando Firebase...');
+    console.log('⚙️ Verificando Firebase...');
+    
+    // ✅ CORREÇÃO: Aguardar mais tempo para garantir carregamento
+    setTimeout(() => {
+        console.log('🔍 Verificando se Firebase está disponível...');
         
-        // Aguardar um pouco para garantir que o Firebase está disponível
-        setTimeout(() => {
-            if (typeof firebase !== 'undefined') {
-                // Configuração do Firebase (MESMA DO SEU CÓDIGO ORIGINAL)
-                const firebaseConfig = {
-                    apiKey: "AIzaSyA4FdLA3O1EDDpVtvlr9OTW1_D0J1zDV_g",
-                    authDomain: "sistema-de-demandas-escolares.firebaseapp.com",
-                    projectId: "sistema-de-demandas-escolares",
-                    storageBucket: "sistema-de-demandas-escolares.firebasestorage.app",
-                    messagingSenderId: "655714446030",
-                    appId: "1:655714446030:web:5e7ecb83df5d7c21c2fe9f"
-                };
-                
-                // Verificar se já não foi inicializado
-                if (!firebase.apps.length) {
+        // Verificação mais detalhada
+        const firebaseAvailable = typeof firebase !== 'undefined' && 
+                                  typeof firebase.initializeApp === 'function';
+        
+        if (firebaseAvailable) {
+            const firebaseConfig = {
+                apiKey: "AIzaSyA4FdLA3O1EDDpVtvlr9OTW1_D0J1zDV_g",
+                authDomain: "sistema-de-demandas-escolares.firebaseapp.com",
+                projectId: "sistema-de-demandas-escolares",
+                storageBucket: "sistema-de-demandas-escolares.firebasestorage.app",
+                messagingSenderId: "655714446030",
+                appId: "1:655714446030:web:5e7ecb83df5d7c21c2fe9f"
+            };
+            
+            try {
+                // ✅ CORREÇÃO: Verificar de forma mais segura
+                if (!firebase.apps || firebase.apps.length === 0) {
                     firebase.initializeApp(firebaseConfig);
-                    console.log('🔥 Firebase configurado dinamicamente!');
+                    console.log('🔥 Firebase App inicializado!');
                 } else {
-                    console.log('ℹ️ Firebase já estava inicializado');
+                    console.log('ℹ️ Firebase App já estava inicializado');
                 }
-            } else {
-                console.error('❌ Firebase ainda não disponível após carregamento');
+                
+                // ✅ CORREÇÃO: Verificar mensaging separadamente
+                setTimeout(() => {
+                    if (typeof firebase.messaging !== 'undefined') {
+                        console.log('✅ Firebase Messaging carregado!');
+                        
+                        // Iniciar notificações 5 segundos depois
+                        setTimeout(() => {
+                            if (typeof inicializarSistemaNotificacoesCompleto === 'function') {
+                                inicializarSistemaNotificacoesCompleto();
+                            }
+                        }, 5000);
+                    } else {
+                        console.warn('⚠️ Firebase Messaging não está disponível');
+                    }
+                }, 2000);
+                
+            } catch (err) {
+                console.error('❌ Erro ao inicializar Firebase:', err);
             }
-        }, 1000); // Aguardar 1 segundo
-    }
+        } else {
+            console.error('❌ Firebase não disponível após carregamento');
+        }
+    }, 2000); // ✅ CORREÇÃO: Aguardar 2 segundos
+}
+    
 } else {
     // Se o Firebase já estiver carregado (de outro lugar)
     console.log('✅ Firebase já está carregado');
