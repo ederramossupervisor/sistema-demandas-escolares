@@ -14,39 +14,41 @@ const APP_CONFIG = {
     supervisorName: "Supervisão Escolar"
 };
 // ============================================
-// CONFIGURAÇÃO FIREBASE - CARREGAMENTO DINÂMICO
+// CONFIGURAÇÃO FIREBASE - CARREGAMENTO DINÂMICO CORRIGIDO
 // ============================================
 
 // Verificar se o Firebase já está carregado
 if (typeof firebase === 'undefined') {
     console.log('📦 Carregando Firebase dinamicamente...');
     
-    // URLs dos scripts do Firebase
-    const firebaseScripts = [
-        'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js',
-        'https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js'
-    ];
-    
-    let scriptsLoaded = 0;
-    
-    // Carregar cada script dinamicamente
-    firebaseScripts.forEach(src => {
+    // ✅ CORREÇÃO: Primeiro carregar app, DEPOIS messaging
+    // Carregar firebase-app-compat.js PRIMEIRO
+    const loadFirebaseApp = new Promise((resolve) => {
         const script = document.createElement('script');
-        script.src = src;
-        
-        // Quando cada script carregar
+        script.src = 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js';
         script.onload = () => {
-            scriptsLoaded++;
-            console.log(`✅ Script carregado: ${src}`);
-            
-            // Quando todos os scripts carregarem
-            if (scriptsLoaded === firebaseScripts.length) {
-                console.log('✅ Todos os scripts do Firebase carregados!');
-                inicializarFirebaseAposCarregamento();
-            }
+            console.log('✅ firebase-app-compat.js carregado!');
+            resolve();
         };
-        
-        // Adicionar à página
+        script.onerror = () => {
+            console.error('❌ Falha ao carregar firebase-app-compat.js');
+            resolve();
+        };
+        document.head.appendChild(script);
+    });
+    
+    // SÓ DEPOIS que o app carregar, carregar messaging
+    loadFirebaseApp.then(() => {
+        const script = document.createElement('script');
+        script.src = 'https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js';
+        script.onload = () => {
+            console.log('✅ firebase-messaging-compat.js carregado!');
+            inicializarFirebaseAposCarregamento();
+        };
+        script.onerror = () => {
+            console.error('❌ Falha ao carregar firebase-messaging-compat.js');
+            inicializarFirebaseAposCarregamento();
+        };
         document.head.appendChild(script);
     });
     
