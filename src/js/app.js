@@ -782,9 +782,7 @@ function renderizarDemandas() {
     
     container.innerHTML = html;
 }
-/**
- * FUNÇÃO RESPONSIVA: Renderiza demandas na LISTA para celular e computador
- */
+
 function renderizarDemandasNaLista() {
     console.log("🎯 Renderizando demandas responsivamente...");
     
@@ -826,6 +824,12 @@ function renderizarDemandasNaLista() {
     
     // 3. Limpar container
     listaContainer.innerHTML = '';
+    
+    // 🚫 BLOQUEIO NA TELA DE LOGIN
+    if (document.body.classList.contains('login-page')) {
+        console.log("🚫 Tela de login detectada - não renderizando mensagens de demanda");
+        return;
+    }
     
     // 4. Verificar se temos demandas
     if (!state.demandas || state.demandas.length === 0) {
@@ -871,19 +875,14 @@ function renderizarDemandasNaLista() {
     console.log(`📱 Dispositivo: ${isMobile ? 'CELULAR' : 'COMPUTADOR'}`);
     
     if (isMobile) {
-        // ============================================
-        // 🔥 LAYOUT PARA CELULAR (Cards)
-        // ============================================
         renderizarParaCelular(listaContainer);
     } else {
-        // ============================================
-        // 💻 LAYOUT PARA COMPUTADOR (Tabela)
-        // ============================================
         renderizarParaComputador(listaContainer);
     }
     
     console.log("✅ Lista renderizada de forma responsiva!");
 }
+
 
 /**
  * LAYOUT PARA CELULAR - Cards simples
