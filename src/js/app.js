@@ -3734,7 +3734,7 @@ async function enviarNotificacaoFirebase(dados) {
         }
         
         // Obter token FCM do usuário atual
-        const tokenFCM = await obterTokenFCM();
+        const tokenFCM = await obterToken();
         
         if (!tokenFCM) {
             console.warn('⚠️ Token FCM não disponível');
