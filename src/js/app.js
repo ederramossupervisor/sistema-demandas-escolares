@@ -3693,12 +3693,9 @@ async function getFCMToken() {
         const vapidKey = "BMQIERFqdSFhiX319L_Wfa176UU8nzop-9-SB4pPxowM6yBo9gIrnU5-PtsENsc_XWXZJTQHCgMeYtiztUE9C3Q";
 
         const fcmToken = await messaging.getToken({
-            vapidKey: vapidKey,
-            serviceWorkerRegistration: registration
-    });
-            vapidKey: vapidKey,
-            serviceWorkerRegistration: registration
-        });
+    vapidKey: vapidKey,
+    serviceWorkerRegistration: registration
+});
         
         if (!fcmToken) {
             throw new Error("Firebase não retornou token FCM");
