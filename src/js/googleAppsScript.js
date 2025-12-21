@@ -393,20 +393,26 @@ async function listarDemandasDoServidor(filtros = {}) {
     console.log('📋 Listando demandas com filtros automáticos...');
     
     try {
-        // 🔥 NOVO: Obter usuário logado
+        // 🔥 OBTEM USUÁRIO LOGADO
         const usuarioLogado = obterUsuarioLogadoDoLocalStorage();
         
-        console.log('👤 Usuário para filtros automáticos:', {
-            email: usuarioLogado?.email,
-            tipo: usuarioLogado?.tipo_usuario,
-            escola: usuarioLogado?.escola,
-            departamento: usuarioLogado?.departamento
-        });
+        if (!usuarioLogado) {
+            console.warn('⚠️ Nenhum usuário logado. Usando filtros manuais apenas.');
+        } else {
+            console.log('👤 Usuário para filtros automáticos:', {
+                email: usuarioLogado.email,
+                tipo: usuarioLogado.tipo_usuario,
+                escola: usuarioLogado.escola,
+                departamento: usuarioLogado.departamento,
+                nome: usuarioLogado.nome
+            });
+        }
         
+        // 🔥 ENVIA USUÁRIO JUNTO COM OS FILTROS
         const resultado = await enviarParaGoogleAppsScript({
             acao: 'listarDemandas',
             filtros: filtros,           // Filtros manuais da interface
-            usuario: usuarioLogado      // 🔥 NOVO: Dados do usuário para filtros automáticos
+            usuario: usuarioLogado      // 🔥 Dados do usuário para filtros automáticos
         });
         
         console.log(`✅ ${Array.isArray(resultado) ? resultado.length : 0} demandas recebidas`);
@@ -418,13 +424,19 @@ async function listarDemandasDoServidor(filtros = {}) {
     }
 }
 
-// 🔥 ADICIONE ESTA FUNÇÃO NO MESMO ARQUIVO (googleAppsScript.js):
+// 🔥 ADICIONE ESTA FUNÇÃO NO googleAppsScript.js:
 
 /**
  * Obtém o usuário logado do localStorage
  */
 function obterUsuarioLogadoDoLocalStorage() {
     try {
+        // Verificar se está no localStorage
+        if (typeof localStorage === 'undefined') {
+            console.warn('⚠️ localStorage não disponível');
+            return null;
+        }
+        
         const usuarioSalvo = localStorage.getItem('usuario_demandas');
         if (!usuarioSalvo) {
             console.warn('⚠️ Nenhum usuário logado encontrado no localStorage');
@@ -433,17 +445,19 @@ function obterUsuarioLogadoDoLocalStorage() {
         
         const usuario = JSON.parse(usuarioSalvo);
         
-        // 🔥 CORREÇÃO: Garantir que a escola esteja correta
-        if (usuario.escola && usuario.escola.includes('Pedra Azul')) {
-            console.warn('⚠️ Escola pode estar com valor antigo:', usuario.escola);
+        // 🔥 VALIDAÇÃO DOS DADOS DO USUÁRIO
+        if (!usuario.email) {
+            console.error('❌ Usuário sem email!');
+            return null;
         }
         
+        // Log para depuração
         console.log('✅ Usuário obtido do localStorage:', {
             email: usuario.email,
-            nome: usuario.nome,
-            tipo_usuario: usuario.tipo_usuario,
-            escola: usuario.escola,
-            departamento: usuario.departamento
+            nome: usuario.nome || 'Não informado',
+            tipo_usuario: usuario.tipo_usuario || 'comum',
+            escola: usuario.escola || 'Não definida',
+            departamento: usuario.departamento || 'Não definido'
         });
         
         return usuario;
