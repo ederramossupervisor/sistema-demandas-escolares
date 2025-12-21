@@ -855,7 +855,7 @@ try {
     usuario = JSON.parse(usuarioSalvo);
     console.log('✅ Usuário logado:', usuario.nome);
     console.log('🎯 Tipo:', usuario.tipo_usuario);
-    console.log('🏫 Escola:', usuario.escola_sre);
+    console.log('🏫 Escola:', usuario.escola);
     console.log('🏢 Departamento:', usuario.departamento);
 } catch (e) {
     console.error('❌ Erro ao carregar usuário:', e);
@@ -914,7 +914,7 @@ function ajustarInterfacePorTipoUsuario(tipo) {
     console.log('👤 Dados do usuário:', {
         nome: usuario.nome,
         tipo: usuario.tipo_usuario,
-        escola: usuario.escola_sre,
+        escola: usuario.escola,
         departamento: usuario.departamento
     });
     
@@ -1002,7 +1002,7 @@ function ajustarInterfacePorTipoUsuario(tipo) {
             // Já está configurado no HTML
         } else {
             // DIRETOR(A) e USUÁRIO COMUM: Escola FIXA
-            const escolaUsuario = usuario.escola_sre || 'EEEFM Pedra Azul';
+            const escolaUsuario = usuario.escola || 'EEEFM Pedra Azul';
             
             // Limpar e definir apenas sua escola
             filtroEscola.innerHTML = `
@@ -1039,7 +1039,7 @@ function ajustarInterfacePorTipoUsuario(tipo) {
         else if (tipo === 'gestor') tipoTexto = 'Diretor(a)';
         else if (tipo === 'comum') tipoTexto = 'Usuário';
         
-        userEmail.textContent = `${tipoTexto} • ${usuario.escola_sre || ''}`;
+        userEmail.textContent = `${tipoTexto} • ${usuario.escola || ''}`;
         console.log('📋 Cabeçalho atualizado:', tipoTexto);
     }
     
