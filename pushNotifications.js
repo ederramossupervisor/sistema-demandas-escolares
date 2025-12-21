@@ -251,7 +251,7 @@ const PushNotificationSystem = {
 
             // Fallback: JSONP
             const resultado = await this.jsonpRequest(
-                'https://script.google.com/macros/s/AKfycbwUOIb2a7sVBrHk30HaxgBxyWLIa5T2H5jJcKoQ2EeP373XJCUEBYqioHRza2z3cjdRQA/exec',
+                'https://script.google.com/macros/s/AKfycbwpwemYlgy4jCJTaginH21BjPUntVXNDNiy41wGZNWtCZ_ol8f6l046Qe7e7PjzneOe/exec',
                 dados
             );
 
