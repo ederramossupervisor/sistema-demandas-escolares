@@ -105,7 +105,7 @@ const AdminSystem = {
           nome: nome || 'Usuário',
           tipo_usuario: tipo,
           departamento: departamento,
-          escola_sre: escola,
+          escola: escola,
           senha: senha
         });
         
@@ -136,7 +136,7 @@ const AdminSystem = {
         email: email,
         tipo_usuario: tipo,
         departamento: departamento,
-        escola_sre: escola
+        escola: escola
       };
       
       if (senha && senha.trim() !== '') {
