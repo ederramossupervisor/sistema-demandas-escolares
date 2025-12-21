@@ -384,17 +384,29 @@ function formatarTamanho(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
+
 // ============================================
-// FUNÇÕES DO SISTEMA (100% COMPATÍVEIS)
+// FUNÇÕES DO SISTEMA (100% COMPATÍVEIS) - VERSÃO CORRIGIDA
 // ============================================
 
 async function listarDemandasDoServidor(filtros = {}) {
-    console.log('📋 Listando demandas...');
+    console.log('📋 Listando demandas com filtros automáticos...');
     
     try {
+        // 🔥 NOVO: Obter usuário logado
+        const usuarioLogado = obterUsuarioLogadoDoLocalStorage();
+        
+        console.log('👤 Usuário para filtros automáticos:', {
+            email: usuarioLogado?.email,
+            tipo: usuarioLogado?.tipo_usuario,
+            escola: usuarioLogado?.escola,
+            departamento: usuarioLogado?.departamento
+        });
+        
         const resultado = await enviarParaGoogleAppsScript({
             acao: 'listarDemandas',
-            filtros: filtros
+            filtros: filtros,           // Filtros manuais da interface
+            usuario: usuarioLogado      // 🔥 NOVO: Dados do usuário para filtros automáticos
         });
         
         console.log(`✅ ${Array.isArray(resultado) ? resultado.length : 0} demandas recebidas`);
@@ -406,6 +418,41 @@ async function listarDemandasDoServidor(filtros = {}) {
     }
 }
 
+// 🔥 ADICIONE ESTA FUNÇÃO NO MESMO ARQUIVO (googleAppsScript.js):
+
+/**
+ * Obtém o usuário logado do localStorage
+ */
+function obterUsuarioLogadoDoLocalStorage() {
+    try {
+        const usuarioSalvo = localStorage.getItem('usuario_demandas');
+        if (!usuarioSalvo) {
+            console.warn('⚠️ Nenhum usuário logado encontrado no localStorage');
+            return null;
+        }
+        
+        const usuario = JSON.parse(usuarioSalvo);
+        
+        // 🔥 CORREÇÃO: Garantir que a escola esteja correta
+        if (usuario.escola && usuario.escola.includes('Pedra Azul')) {
+            console.warn('⚠️ Escola pode estar com valor antigo:', usuario.escola);
+        }
+        
+        console.log('✅ Usuário obtido do localStorage:', {
+            email: usuario.email,
+            nome: usuario.nome,
+            tipo_usuario: usuario.tipo_usuario,
+            escola: usuario.escola,
+            departamento: usuario.departamento
+        });
+        
+        return usuario;
+        
+    } catch (erro) {
+        console.error('❌ Erro ao obter usuário do localStorage:', erro);
+        return null;
+    }
+}
 async function salvarDemandaNoServidor(dados) {
     console.log('💾 Salvando demanda...');
     
