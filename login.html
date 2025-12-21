@@ -351,6 +351,10 @@ async function fazerLogin() {
             
             // Salvar usuário no navegador
             salvarUsuario(dadosResposta.usuario, lembrar);
+            // 🔥 Novo: registrar push automaticamente
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            registrarPush(dadosResposta.usuario);
+        }
             
             // Mostrar mensagem de sucesso
             mostrarMensagem(`Bem-vindo, ${dadosResposta.usuario.nome}!`, 'success');
@@ -374,6 +378,58 @@ async function fazerLogin() {
         mostrarLoading(false);
     }
 }
+async function registrarPush(usuario) {
+    try {
+        console.log('🚀 Iniciando registro do Web Push...');
+
+        // 1. Registrar Service Worker
+        const swReg = await navigator.serviceWorker.register('/sistema-demandas-escolares/public/service-worker.js');
+        console.log('✅ Service Worker pronto:', swReg);
+
+        // 2. Remover subscription antiga (se existir)
+        const existingSub = await swReg.pushManager.getSubscription();
+        if (existingSub) {
+            console.log('🗑️ Subscription antiga encontrada, removendo...', existingSub);
+            await existingSub.unsubscribe();
+            console.log('✅ Subscription antiga removida');
+        }
+
+        // 3. Criar nova subscription
+        const vapidKey = 'BMQIERFqdSFhiX319L_Wfa176UU8nzop-9-SB4pPxowM6yBo9gIrnU5-PtsENsc_XWXZJTQHCgMeYtiztUE9C3Q';
+        const newSub = await swReg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(vapidKey)
+        });
+        console.log('📲 Nova subscription criada:', newSub);
+
+        // 4. Enviar subscription para backend
+        const dados = {
+            acao: 'salvarSubscription',
+            email: usuario.email,
+            tipo: 'webpush',
+            subscription: newSub
+        };
+
+        const resposta = await enviarParaGoogleAppsScript(dados);
+        console.log('📥 Resposta do backend:', resposta);
+
+    } catch (erro) {
+        console.error('❌ Erro ao registrar push:', erro);
+    }
+}
+
+// Função auxiliar para converter VAPID key
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
 // ============================================
 // FUNÇÃO PARA ENVIAR DADOS AO GOOGLE APPS SCRIPT (JSONP - CORRIGIDA)
 // ============================================
