@@ -39,7 +39,4 @@ async function testarIntegracaoCompleta() {
     };
 }
 
-// Adicionar ao window para testar via console
-window.testarIntegracaoCompleta = testarIntegracaoCompleta;
 
-console.log('🔧 Teste rápido carregado! Use testarIntegracaoCompleta() no console.');
