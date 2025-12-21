@@ -2660,7 +2660,7 @@ async function obterUsuariosParaNotificar(dadosDemanda) {
             // Diretor recebe apenas da sua escola
             if (usuario.tipo_usuario === 'diretor' || usuario.tipo_usuario === 'gestor') {
                 const escolasDemanda = dadosDemanda.escolas || [];
-                return escolasDemanda.includes(usuario.escola_sre || usuario.escola);
+                return escolasDemanda.includes(usuario.escola || usuario.escola);
             }
             
             // Usuário comum recebe apenas do seu departamento+escola
@@ -2676,7 +2676,7 @@ async function obterUsuariosParaNotificar(dadosDemanda) {
                 const temDepartamentoComum = departamentosUsuario.some(dept => 
                     departamentosDemanda.includes(dept));
                 
-                const temEscolaComum = escolasDemanda.includes(usuario.escola_sre || usuario.escola);
+                const temEscolaComum = escolasDemanda.includes(usuario.escola || usuario.escola);
                 
                 return temDepartamentoComum && temEscolaComum;
             }
