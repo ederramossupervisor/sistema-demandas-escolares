@@ -1032,7 +1032,7 @@ async function carregarUsuarios() {
             const tipoUsuario = usuario.tipo_usuario || 'comum';
             const nomeUsuario = usuario.nome || '';
             const departamentoUsuario = usuario.departamento || '';
-            const escolaUsuario = usuario.escola_sre || '';
+            const escolaUsuario = usuario.escola || '';
             
             html += `
                 <tr>
@@ -1040,7 +1040,7 @@ async function carregarUsuarios() {
                     <td>${usuario.email || 'N/A'}</td>
                     <td><span class="tipo-badge ${tipoClass}">${tipoTexto}</span></td>
                     <td>${usuario.departamento || 'N/A'}</td>
-                    <td>${usuario.escola_sre || 'N/A'}</td>
+                    <td>${usuario.escola || 'N/A'}</td>
                     <td>
                         <div class="btn-group">
                             <button class="btn btn-primary btn-small" onclick="abrirModalEditar('${usuario.email}', '${nomeUsuario}', '${tipoUsuario}', '${departamentoUsuario}', '${escolaUsuario}')">
@@ -1247,7 +1247,7 @@ async function salvarEdicaoUsuario() {
             nome: nomeNovo,                  // Nome NOVO
             tipo_usuario: tipo,              // Tipo
             departamento: departamento,      // Departamento
-            escola_sre: escola,              // Escola
+            escola: escola,              // Escola
             senha: senha                     // Senha (opcional)
         });
         
