@@ -12,7 +12,7 @@
 
 const BACKEND_CONFIG = {
     // URL principal do backend
-    url: 'https://script.google.com/macros/s/AKfycbw1h6yYwK4RR5wK0SkFzDHEl2UwF23WRFyJqJwYHheN7Rlcq9IBSerKgrYOCuC3OXw/exec',
+    url: 'https://script.google.com/macros/s/AKfycbwpwemYlgy4jCJTaginH21BjPUntVXNDNiy41wGZNWtCZ_ol8f6l046Qe7e7PjzneOe/exec',
     
     // Timeout padrão para requisições (10 segundos)
     timeout: 10000,
