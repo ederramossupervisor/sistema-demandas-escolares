@@ -1,21 +1,17 @@
-// src/js/integracao-backend.js
+// src/js/integracao-backend.js (ATUALIZADO)
 /**
  * SISTEMA DE INTEGRAÇÃO COM BACKEND GOOGLE APPS SCRIPT
  * 
- * Conexão segura com todas as funcionalidades do backend:
- * - Autenticação de usuários
- * - CRUD de demandas
- * - Upload de arquivos
- * - Envio de e-mails
- * - Notificações push
+ * CONFIGURAÇÕES AGORA VÊM DO config.js
  */
 
 const BACKEND_CONFIG = {
-    // URL principal do backend
-    url: 'https://script.google.com/macros/s/AKfycbwpwemYlgy4jCJTaginH21BjPUntVXNDNiy41wGZNWtCZ_ol8f6l046Qe7e7PjzneOe/exec',
+    // Usar URL do CONFIG
+    url: window.CONFIG ? window.CONFIG.BACKEND_URL : 
+        'https://script.google.com/macros/s/AKfycbwpwemYlgy4jCJTaginH21BjPUntVXNDNiy41wGZNWtCZ_ol8f6l046Qe7e7PjzneOe/exec',
     
-    // Timeout padrão para requisições (10 segundos)
-    timeout: 10000,
+    // Usar timeout do CONFIG
+    timeout: window.CONFIG ? window.CONFIG.TIMEOUT_REQUISICOES : 10000,
     
     // Métodos suportados
     metodos: {
@@ -23,33 +19,17 @@ const BACKEND_CONFIG = {
         POST: 'POST'
     },
     
-    // Endpoints principais
-    endpoints: {
-        // Autenticação
+    // Endpoints do CONFIG
+    endpoints: window.CONFIG ? window.CONFIG.ENDPOINTS : {
         validarLogin: 'validarLogin',
-        salvarUsuario: 'salvarUsuario',
-        
-        // Demandas
         listarDemandas: 'listarDemandas',
         salvarDemanda: 'salvarDemanda',
-        atualizarDemanda: 'atualizarDemanda',
-        excluirDemanda: 'excluirDemanda',
-        
-        // Notificações
-        salvarSubscription: 'salvarSubscription',
-        enviarNotificacao: 'enviarNotificacao',
-        
-        // E-mail
-        enviarEmailDemanda: 'enviarEmailDemanda',
-        
-        // Upload
         uploadArquivo: 'uploadArquivo',
-        
-        // Sistema
-        infoSistema: 'info'
+        enviarEmailDemanda: 'enviarEmailDemanda',
+        salvarSubscription: 'salvarSubscription',
+        info: 'info'
     }
 };
-
 class IntegracaoBackend {
     constructor() {
         this.estaConectado = false;
