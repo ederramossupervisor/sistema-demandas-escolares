@@ -1106,7 +1106,7 @@ function renderizarParaComputador(container) {
                         ${demanda.titulo || 'Sem título'}
                     </div>
                     <div style="font-size: 12px; color: #7f8c8d;">
-                        ${demanda.descricao ? String(demanda.descricao).substring(0, 50) + '...') : 'Sem descrição'}
+                        ${demanda.descricao ? (String(demanda.descricao).substring(0, 50) + '...') : 'Sem descrição'}
                     </div>
                 </div>
                 
