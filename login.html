@@ -648,9 +648,12 @@ window.solicitarAcesso = solicitarAcesso;
 window.sairSistema = function() {
     localStorage.removeItem('usuario_demandas');
     sessionStorage.removeItem('usuario_demandas');
-    window.location.href = 'index.html';
+window.location.href = 'index.html';
+// Adicionar ao window para testar via console
+window.testarIntegracaoCompleta = testarIntegracaoCompleta;
 };
 
+console.log('🔧 Teste rápido carregado! Use testarIntegracaoCompleta() no console.');
 console.log('✅ Sistema de login 3.0 carregado com sucesso!');
 </script>
     <!-- SERVICE WORKER REGISTRATION -->
